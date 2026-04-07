@@ -1,0 +1,14 @@
+{
+  "name": "kairos-ot-simulator",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Simulates OT sensor readings for the KairOS Astellas demo",
+  "scripts": {
+    "start": "node index.js",
+    "correct": "node index.js --correct"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "dotenv": "^16.4.5"
+  }
+}

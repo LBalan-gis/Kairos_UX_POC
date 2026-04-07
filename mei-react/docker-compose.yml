@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  mei-engine:
+    build: .
+    container_name: mei_edge_dashboard
+    restart: always  # Critical for factory floors: boots automatically on server restart
+    ports:
+      - "80:80"
+    volumes:
+      # Offline-first architecture: The core engine is immutable, but the factory configuration
+      # is mounted directly from the host operating system. Engineers can update the factory map
+      # by just editing this local JSON file and hitting refresh on the dashboard.
+      - ./factory_configurations/line_A_config.json:/usr/share/nginx/html/config.json:ro
+    environment:
+      - NODE_ENV=production

@@ -1,0 +1,92 @@
+/* Extracted from mei-dynamic-plant-graph.html Monolith */
+
+.fl-view {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  height: 100%;
+  width: 100%;
+}
+
+.fl-three-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Incident bar */
+.fl-incident-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 20px;
+  background: rgba(177,74,66,0.07);
+  border-bottom: 1px solid rgba(177,74,66,0.18);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #B14A42;
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
+}
+.fl-incident-bar strong { font-weight: 700; }
+.fl-ib-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #B14A42; flex-shrink: 0;
+  animation: flPulseRed 1.8s ease-in-out infinite;
+}
+@keyframes flPulseRed {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:0.45; transform:scale(1.5); }
+}
+.fl-ib-sep { opacity: 0.45; }
+.fl-ib-age { margin-left: auto; opacity: 0.60; font-size: 11px; }
+
+/* HUD overlay — bottom left, always above label layer */
+.fl-three-hud {
+  position: absolute; bottom: 16px; left: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  pointer-events: none; z-index: 10;
+}
+.fl-hud-card {
+  background: rgba(6,10,16,0.82); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 9px 12px; min-width: 160px;
+}
+.fl-hud-warn { border-color: rgba(245,158,11,0.25); }
+.fl-hud-crit { border-color: rgba(239,68,68,0.25); }
+.fl-hud-label {
+  font-size: 8.5px; font-weight: 700; letter-spacing: 0.10em;
+  color: #475569; text-transform: uppercase; margin-bottom: 3px;
+}
+.fl-hud-name { font-size: 11px; font-weight: 600; color: #e2e8f0; margin-bottom: 5px; }
+.fl-hud-metric {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: 10.5px; color: #64748b; padding: 2px 0;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.fl-hud-metric span:last-child { font-weight: 600; color: #94a3b8; }
+.fl-hud-val-warn { color: #fbbf24 !important; }
+.fl-hud-val-crit { color: #f87171 !important; }
+.fl-hud-val-ok   { color: #4ade80 !important; }
+
+/* Minimap Overlay */
+.fl-minimap {
+  position: absolute; bottom: 16px; right: 16px;
+  z-index: 10; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+}
+.fl-mm-panel {
+  background: rgba(6,10,16,0.82); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 8px; width: 180px;
+}
+.fl-mm-title {
+  font-size: 8.5px; font-weight: 700; letter-spacing: 0.10em; color: #475569; margin-bottom: 6px; text-transform: uppercase;
+}
+.fl-mm-svg { width: 100%; height: auto; display: block; }

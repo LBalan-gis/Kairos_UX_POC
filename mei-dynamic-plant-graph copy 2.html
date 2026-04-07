@@ -1,0 +1,3353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KairOS Dynamic Plant Graph</title>
+  <style>
+    :root {
+      --bg: #F6F7F4;
+      --panel: rgba(250,251,248,0.72);
+      --card: #FCFCFA;
+
+      --text-primary: #161B22;
+      --text-secondary: #4B5563;
+      --text-muted: #6B7280;
+
+      --border-soft: rgba(60,72,88,0.10);
+      --border-default: rgba(60,72,88,0.16);
+
+      --focus: #355C9A;
+      --focus-ring: rgba(53,92,154,0.18);
+
+      --material:   #4B6A9B;
+      --sensor:     #2E6F74;
+      --control:    #587A3E;
+      --asset:      #355C9A;
+      --quality:    #A47A2A;
+      --golden:     #9B7A2E;
+      --deviation:  #B14A42;
+      --simulation: #7A5CAD;
+      --financial:  #6D7C46;
+      --system:     #727C8A;
+
+      --material-fill:   #F2F5FA;
+      --sensor-fill:     #F1F6F5;
+      --control-fill:    #F4F7F1;
+      --asset-fill:      #F2F5FA;
+      --quality-fill:    #FBF7EE;
+      --golden-fill:     #F9F3E6;
+      --deviation-fill:  #FCF1EF;
+      --simulation-fill: #F5F2FA;
+      --financial-fill:  #F4F7F0;
+      --system-fill:     #F6F7F8;
+
+      --chart-live:       #355C9A;
+      --chart-reference:  #9B7A2E;
+      --chart-threshold:  #6B7280;
+      --chart-loss:       #B14A42;
+      --chart-recovery:   #587A3E;
+      --chart-simulation: #7A5CAD;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      font-size: 16px;
+      overflow: hidden;
+      background: var(--bg);
+      color: #1e293b;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: 64px 42px 40px 1fr;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      background: rgba(248,249,245,0.74);
+      backdrop-filter: blur(8px) saturate(105%);
+      -webkit-backdrop-filter: blur(8px) saturate(105%);
+      border-bottom: 1px solid rgba(60,72,88,0.08);
+      z-index: 20;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .mark {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 2px solid rgba(53,92,154,0.55);
+      background: linear-gradient(135deg, #E4EAF5 0%, #D0DAEA 100%);
+    }
+    .brand b { font-size: 22px; font-weight: 650; letter-spacing: 0.01em; }
+    .context {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .command {
+      height: 40px;
+      width: min(640px, 58vw);
+      border: 1px solid rgba(99, 106, 128, 0.2);
+      border-radius: 999px;
+      background: rgba(251, 252, 255, 0.58);
+      backdrop-filter: blur(14px) saturate(125%);
+      -webkit-backdrop-filter: blur(10px);
+      color: #4a5163;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .command:focus-visible,
+    .action-btn:focus-visible,
+    .theme-toggle:focus-visible,
+    .focus-exit:focus-visible,
+    .insight-chip:focus-visible {
+      outline: 2px solid #7aa2ff;
+      outline-offset: 2px;
+    }
+
+    .command-menu {
+      position: absolute;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(680px, 72vw);
+      border: 1px solid rgba(99, 106, 128, 0.18);
+      border-radius: 14px;
+      background: rgba(247, 248, 253, 0.76);
+      backdrop-filter: blur(18px) saturate(120%);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+      padding: 10px;
+      display: none;
+      z-index: 40;
+    }
+    .command-menu.show { display: block; }
+    .command-menu input {
+      width: 100%;
+      height: 40px;
+      border: 1px solid rgba(99, 106, 128, 0.18);
+      border-radius: 10px;
+      padding: 0 12px;
+      font-size: 14px;
+      background: rgba(255,255,255,0.62);
+      color: #1e293b;
+    }
+    .command-list {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+      max-height: 220px;
+      overflow: auto;
+    }
+    .command-item {
+      border: 1px solid rgba(99, 106, 128, 0.18);
+      border-radius: 10px;
+      background: rgba(251,252,255,0.58);
+      color: #3b4253;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 10px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .status { justify-self: end; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #44536e; }
+    .live {
+      border: 1px solid rgba(53,92,154,0.24);
+      border-radius: 6px;
+      padding: 4px 10px;
+      background: rgba(53,92,154,0.07);
+      color: #355C9A;
+      font-weight: 600;
+      font-size: 12px;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .live i { width: 6px; height: 6px; border-radius: 50%; background: #587A3E; display: inline-block;
+      box-shadow: 0 0 0 3px rgba(88,122,62,0.20); }
+
+    .board {
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(80,96,120,0.32) 1px, transparent 1.2px) 0 0 / 40px 40px,
+        radial-gradient(circle at 1px 1px, rgba(80,96,120,0.12) 1px, transparent 1.2px) 20px 20px / 40px 40px,
+        #F6F7F4;
+    }
+    /* ── Zone Swimlanes ──────────────────────────────────────── */
+    #swimlaneLayer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .swimlane {
+      position: absolute;
+      border-radius: 16px;
+      pointer-events: none;
+    }
+    .swimlane-label {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 800;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: 0.70;
+      pointer-events: none;
+      line-height: 1;
+      color: var(--text-primary);
+    }
+    /* Zone fills — structural, cards and edges are primary */
+    .zone-A { background: rgba(155,122,46,0.04);  border: 1px solid rgba(155,122,46,0.14);  color: #7A5C20; }
+    .zone-B { background: rgba(177,74,66,0.04);   border: 1px solid rgba(177,74,66,0.14);   color: #8C3B35; }
+    .zone-C { background: rgba(53,92,154,0.04);   border: 1px solid rgba(53,92,154,0.14);   color: #2F4F7C; }
+    .zone-D { background: rgba(164,122,42,0.04);  border: 1px solid rgba(164,122,42,0.14);  color: #7A5820; }
+    .zone-E { background: rgba(88,122,62,0.04);   border: 1px solid rgba(88,122,62,0.14);   color: #445E2E; }
+    .zone-F { background: rgba(114,124,138,0.04); border: 1px solid rgba(114,124,138,0.13); color: #4A5568; }
+
+
+    .timeline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-bottom: 1px solid rgba(60,72,88,0.08);
+      background: rgba(248,249,245,0.74);
+      backdrop-filter: blur(8px) saturate(105%);
+      -webkit-backdrop-filter: blur(8px) saturate(105%);
+      overflow-x: auto;
+      white-space: nowrap;
+      z-index: 15;
+    }
+    .timeline .event {
+      border: 1px solid rgba(99, 106, 128, 0.16);
+      border-radius: 999px;
+      background: rgba(251,252,255,0.52);
+      color: #454d5f;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .timeline .event b {
+      color: #24364f;
+      margin-right: 6px;
+      font-weight: 700;
+    }
+
+    #viewport {
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 0;
+    }
+
+    #edgeSvg, #nodeLayer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      z-index: 2;
+    }
+
+    #edgeSvg { pointer-events: none; z-index: 1; }
+
+    .node {
+      position: absolute; border-radius: 10px;
+      border: 1px solid var(--border-default);
+      border-left: 4px solid var(--accent);
+      background: var(--card);
+      box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.08);
+      padding: 22px 26px; font-size: 14px; line-height: 1.55;
+      color: var(--text-primary); cursor: grab; user-select: none; touch-action: none;
+      overflow: hidden; min-width: 340px;
+      transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+    }
+
+    /* Node type fills — light mode */
+    .node.material   { background: var(--material-fill);   border-left-color: var(--material); }
+    .node.sensor     { background: var(--sensor-fill);     border-left-color: var(--sensor); }
+    .node.control    { background: var(--control-fill);    border-left-color: var(--control); }
+    .node.controlparameter { background: var(--control-fill); border-left-color: var(--control); }
+    .node.asset      { background: var(--asset-fill);      border-left-color: var(--asset); }
+    .node.quality    { background: var(--quality-fill);    border-left-color: var(--quality); }
+    .node.qualitystate { background: var(--quality-fill);  border-left-color: var(--quality); }
+    .node.goldenbatch { background: var(--golden-fill);   border-left-color: var(--golden); box-shadow: 0 1px 3px rgba(161,98,7,0.10), 0 4px 20px rgba(161,98,7,0.14); }
+    .node.batch      { background: var(--asset-fill);      border-left-color: var(--asset); }
+    .node.deviation  { background: var(--deviation-fill);  border-left-color: var(--deviation); }
+    .node.simulation { background: var(--simulation-fill); border-left-color: var(--simulation); }
+    .node.simulationscenario { background: var(--simulation-fill); border-left-color: var(--simulation); }
+    .node.financial  { background: var(--financial-fill);  border-left-color: var(--financial); }
+    .node.financialimpact { background: var(--financial-fill); border-left-color: var(--financial); }
+    .node.system     { background: var(--system-fill);     border-left-color: var(--system); }
+    .node.externalsystem { background: var(--system-fill); border-left-color: var(--system); }
+    .node.action     { background: var(--control-fill);    border-left-color: var(--control); }
+    .node.dragging { cursor: grabbing; }
+    .node:hover {
+      box-shadow:
+        0 20px 42px rgba(30, 27, 32, 0.16),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+    .node:active {
+      cursor: grabbing;
+      transform: scale(1.02);
+    }
+
+    .node::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      border-radius: 12px 0 0 12px;
+      background: var(--accent, #0a84ff);
+      opacity: 0.9;
+    }
+
+    .node::after {
+      content: none;
+    }
+
+    .anchor-card   { min-width: 520px; }
+    .process-card  { min-width: 400px; }
+    .simulation-card {
+      min-width: 300px !important;
+      max-width: 340px !important;
+      padding: 18px 20px !important;
+      border-style: solid;
+    }
+    .system-card   { min-width: 280px; padding: 16px 20px; }
+    .compact-card  { min-width: 320px; }
+    .system-card .spark { display: none; }
+    .system-card .metrics { gap: 5px; margin-bottom: 0; }
+    .system-card .metric { font-size: 12px; }
+    .system-card .metric b { font-size: 14px; }
+
+    .tier-primary {
+      border-color: #b2c6de;
+      box-shadow: 0 28px 56px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255,255,255,0.82);
+    }
+    .tier-secondary {
+      border-color: #cfdae8;
+      box-shadow: 0 14px 26px rgba(15, 23, 42, 0.11), inset 0 1px 0 rgba(255,255,255,0.68);
+    }
+    .tier-tertiary {
+      border-color: #dde5ee;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.58);
+      opacity: 0.78;
+    }
+    .tier-endpoint {
+      border-color: #e0e7f0;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.56);
+      opacity: 0.72;
+    }
+    .operational-card .insight-chip { opacity: 0.92; }
+    .analytical-card .insight-chip {
+      border-color: #ccdaf7;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.7),
+        0 5px 14px rgba(21, 43, 82, 0.12);
+    }
+    .analytical-card .spark { border-top-color: #d5e0f2; }
+    .endpoint-card .sub { font-size: 12px; }
+    .endpoint-card .metrics { margin-bottom: 0; gap: 5px; }
+    .endpoint-card .metric { font-size: 12px; }
+    .endpoint-card .metric b { font-size: 14px; }
+
+    .node-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+    .node-header-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .icon-chip {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: var(--icon-bg, #edf2fb);
+    }
+    .icon-chip svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+
+    .node-title,
+    .node .title {
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      color: #0a0e1a;
+      margin-bottom: 4px;
+    }
+
+    .node .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      color: #8E8E93;
+      margin-bottom: 8px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      color: #8E8E93;
+    }
+
+    /* State badge — large touch-friendly pill */
+    .node-status,
+    .state {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      min-height: 34px;
+      border-radius: 999px;
+      background: var(--state-bg, #F2F2F7);
+      text-transform: uppercase;
+      letter-spacing: 0.10em;
+      border: 1.5px solid var(--state-border, #C6C6C8);
+      color: var(--state-fg, #3C3C43);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .state i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: inline-block; flex-shrink: 0; }
+
+    .node-body { display: flex; flex-direction: column; gap: 10px; }
+
+    .signal-age {
+      font-size: 12px;
+      color: #8E8E93;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .signal-age.stale { color: #FF9F0A; font-weight: 700; }
+
+    .sub { font-size: 15px; font-weight: 500; line-height: 1.5; color: #3C3C43; margin-bottom: 0; }
+
+    .metrics { display: grid; gap: 10px; margin-top: 6px; margin-bottom: 16px; }
+    .node .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #3C3C43;
+      min-height: 32px;
+    }
+    .node .metric b {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.1;
+      color: #0a0e1a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      letter-spacing: -0.02em;
+    }
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #3C3C43;
+    }
+    .metric b {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.1;
+      color: #0a0e1a;
+      letter-spacing: -0.02em;
+    }
+
+    .metric-probability {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #475569;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      border-top: 1px dashed rgba(100,116,139,0.22);
+      padding-top: 6px;
+      margin-top: 2px;
+    }
+    .metric-probability b {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f172a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .simulation-card .node-title,
+    .simulation-card .title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .node.prob-high:not(.focus-root):not(.focal) { transform: scale(1.04); }
+    .node.prob-medium:not(.focus-root):not(.focal) { transform: scale(1.02); }
+
+    @keyframes kairosShimmer {
+      0%   { background-position: 200% center; }
+      100% { background-position: -200% center; }
+    }
+    @keyframes kairosPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.55; transform: scale(1.35); }
+    }
+    .insight-chip {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: linear-gradient(
+        105deg,
+        rgba(122,92,173,0.10) 0%,
+        rgba(93,78,160,0.16) 35%,
+        rgba(122,92,173,0.10) 55%,
+        rgba(74,90,168,0.14) 80%,
+        rgba(122,92,173,0.10) 100%
+      );
+      background-size: 300% 100%;
+      animation: kairosShimmer 6s linear infinite;
+      border: 1.5px solid rgba(122,92,173,0.24);
+      border-left: 3px solid var(--simulation);
+      border-radius: 10px;
+      padding: 14px 16px; min-height: 52px;
+      font-size: 14px; line-height: 1.5;
+      color: #4C1D95;
+      cursor: pointer; width: 100%; text-align: left; margin-top: 10px;
+      transition: border-color 150ms;
+    }
+    .insight-chip:hover {
+      border-color: rgba(122,92,173,0.40);
+      animation-duration: 2.5s;
+    }
+    .insight-chip strong { color: var(--simulation); font-weight: 700; }
+    .insight-chip i {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--simulation); flex-shrink: 0; margin-top: 6px;
+      animation: kairosPulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes meiPulse {
+      0% { box-shadow: 0 0 0 0 rgba(59,102,194,0.35); }
+      70% { box-shadow: 0 0 0 8px rgba(59,102,194,0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,102,194,0); }
+    }
+
+    .spark-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 18px;
+      margin-bottom: 4px;
+      gap: 8px;
+    }
+    .spark-ref-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #b68c2d;
+      opacity: 0.82;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .spark-ref-label::before {
+      content: "";
+      display: inline-block;
+      width: 20px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 1px;
+      opacity: 0.65;
+    }
+    .spark-range { display: flex; gap: 3px; }
+    .spark-range-btn {
+      border: 1px solid rgba(99,106,128,0.18);
+      border-radius: 999px;
+      background: transparent;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 2px 8px;
+      cursor: pointer;
+      transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+    }
+    .spark-range-btn:hover { border-color: rgba(47,107,255,0.22); color: #3b5fc0; }
+    .spark-range-btn.active {
+      background: rgba(47,107,255,0.10);
+      border-color: rgba(47,107,255,0.30);
+      color: #2f6bff;
+    }
+
+    .spark {
+      margin-top: 6px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 12px;
+      width: 100%;
+      height: 160px;
+      position: relative;
+    }
+    .spark.large { height: 220px; }
+
+    .spark canvas { width: 100% !important; height: 100% !important; display: block; }
+    .anchor-card .spark        { height: 220px; }
+    .process-card .spark       { height: 160px; }
+    .simulation-card .spark    { height: 150px; }
+    .system-card .spark        { display: none; }
+    .compact-card.expanded .spark { height: 150px; }
+
+    .primary-analytical {
+      box-shadow: 0 14px 34px rgba(15,23,42,0.12);
+      border-color: #cfd9e8;
+    }
+
+    .theme-toggle {
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 10px;
+      padding: 6px 10px;
+      background: rgba(242, 246, 255, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #3f5ea5;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .theme-toggle::after {
+      content: attr(data-mode);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      height: 20px;
+      border-radius: 999px;
+      background: rgba(63, 94, 165, 0.12);
+      color: #2f4f8f;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .edge { fill: none; stroke: #94A3B8; stroke-width: 1.5px; opacity: 0.65; }
+    .edge.material   { stroke: var(--material);   stroke-width: 2px;   opacity: 0.80; }
+    .edge.causal     { stroke: #334155;            stroke-width: 3px;   opacity: 0.55; }
+    .edge.deviation  { stroke: var(--deviation);   stroke-width: 2.5px; opacity: 0.90; }
+    .edge.control    { stroke: var(--control);     stroke-width: 2px;   opacity: 0.80; }
+    .edge.simulation { stroke: var(--simulation);  stroke-width: 1.5px; stroke-dasharray: 6 4; opacity: 0.75; }
+    .edge.system     { stroke: var(--system);      stroke-width: 1px;   stroke-dasharray: 3 4; opacity: 0.45; }
+    .edge.golden-ref { stroke: var(--golden);      stroke-width: 1.5px; stroke-dasharray: 8 5; opacity: 0.60; }
+    .edge.reference  { stroke: #94A3B8;            stroke-width: 1px;   stroke-dasharray: 3 4; opacity: 0.30; }
+    .edge.focused    { stroke: var(--focus) !important; opacity: 1 !important; stroke-width: 3px !important; filter: drop-shadow(0 0 4px var(--focus-ring)); }
+    .edge.primary-spine  { opacity: 1; stroke-width: 3px !important; }
+    .edge.spine          { opacity: 0.85; }
+    .edge.branch         { opacity: 0.55; }
+    .edge.exec           { opacity: 0.28; }
+    .edge.dimmed { opacity: 0.05 !important; }
+    .fork-link {
+      fill: none;
+      stroke: #0a84ff;
+      stroke-width: 2px;
+      stroke-dasharray: 4 4;
+      opacity: 0.78;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+    .fork-link.unchanged { stroke: #dc2626; }
+    .fork-link.corrected { stroke: #0a84ff; }
+    .edge-label {
+      font-size: 12px;
+      font-weight: 700;
+      fill: #4b5a6e;
+      opacity: 0.80;
+      pointer-events: none;
+      transition: opacity 120ms ease;
+      letter-spacing: 0.01em;
+    }
+    .edge-label.focused { opacity: 1; }
+    .edge-prob-label {
+      font-size: 11px;
+      fill: #64748b;
+      opacity: 0.75;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      pointer-events: none;
+    }
+    .fork-label {
+      font-size: 11px;
+      fill: #4f46e5;
+      font-weight: 700;
+      opacity: 0.94;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    .fork-label.unchanged { fill: #dc2626; }
+    .fork-label.corrected { fill: #0a84ff; }
+    .fork-junction {
+      fill: #4f46e5;
+      opacity: 0.72;
+      pointer-events: none;
+    }
+
+    .node.focal {
+      opacity: 1 !important;
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px var(--focus-ring), 0 8px 32px rgba(29,78,216,0.16) !important;
+      z-index: 20;
+    }
+    .node.focus-root {
+      outline: 3px solid var(--deviation);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 6px rgba(185,28,28,0.14), 0 16px 40px rgba(185,28,28,0.18) !important;
+      border-left-color: var(--deviation) !important;
+      z-index: 30;
+    }
+    .node.incident-root {
+      transform: scale(1.06);
+      box-shadow:
+        0 0 0 3px rgba(220,38,38,0.50),
+        0 0 0 7px rgba(220,38,38,0.10),
+        0 28px 56px rgba(15,23,42,0.26);
+      border-color: rgba(220,38,38,0.60);
+      z-index: 30;
+    }
+    #node-batch_golden {
+      z-index: 1;
+      width: 360px !important;
+      min-width: 360px !important;
+      max-width: 360px !important;
+      background: linear-gradient(180deg, rgba(251,245,224,0.96) 0%, rgba(244,235,203,0.92) 100%) !important;
+      border: 1px solid rgba(251,191,36,0.34) !important;
+      border-left: 4px solid #D97706 !important;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.12) !important;
+      opacity: 0.94 !important;
+    }
+    body:not(.dark) #node-batch_golden .title,
+    body:not(.dark) #node-batch_golden .node-title { color: #3B2A0E !important; }
+    .node.dimmed { opacity: 0.20 !important; filter: grayscale(0.7); pointer-events: none; }
+    .reference-node {
+      background: #FFFBEB !important;
+      border-color: #FDE68A !important;
+      border-left: 4px solid #D97706 !important;
+      box-shadow: 0 1px 3px rgba(217,119,6,0.12), 0 4px 20px rgba(217,119,6,0.18) !important;
+    }
+
+    .decision-dock-label {
+      position: fixed;
+      bottom: 82px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      color: #8A9AB0;
+      text-transform: uppercase;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 40;
+    }
+
+    .actions {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: auto;
+      max-width: 1100px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(248,249,245,0.88);
+      backdrop-filter: blur(14px) saturate(110%);
+      -webkit-backdrop-filter: blur(14px) saturate(110%);
+      border: 1px solid rgba(60,72,88,0.10);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+      z-index: 40;
+    }
+
+    .dock-divider {
+      width: 1px;
+      height: 28px;
+      background: rgba(60,72,88,0.14);
+      flex-shrink: 0;
+      margin: 0 2px;
+    }
+    body.compact .node { padding: 14px 16px; font-size: 12px; }
+    body.compact .node .title, body.compact .node-title { font-size: 14px; }
+
+
+    .compact-card .spark { display: none; }
+    .compact-card .extra-detail {
+      display: none;
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.45;
+      color: #5f6f89;
+      border-top: 1px dashed rgba(100,116,139,0.24);
+      padding-top: 8px;
+    }
+
+    .compact-card.expanded .spark { display: block; }
+    .compact-card.expanded .extra-detail { display: block; }
+
+    .action-btn {
+      border: 1px solid rgba(60,72,88,0.14);
+      border-radius: 10px;
+      background: #FCFCFA;
+      color: #2A3341;
+      padding: 10px 16px;
+      min-height: 44px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      box-shadow: none;
+      flex: 0 0 auto;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      transition: background 80ms, border-color 80ms;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .action-btn:hover { background: #F4F5F1; border-color: rgba(60,72,88,0.24); }
+    .action-btn:active { transform: scale(0.98); }
+    .action-btn .tag {
+      margin-left: auto;
+      border-radius: 6px;
+      background: rgba(10,20,40,0.06);
+      color: #6B7280;
+      padding: 2px 7px;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 750;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 900px) {
+      .action-btn.system { display: none; }
+      .dock-divider { display: none; }
+      .decision-dock-label { bottom: 78px; }
+    }
+    @media (max-width: 600px) {
+      .action-btn .tag { display: none; }
+      .actions { padding: 8px 10px; gap: 6px; }
+    }
+
+    /* Color = intent — light mode industrial */
+    .action-btn.primary,
+    .action-btn.primary-recommendation { background: #355C9A !important; border-color: #355C9A !important; color: #FFFFFF !important; font-weight: 700; box-shadow: none; }
+    .action-btn.primary:hover,
+    .action-btn.primary-recommendation:hover { background: #2C4F8A !important; }
+    .action-btn.warn    { background: #A4651A !important; border-color: #A4651A !important; color: #FFFFFF !important; font-weight: 700; box-shadow: none; }
+    .action-btn.warn:hover { background: #8F5615 !important; }
+    .action-btn.system  { background: #FCFCFA !important; border-color: rgba(60,72,88,0.14) !important; color: #334155 !important; }
+    .action-btn.dimmed  { opacity: 0.35; filter: grayscale(0.25); }
+    .action-btn.active  { box-shadow: 0 0 0 2px rgba(53,92,154,0.20) inset; border-color: rgba(53,92,154,0.40); }
+    .action-btn.queued  { background: #587A3E !important; border-color: #587A3E !important; color: #FFFFFF !important; }
+
+    /* ═══════════════════════════════════════════════════
+       DARK MODE — Restrained Industrial HMI Palette
+       ═══════════════════════════════════════════════════ */
+
+    body.dark {
+      --bg: #0B1220;
+      --panel: #0F172A;
+      --card: #162033;
+      --card-elevated: #1B263B;
+
+      --text-primary: #F8FAFC;
+      --text-secondary: #CBD5E1;
+      --text-tertiary: #94A3B8;
+
+      --border-soft: #223047;
+      --border-default: #334155;
+      --border-strong: #475569;
+
+      --focus: #60A5FA;
+      --focus-ring: rgba(96,165,250,0.22);
+
+      /* Semantic — muted for dark */
+      --material:   #7AA2FF;
+      --sensor:     #2DD4BF;
+      --control:    #4ADE80;
+      --asset:      #60A5FA;
+      --quality:    #F59E0B;
+      --golden:     #FBBF24;
+      --deviation:  #F87171;
+      --simulation: #A78BFA;
+      --financial:  #4ADE80;
+      --system:     #94A3B8;
+
+      --chart-live:       #60A5FA;
+      --chart-reference:  #FBBF24;
+      --chart-threshold:  #64748B;
+      --chart-loss:       #F87171;
+      --chart-recovery:   #4ADE80;
+      --chart-simulation: #A78BFA;
+    }
+
+    /* ── Base surfaces ── */
+    body.dark { background: #0B1220; color: #CBD5E1; }
+    body.dark #app { background: #0B1220; }
+
+    body.dark .topbar {
+      background: rgba(11,18,32,0.97);
+      border-bottom-color: #223047;
+      backdrop-filter: blur(16px);
+    }
+    body.dark .brand b  { color: #F8FAFC; }
+    body.dark .context  { color: #94A3B8; }
+    body.dark .status   { color: #64748B; }
+
+    /* ── Board ── */
+    body.dark .board {
+      background:
+        radial-gradient(circle at 1px 1px, rgba(148,163,184,0.24) 1px, transparent 1.2px) 0 0 / 40px 40px,
+        radial-gradient(circle at 1px 1px, rgba(148,163,184,0.08) 1px, transparent 1.2px) 20px 20px / 40px 40px,
+        #08111F;
+    }
+
+    /* ── Swimlanes — structural scaffold ── */
+    body.dark .swimlane {
+      opacity: 1;
+      border-radius: 0;
+      border-top: none;
+      border-bottom: none;
+      border-left: 1px solid rgba(148,163,184,0.16);
+      border-right: 1px solid rgba(148,163,184,0.16);
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+    body.dark .zone-A {
+      background: linear-gradient(180deg, rgba(251,191,36,0.035) 0%, rgba(251,191,36,0.015) 100%);
+      border-left-color: rgba(251,191,36,0.16);
+      border-right-color: rgba(251,191,36,0.16);
+    }
+    body.dark .zone-B {
+      background: linear-gradient(180deg, rgba(45,212,191,0.035) 0%, rgba(45,212,191,0.015) 100%);
+      border-left-color: rgba(45,212,191,0.15);
+      border-right-color: rgba(45,212,191,0.15);
+    }
+    body.dark .zone-C {
+      background: linear-gradient(180deg, rgba(96,165,250,0.035) 0%, rgba(96,165,250,0.015) 100%);
+      border-left-color: rgba(96,165,250,0.16);
+      border-right-color: rgba(96,165,250,0.16);
+    }
+    body.dark .zone-D {
+      background: linear-gradient(180deg, rgba(245,158,11,0.035) 0%, rgba(245,158,11,0.015) 100%);
+      border-left-color: rgba(245,158,11,0.16);
+      border-right-color: rgba(245,158,11,0.16);
+    }
+    body.dark .zone-E {
+      background: linear-gradient(180deg, rgba(167,139,250,0.04) 0%, rgba(167,139,250,0.018) 100%);
+      border-left-color: rgba(167,139,250,0.18);
+      border-right-color: rgba(167,139,250,0.18);
+    }
+    body.dark .zone-F {
+      background: linear-gradient(180deg, rgba(148,163,184,0.03) 0%, rgba(148,163,184,0.015) 100%);
+      border-left-color: rgba(148,163,184,0.14);
+      border-right-color: rgba(148,163,184,0.14);
+    }
+    body.dark .swimlane-label {
+      color: rgba(203,213,225,0.32);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    /* ── Cards / Nodes ── */
+    body.dark .node {
+      background: linear-gradient(180deg, #162033 0%, #182538 100%);
+      border-color: #334155;
+      border-left-color: var(--accent);
+      color: #CBD5E1;
+      box-shadow:
+        0 8px 24px rgba(0,0,0,0.34),
+        0 18px 40px rgba(0,0,0,0.24),
+        inset 0 1px 0 rgba(255,255,255,0.03);
+      backdrop-filter: blur(8px) saturate(110%);
+    }
+    body.dark .node:hover {
+      border-color: #475569;
+      background: linear-gradient(180deg, #1B2A40 0%, #1E2F44 100%);
+      box-shadow:
+        0 10px 28px rgba(0,0,0,0.40),
+        0 22px 48px rgba(0,0,0,0.28),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    /* ── Simulation cards — decision fork ── */
+    /* Unchanged / risk path */
+    body.dark #node-sim_unchanged {
+      background: linear-gradient(180deg, rgba(43,23,33,0.96) 0%, rgba(28,18,30,0.94) 100%) !important;
+      border: 1px solid rgba(248,113,113,0.34) !important;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.30) !important;
+      color: #F0C9C9 !important;
+    }
+    body.dark #node-sim_unchanged::before { background: #F87171 !important; width: 4px !important; }
+    body.dark #node-sim_unchanged .title,
+    body.dark #node-sim_unchanged .node-title,
+    body.dark #node-sim_unchanged .metric b { color: #FFE8E8 !important; }
+    body.dark #node-sim_unchanged .sub,
+    body.dark #node-sim_unchanged .metric,
+    body.dark #node-sim_unchanged .section-label { color: #F0C9C9 !important; }
+
+    /* Corrected / recovery path */
+    body.dark #node-sim_corrected {
+      background: linear-gradient(180deg, rgba(20,39,33,0.96) 0%, rgba(16,29,25,0.94) 100%) !important;
+      border: 1px solid rgba(74,222,128,0.34) !important;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.30) !important;
+      color: #C7EBD2 !important;
+    }
+    body.dark #node-sim_corrected::before { background: #4ADE80 !important; width: 4px !important; }
+    body.dark #node-sim_corrected .title,
+    body.dark #node-sim_corrected .node-title,
+    body.dark #node-sim_corrected .metric b { color: #E8FFF0 !important; }
+    body.dark #node-sim_corrected .sub,
+    body.dark #node-sim_corrected .metric,
+    body.dark #node-sim_corrected .section-label { color: #C7EBD2 !important; }
+
+    /* Simulation badge — restrained */
+    body.dark .simulation-card .state,
+    body.dark .simulation-card .node-status {
+      background: rgba(255,255,255,0.05) !important;
+      border-color: rgba(167,139,250,0.26) !important;
+      color: #D8CCFF !important;
+      font-size: 11px !important;
+    }
+
+    /* Golden Batch dark mode */
+    body.dark #node-batch_golden {
+      background: linear-gradient(180deg, rgba(53,41,16,0.88) 0%, rgba(38,31,18,0.84) 100%) !important;
+      border-color: rgba(251,191,36,0.34) !important;
+    }
+    body.dark #node-batch_golden .title,
+    body.dark #node-batch_golden .node-title { color: #F3F7FB !important; }
+
+    /* Semantic gradient fills for key cards */
+    body.dark .node[data-role="deviation"],
+    body.dark .node.deviation,
+    body.dark #node-deviation {
+      background: linear-gradient(180deg, rgba(185,28,28,0.14) 0%, #1A1F30 100%) !important;
+    }
+    body.dark .node[data-role="quality"],
+    body.dark .node.quality,
+    body.dark #node-quality_seal {
+      background: linear-gradient(180deg, rgba(180,83,9,0.10) 0%, #1A2132 100%) !important;
+    }
+    body.dark .node[data-role="financial"],
+    body.dark .node.financial,
+    body.dark #node-impact_loss {
+      background: linear-gradient(180deg, rgba(22,101,52,0.12) 0%, #162234 100%) !important;
+    }
+
+    /* ── Typography ── */
+    body.dark .node-title, body.dark .title      { color: #F8FAFC; }
+    body.dark .sub                               { color: #A8B4C3; }
+    body.dark .metric                            { color: #A8B4C3; }
+    body.dark .metric b                          { color: #F8FAFC; }
+    body.dark .section-label                     { color: #A8B4C3 !important; opacity: 1 !important; }
+    body.dark .signal-age                        { color: #A8B4C3 !important; opacity: 1 !important; }
+    body.dark .signal-age.stale                  { color: #FBBF24; }
+    body.dark .di-label                          { color: #A8B4C3 !important; opacity: 1 !important; }
+    body.dark .group-label                       { color: #A8B4C3 !important; opacity: 1 !important; }
+    body.dark .spark-range-btn                   { color: #A8B4C3 !important; border-color: #334155; }
+    body.dark .spark-range-btn.active            { background: rgba(96,165,250,0.14); border-color: rgba(96,165,250,0.36); color: #60A5FA !important; }
+    body.dark .spark-ref-label                   { color: #FBBF24 !important; opacity: 1 !important; }
+    body.dark .edge-label                        { fill: #A8B4C3 !important; }
+
+    /* State badges */
+    body.dark .node-status, body.dark .state {
+      color: #E2E8F0;
+      border-color: #475569;
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* ── Edges ── */
+    body.dark .edge             { stroke: #2D3F55; stroke-width: 1.5px; opacity: 0.65; }
+    body.dark .edge.causal      { stroke: #8FA3BC; opacity: 0.44; }
+    body.dark .edge.primary-spine { stroke: #C7D2E0; opacity: 0.92; stroke-width: 5px; }
+    body.dark .edge.spine       { stroke: #C7D2E0; opacity: 0.70; }
+    body.dark .edge.material    { stroke: #7AA2FF; stroke-width: 2px; opacity: 0.80; }
+    body.dark .edge.deviation   { stroke: #F87171; stroke-width: 2.5px; opacity: 0.86; }
+    body.dark .edge.control     { stroke: #4ADE80; stroke-width: 2px; opacity: 0.78; }
+    body.dark .edge.simulation  { stroke: #A78BFA; stroke-width: 1.5px; opacity: 0.78; }
+    body.dark .fork-link        { stroke: #A78BFA; opacity: 0.78; }
+    body.dark .edge.system      { stroke: #64748B; opacity: 0.24; }
+    body.dark .edge.exec        { stroke: #64748B; opacity: 0.24; }
+    body.dark .edge.golden-ref  { stroke: #FBBF24; opacity: 0.34; }
+    body.dark .edge.reference   { stroke: #FBBF24; opacity: 0.34; }
+    body.dark .edge.branch      { opacity: 0.48; }
+    body.dark .edge.focused     { stroke: #60A5FA !important; opacity: 0.96 !important; stroke-width: 3px !important; filter: none !important; }
+    body.dark .fork-label           { fill: #A78BFA; opacity: 0.80; }
+    body.dark .fork-label.unchanged { fill: #FCA5A5 !important; opacity: 0.95 !important; font-weight: 800 !important; }
+    body.dark .fork-label.corrected { fill: #86EFAC !important; opacity: 0.95 !important; font-weight: 800 !important; }
+    body.dark .fork-junction        { fill: #CBD5E1 !important; opacity: 0.42 !important; }
+
+    /* ── Focus mode ── */
+    body.dark .node.focal {
+      opacity: 1 !important;
+      border-color: rgba(96,165,250,0.55) !important;
+      box-shadow:
+        0 0 0 2px rgba(96,165,250,0.36),
+        0 0 0 5px rgba(96,165,250,0.10),
+        0 18px 38px rgba(0,0,0,0.42) !important;
+    }
+    body.dark .node.focus-root {
+      border-color: #60A5FA !important;
+      box-shadow:
+        0 0 0 2px rgba(96,165,250,0.72),
+        0 0 0 6px rgba(96,165,250,0.12),
+        0 18px 38px rgba(0,0,0,0.42) !important;
+    }
+    body.dark .node.dimmed { opacity: 0.14 !important; filter: grayscale(0.7); pointer-events: none; }
+    body.dark .node.incident-root {
+      border-color: rgba(248,113,113,0.55) !important;
+      box-shadow:
+        0 0 0 2px rgba(248,113,113,0.40),
+        0 0 0 6px rgba(248,113,113,0.10),
+        0 18px 38px rgba(0,0,0,0.44) !important;
+    }
+
+    /* ── Insight chip — readable, distinct from simulation ── */
+    body.dark .insight-chip {
+      background: linear-gradient(
+        105deg,
+        rgba(96,165,250,0.08) 0%,
+        rgba(122,92,173,0.14) 35%,
+        rgba(96,165,250,0.08) 55%,
+        rgba(122,92,173,0.12) 80%,
+        rgba(96,165,250,0.08) 100%
+      );
+      background-size: 300% 100%;
+      animation: kairosShimmer 6s linear infinite;
+      border-color: rgba(96,165,250,0.22);
+      border-left-color: #60A5FA;
+      color: #D8E6FF;
+      box-shadow: none;
+    }
+    body.dark .insight-chip:hover { border-color: rgba(96,165,250,0.40); animation-duration: 2.5s; }
+    body.dark .insight-chip strong { color: #8CB8FF; }
+    body.dark .insight-chip i { background: #60A5FA; box-shadow: none; }
+
+    /* ── Action bar — flat, industrial, touch-friendly ── */
+    body.dark .decision-dock-label { color: #475569; }
+    body.dark .actions {
+      background: rgba(18,28,46,0.92);
+      border-color: #223047;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.30), 0 2px 6px rgba(0,0,0,0.18);
+      backdrop-filter: blur(14px) saturate(120%);
+    }
+    body.dark .dock-divider { background: #223047; }
+    body.dark .action-btn {
+      min-height: 54px;
+      padding: 0 18px;
+      border-radius: 10px;
+      box-shadow: none;
+      background: #162033;
+      border-color: #334155;
+      color: #E2E8F0;
+    }
+    body.dark .action-btn:hover { background: #1B2A40; border-color: #475569; color: #F8FAFC; }
+    body.dark .action-btn:active { background: #1F3248; }
+    body.dark .action-btn.primary,
+    body.dark .action-btn.primary-recommendation {
+      background: #1D4ED8;
+      border-color: #2563EB;
+      color: #F8FAFC;
+      box-shadow: none;
+    }
+    body.dark .action-btn.primary:hover,
+    body.dark .action-btn.primary-recommendation:hover { background: #2563EB; }
+    body.dark .action-btn.warn {
+      background: #92400E;
+      border-color: #B45309;
+      color: #FFF7ED;
+      box-shadow: none;
+    }
+    body.dark .action-btn.warn:hover { background: #A16207; }
+    body.dark .action-btn.system { background: #162033; border-color: #334155; color: #CBD5E1; }
+    body.dark .action-btn.dimmed { opacity: 0.30; filter: grayscale(0.35); }
+    body.dark .action-btn.queued { background: #166534 !important; border-color: #15803D !important; color: #F0FDF4 !important; box-shadow: none !important; }
+    body.dark .action-btn .tag   { background: rgba(255,255,255,0.08); color: #CBD5E1; border: none; }
+
+    /* ── Timeline ── */
+    body.dark .timeline { background: rgba(11,18,32,0.94); border-bottom-color: #223047; }
+    body.dark .timeline .event { background: #162033; border-color: #334155; color: #94A3B8; }
+    body.dark .timeline .event.active { background: rgba(96,165,250,0.12); border-color: rgba(96,165,250,0.32); color: #60A5FA; }
+
+    /* ── Spark / charts ── */
+    body.dark .spark { border-top-color: #223047; }
+    body.dark .icon-chip { border-color: #334155; }
+
+    /* ── Misc controls ── */
+    body.dark .theme-toggle { background: #162033; border-color: #334155; color: #64748B; }
+    body.dark .focus-exit   { background: #162033; border-color: #334155; color: #94A3B8; }
+    body.dark .compact-card:not(.expanded) .node-body::after { color: #60A5FA; background: rgba(96,165,250,0.09); border-color: rgba(96,165,250,0.26); }
+    body.dark .compact-card.expanded .node-body::after { color: #64748B; background: rgba(71,85,105,0.12); border-color: #334155; }
+
+    /* ── Live indicator ── */
+    body.dark .live   { border-color: rgba(96,165,250,0.32); background: rgba(96,165,250,0.09); color: #60A5FA; }
+    body.dark .live i { background: #60A5FA; box-shadow: 0 0 0 3px rgba(96,165,250,0.20); }
+    body.dark .mark   { border-color: rgba(96,165,250,0.40); background: rgba(96,165,250,0.14); }
+
+    /* ── Command palette ── */
+    body.dark .command       { background: #162033; border-color: #334155; color: #CBD5E1; }
+    body.dark .command-menu  { background: #0F172A; border-color: #334155; }
+    body.dark .command-menu input { background: #1B263B; border-color: #334155; color: #F8FAFC; }
+    body.dark .command-item  { background: transparent; border-color: rgba(51,65,85,0.35); color: #CBD5E1; }
+
+    /* ── Decision banner ── */
+    body.dark .decision-banner { background: rgba(11,18,32,0.97); border-bottom-color: #223047; }
+    body.dark .di-value { color: #CBD5E1; }
+    body.dark .decision-item.dominant-cause .di-value { color: #F87171; }
+    body.dark .decision-item.recommended    .di-value { color: #4ADE80; }
+    body.dark .decision-item.exposure       .di-value { color: #FBBF24; }
+
+    .focus-exit {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 30;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(248, 250, 255, 0.82);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #334155;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      display: none;
+    }
+    .focus-exit.show { display: inline-flex; align-items: center; gap: 6px; }
+
+    @media (max-width: 1120px) {
+      .topbar { grid-template-columns: 1fr; gap: 8px; padding: 8px 12px; }
+      .status { justify-self: start; }
+      .command { width: 100%; }
+    }
+
+    .decision-banner {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      padding: 0 18px;
+      border-bottom: 1px solid rgba(60,72,88,0.08);
+      background: rgba(248,249,245,0.74);
+      backdrop-filter: blur(8px) saturate(105%);
+      -webkit-backdrop-filter: blur(8px) saturate(105%);
+      overflow-x: auto;
+      white-space: nowrap;
+      z-index: 14;
+    }
+    .decision-item {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 20px 0 0;
+      margin-right: 20px;
+      border-right: 1px dashed rgba(99,106,128,0.16);
+      flex: 0 0 auto;
+    }
+    .decision-item:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+    .di-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 1px;
+    }
+    .di-value {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: 0.01em;
+    }
+    .di-value em { font-style: normal; color: #64748b; font-weight: 600; margin-left: 4px; }
+    .decision-item.dominant-cause .di-value { color: #dc2626; }
+    .decision-item.recommended .di-value { color: #16a34a; }
+    .decision-item.exposure .di-value { color: #b45309; }
+
+    #node-sim_unchanged {
+      background: linear-gradient(180deg, #FBF5F4 0%, #F7EEEC 100%) !important;
+      border-color: rgba(177,74,66,0.26) !important;
+    }
+    #node-sim_unchanged::before { background: #B14A42 !important; }
+    #node-sim_corrected {
+      background: linear-gradient(180deg, #F4F8F2 0%, #EEF5EA 100%) !important;
+      border-color: rgba(88,122,62,0.26) !important;
+    }
+    #node-sim_corrected::before { background: #587A3E !important; }
+
+    .node.prob-high:not(.focus-root):not(.focal) {
+      transform: scale(1.06);
+      opacity: 1 !important;
+      box-shadow: 0 0 0 2px rgba(220,38,38,0.24), 0 16px 32px rgba(15,23,42,0.18) !important;
+      z-index: 5;
+    }
+    .node.prob-medium:not(.focus-root):not(.focal) {
+      transform: scale(1.01);
+      opacity: 0.82 !important;
+    }
+    .tier-tertiary:not(.prob-high):not(.prob-medium) { opacity: 0.58; }
+
+    .action-btn.primary-recommendation {
+      /* primary blue already communicates highest priority */
+    }
+
+    .compact-card:not(.expanded) .node-body::after {
+      content: "▾  Show detail";
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #4a6fa5;
+      background: rgba(74,111,165,0.08);
+      border: 1px solid rgba(74,111,165,0.20);
+      border-radius: 999px;
+      padding: 5px 14px;
+      margin-top: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .compact-card.expanded .node-body::after {
+      content: "▴  Collapse";
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #64748b;
+      background: rgba(100,116,139,0.06);
+      border: 1px solid rgba(100,116,139,0.18);
+      border-radius: 999px;
+      padding: 5px 14px;
+      margin-top: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .analytical-card { padding-bottom: 18px; }
+    .analytical-card .metrics { gap: 5px; margin-bottom: 10px; }
+
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark"></div>
+        <div>
+          <b>KairOS</b>
+          <div class="context">PLANT / AREA A / BLISTER PACKAGING CELL</div>
+        </div>
+      </div>
+      <button id="commandBtn" class="command">Ask KairOS anything… <span>⌘K</span></button>
+      <div class="status">
+        <span class="live"><i></i>LIVE</span>
+        <button id="themeToggle" class="theme-toggle" type="button" data-mode="Day">Theme</button>
+        <button id="densityToggle" class="theme-toggle" type="button" data-mode="Expanded">Density</button>
+        <button id="simToggle" class="theme-toggle" type="button" data-mode="Corrected">Sim</button>
+        <span id="clock">--:--:--</span>
+      </div>
+    </header>
+    <div id="timeline" class="timeline">
+      <button class="event" data-focus="batch_current,batch_golden"><b>12:22</b>Batch started</button>
+      <button class="event" data-focus="sensor_tension,material_foil,asset_sealer"><b>12:31</b>Tension drift detected</button>
+      <button class="event" data-focus="control_heater,asset_sealer,deviation"><b>12:36</b>Heater offset detected</button>
+      <button class="event" data-focus="deviation,quality_seal,batch_current"><b>12:41</b>Seal deviation triggered</button>
+      <button class="event" data-focus="impact_loss,sim_unchanged,sim_corrected,sys_mes,sys_erp"><b>12:47</b>Projection updated</button>
+    </div>
+    <div class="decision-banner" id="decisionBanner">
+      <div class="decision-item dominant-cause">
+        <span class="di-label">Dominant cause</span>
+        <span class="di-value" id="di-dominant">Web Tension Sensor <em>62% · 19 min</em></span>
+      </div>
+      <div class="decision-item recommended">
+        <span class="di-label">Recommended</span>
+        <span class="di-value" id="di-recommended">Reduce speed → 260 ppm</span>
+      </div>
+      <div class="decision-item exposure">
+        <span class="di-label">If unchanged</span>
+        <span class="di-value" id="di-exposure">€42.8K / day</span>
+      </div>
+      <div class="decision-item systems">
+        <span class="di-label">Touches</span>
+        <span class="di-value" id="di-touches">MES · QA · ERP</span>
+      </div>
+    </div>
+    <div id="commandMenu" class="command-menu" role="dialog" aria-label="Command palette">
+      <input id="commandInput" type="text" placeholder="Type command: show drift path, simulate correction..." />
+      <div id="commandList" class="command-list"></div>
+    </div>
+
+    <main class="board" id="board">
+      <button id="focusExit" class="focus-exit">Exit Focus <span>Esc</span></button>
+      <div id="viewport">
+        <div id="swimlaneLayer" aria-hidden="true"></div>
+        <svg id="edgeSvg" aria-hidden="true">
+          <defs>
+            <marker id="arrow-material" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#2F6BFF"></path></marker>
+            <marker id="arrow-causal" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#6B7280"></path></marker>
+            <marker id="arrow-deviation" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,1.5 L7.2,1.5 L9,4.5 L7.2,7.5 L0,7.5 L1.2,4.5 z" fill="#D14343"></path></marker>
+            <marker id="arrow-control" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#2FA36B"></path></marker>
+            <marker id="arrow-simulation" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,4.5 L7.8,0 L7.8,9 z" fill="#7B61FF"></path></marker>
+            <marker id="arrow-system" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#94A3B8"></path></marker>
+          </defs>
+          <g id="edgeLayer"></g>
+        </svg>
+        <div id="nodeLayer"></div>
+      </div>
+    </main>
+
+    <div class="decision-dock-label" id="dockLabel">Recommended response</div>
+    <footer class="actions" id="actionsBar">
+      <button class="action-btn primary primary-recommendation" data-action="reduce_speed" data-focus="deviation,asset_sealer,batch_current,sim_corrected,impact_loss,sys_mes">Reduce speed to 260 ppm <span class="tag">0.86</span></button>
+      <button class="action-btn warn" data-action="adjust_heater" data-focus="deviation,control_heater,asset_sealer,quality_seal">Adjust heater to 183°C <span class="tag">Alt</span></button>
+      <div class="dock-divider"></div>
+      <button class="action-btn system" data-action="log_mes" data-focus="deviation,sys_mes">Log in MES</button>
+      <button class="action-btn system" data-action="notify_qa" data-focus="deviation,sys_qa">Notify QA</button>
+      <button class="action-btn system" data-action="update_erp" data-focus="impact_loss,sys_erp">Update ERP</button>
+    </footer>
+  </div>
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      // ─────────────────────────────────────────────────────────────────
+      // Shared constants
+      // ─────────────────────────────────────────────────────────────────
+      const THEME_KEY   = "mei_theme_mode";
+      const DENSITY_KEY = "mei_density_mode";
+
+      const ICON = {
+        Material: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="7" rx="8" ry="4"/><path d="M4 7v5c0 2.2 3.6 4 8 4s8-1.8 8-4V7"/><path d="M4 12v5c0 2.2 3.6 4 8 4s8-1.8 8-4v-5"/></svg>`,
+        Sensor: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2l3-7 4 14 3-9 2 4h6"/><circle cx="21" cy="12" r="1" fill="var(--accent)"/></svg>`,
+        ControlParameter: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2.5" fill="var(--icon-bg)" stroke="var(--accent)"/><circle cx="15" cy="12" r="2.5" fill="var(--icon-bg)" stroke="var(--accent)"/><circle cx="10" cy="18" r="2.5" fill="var(--icon-bg)" stroke="var(--accent)"/></svg>`,
+        Asset: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`,
+        Deviation: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+        QualityState: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`,
+        Batch: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>`,
+        GoldenBatch: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+        FinancialImpact: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+        SimulationScenario: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>`,
+        ExternalSystem: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>`,
+        Action: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+      };
+
+      const ACCENT = {
+        Material:           ["#2563EB", "#EFF6FF"],
+        Sensor:             ["#0891B2", "#ECFEFF"],
+        ControlParameter:   ["#16A34A", "#F0FDF4"],
+        Asset:              ["#1D4ED8", "#EFF6FF"],
+        Deviation:          ["#DC2626", "#FEF2F2"],
+        QualityState:       ["#F59E0B", "#FFFBEB"],
+        Batch:              ["#2563EB", "#EFF6FF"],
+        GoldenBatch:        ["#D97706", "#FFFBEB"],
+        FinancialImpact:    ["#14532D", "#F0FDF4"],
+        SimulationScenario: ["#7C3AED", "#F5F3FF"],
+        ExternalSystem:     ["#64748B", "#F8FAFC"],
+        Action:             ["#16A34A", "#F0FDF4"]
+      };
+
+      const STATE_STYLE = {
+        normal:     ["#8A9AB0", "#F3F4F6",  "#4A5568"],   /* neutral slate — never green */
+        warning:    ["#A47A2A", "#FBF7EE",  "#7A5010"],
+        critical:   ["#B14A42", "#FCF1EF",  "#6B2020"],
+        simulation: ["#7A5CAD", "#F5F2FA",  "#4A2A7A"],
+        external:   ["#64748B", "#F8FAFC",  "#334155"]
+      };
+
+      const EDGE_STYLE = {
+        feeds:        { cls: "material",  marker: "arrow-material" },
+        measured_by:  { cls: "causal",    marker: "arrow-causal" },
+        controls:     { cls: "control",   marker: "arrow-control" },
+        causes:       { cls: "causal",    marker: "arrow-causal" },
+        affects:      { cls: "deviation", marker: "arrow-deviation" },
+        references:   { cls: "causal",    marker: "arrow-causal" },
+        impacts_cost: { cls: "deviation", marker: "arrow-deviation" },
+        logged_in:    { cls: "system",    marker: "arrow-system" },
+        approved_by:  { cls: "system",    marker: "arrow-system" },
+        simulated_as: { cls: "simulation",marker: "arrow-simulation" },
+        mitigates:    { cls: "control",   marker: "arrow-control" }
+      };
+
+      // ─────────────────────────────────────────────────────────────────
+      // LAYER 1 — PlantKnowledgeGraph
+      // ─────────────────────────────────────────────────────────────────
+      class PlantKnowledgeGraph {
+        constructor() {
+          this.entities  = new Map();
+          this.relations = [];
+          this._index    = new Map(); // id → [relation, ...]
+        }
+        addEntity(e) {
+          this.entities.set(e.id, e);
+        }
+        addRelation(r) {
+          this.relations.push(r);
+          [r.from, r.to].forEach((id) => {
+            if (!this._index.has(id)) this._index.set(id, []);
+            this._index.get(id).push(r);
+          });
+        }
+        getEntity(id)    { return this.entities.get(id); }
+        getRelations(id) { return this._index.get(id) || []; }
+        getRelationsFrom(id) { return this.relations.filter((r) => r.from === id); }
+        getRelationsTo(id)   { return this.relations.filter((r) => r.to   === id); }
+        getNeighbors(id) {
+          const upstream   = this.relations.filter((r) => r.to   === id).map((r) => r.from);
+          const downstream = this.relations.filter((r) => r.from === id).map((r) => r.to);
+          return { upstream, downstream };
+        }
+      }
+
+      function seedGraph(pkg) {
+        [
+          { id: "batch_golden",   type: "GoldenBatch",        label: "Golden Batch GB-2024-01",    state: "normal",     chart: "golden",  rankHint: 0, projectionRole: "reference", pinned: { x: 80, y: 70 }, root_cause_probability: null, metadata: { description: "Reference profile", detail: "Validated baseline for blister packaging line B4" }, metrics: { Yield: "98.7%", Speed: "280 ppm" }, insight: "" },
+          { id: "material_foil",  type: "Material",           label: "Foil Roll A12",              state: "warning",    chart: "foil",    rankHint: 1, projectionRole: "cause",     root_cause_probability: 0.20, metadata: { description: "Lot FR-A12-09", detail: "Supplier lot FR-A12-09 in active web feed" }, metrics: { Tension: "+7.8%", Temp: "27.4C" }, insight: "" },
+          { id: "sensor_tension", type: "Sensor",             label: "Web Tension Sensor",         state: "warning",    chart: "tension", rankHint: 1, projectionRole: "cause",     root_cause_probability: 0.62, metadata: { description: "Sensor T-44", confidence: "0.94", detail: "Signal drift persists across last 19 minutes" }, metrics: { Drift: "+7.8%", Confidence: "0.94" }, insight: "Drift detected 19 min ago" },
+          { id: "control_heater", type: "ControlParameter",   label: "Heater Zone 3",              state: "warning",    chart: "heater",  rankHint: 1, projectionRole: "cause",     root_cause_probability: 0.18, metadata: { description: "Loop HZ-3", confidence: "0.86", detail: "Control loop offset detected above expected band" }, metrics: { Setpoint: "183C", Offset: "+2.2C" }, insight: "Likely heater offset" },
+          { id: "asset_sealer",   type: "Asset",              label: "Blister Sealer",             state: "critical",   chart: null,      rankHint: 2, projectionRole: "live",       root_cause_probability: null, metadata: { description: "Line B4", detail: "Packaging speed currently constrained by drift response" }, metrics: { Speed: "320 ppm", TempDrift: "+2.2C" }, insight: "" },
+          { id: "deviation",      type: "Deviation",          label: "Seal Drift Deviation",       state: "critical",   chart: null,      rankHint: 3, projectionRole: "live",       root_cause_probability: null, metadata: { description: "DV-2026-031", confidence: "0.89", detail: "Deviation window open for 25 minutes" }, metrics: { Severity: "Major", Window: "25 min" }, insight: "Projected scrap €132K/day" },
+          { id: "quality_seal",   type: "QualityState",       label: "Seal Strength",              state: "critical",   chart: "quality", rankHint: 4, projectionRole: "live",       root_cause_probability: null, metadata: { description: "Release quality", confidence: "0.84", detail: "Release threshold breach trend accelerating" }, metrics: { Index: "86.1/100", Forecast: "34% in 90m", "Lower Limit": "16.2", "Current Risk": "High" }, insight: "Seal degradation in progress" },
+          { id: "batch_current",  type: "Batch",              label: "Current Batch SB-2024-04",   state: "warning",    chart: "current", rankHint: 4, projectionRole: "live",       root_cause_probability: null, metadata: { description: "Live batch", confidence: "0.86", detail: "Process diverges from golden reference since t-26" }, metrics: { Speed: "320 ppm", Yield: "97.1%", "Drift Start": "t-26 min", "Delta vs Golden": "+7.1%" }, insight: "Diverging from golden batch" },
+          { id: "sim_unchanged",  type: "SimulationScenario", label: "If unchanged",               state: "simulation", chart: null,      rankHint: 5, projectionRole: "simulation", root_cause_probability: null, metadata: { description: "Continuation path", pathType: "risk" }, metrics: { ScrapRisk: "34%", Loss: "€132K/day", Trend: "Accelerating" }, insight: "High-risk path — €42.8K/day unmitigated exposure at current rate" },
+          { id: "sim_corrected",  type: "SimulationScenario", label: "If corrected",               state: "simulation", chart: null,      rankHint: 5, projectionRole: "simulation", root_cause_probability: null, metadata: { description: "Reduce speed to 260 ppm", pathType: "recovery" }, metrics: { ScrapRisk: "4%", Savings: "€117K/day", Confidence: "0.86" }, insight: "Recommended — 86% confidence · Reduces exposure to €15K/day" },
+          { id: "impact_loss",    type: "FinancialImpact",    label: "Loss Projection",            state: "warning",    chart: "finance", rankHint: 6, projectionRole: "consequence",root_cause_probability: null, metadata: { description: "Cost trajectory" }, metrics: { Unchanged: "€132K/day", Corrected: "€15K/day", "90m Exposure": "€16.5K", "Daily Exposure": "€132K" }, insight: "" },
+          { id: "sys_mes",        type: "ExternalSystem",     label: "MES",                        state: "external",   chart: null,      rankHint: 7, projectionRole: "endpoint",    root_cause_probability: null, metadata: { description: "Execution layer", detail: "Deviation log DV-2026-031 queued — awaiting operator confirmation to execute" }, metrics: { Workflow: "Pending", Action: "Log DV-2026-031", Trigger: "Both paths" }, insight: "" },
+          { id: "sys_qa",         type: "ExternalSystem",     label: "QA",                         state: "external",   chart: null,      rankHint: 7, projectionRole: "endpoint",    root_cause_probability: null, metadata: { description: "Approval layer", detail: "QA escalation opened — approval required before batch release" }, metrics: { Workflow: "Notified", Approval: "Required", Trigger: "Unchanged path" }, insight: "" },
+          { id: "sys_erp",        type: "ExternalSystem",     label: "ERP",                        state: "external",   chart: null,      rankHint: 7, projectionRole: "endpoint",    root_cause_probability: null, metadata: { description: "Cost sync layer", detail: "Cost exposure model pending sync — €42.8K/day to be updated on correction" }, metrics: { Workflow: "Sync pending", Exposure: "€42.8K/day", Trigger: "Corrected path" }, insight: "" },
+          { id: "aux_sensor_2",   type: "Sensor",             label: "Web Camera WC-02",           state: "normal",     chart: null,      rankHint: 1, projectionRole: "cause",       root_cause_probability: 0.04, metadata: { description: "Visual inspection sensor", confidence: "0.91", detail: "Monitoring foil surface defects and web alignment in real-time" }, metrics: { Status: "Nominal", "Defect Rate": "0.3%" }, insight: "No surface anomalies detected" },
+          { id: "aux_asset_2",    type: "Asset",              label: "Cutter Unit C-04",           state: "normal",     chart: null,      rankHint: 2, projectionRole: "live",        root_cause_probability: null, metadata: { description: "Line B4 cutter", detail: "Operating within normal speed and alignment parameters" }, metrics: { Speed: "285 ppm", Alignment: "OK" }, insight: "" }
+        ].forEach((e) => pkg.addEntity(e));
+
+        [
+          { id: "r1",  from: "material_foil",  to: "asset_sealer",  type: "feeds" },
+          { id: "r2",  from: "sensor_tension", to: "asset_sealer",  type: "measured_by" },
+          { id: "r3",  from: "control_heater", to: "asset_sealer",  type: "controls" },
+          { id: "r4",  from: "asset_sealer",   to: "deviation",     type: "causes" },
+          { id: "r5",  from: "deviation",      to: "quality_seal",  type: "affects" },
+          { id: "r6",  from: "quality_seal",   to: "batch_current", type: "affects" },
+          { id: "r7",  from: "batch_current",  to: "impact_loss",   type: "impacts_cost" },
+          { id: "r8",  from: "batch_golden",   to: "batch_current", type: "references" },
+          { id: "r9",  from: "batch_current",  to: "sim_unchanged", type: "simulated_as" },
+          { id: "r10", from: "batch_current",  to: "sim_corrected", type: "simulated_as" },
+          { id: "r11", from: "sim_unchanged",  to: "impact_loss",   type: "impacts_cost" },
+          { id: "r12", from: "sim_corrected",  to: "impact_loss",   type: "mitigates" },
+          { id: "r13", from: "sim_unchanged",  to: "sys_mes",       type: "logged_in" },
+          { id: "r14", from: "sim_unchanged",  to: "sys_qa",        type: "approved_by" },
+          { id: "r15", from: "sim_corrected",  to: "sys_mes",       type: "logged_in" },
+          { id: "r16", from: "sim_corrected",  to: "sys_erp",       type: "logged_in" },
+          { id: "r17", from: "aux_sensor_2",   to: "aux_asset_2",   type: "measured_by" }
+        ].forEach((r) => pkg.addRelation(r));
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // LAYER 2 — LiveSignalModel
+      // ─────────────────────────────────────────────────────────────────
+      class LiveSignalModel extends EventTarget {
+        constructor(pkg) {
+          super();
+          this.pkg      = pkg;
+          this._timer   = null;
+          this._latest  = new Map();
+          this._updatedAt = new Map();
+          // Initialise timestamps for all entities
+          pkg.entities.forEach((_, id) => {
+            this._updatedAt.set(id, Date.now());
+          });
+        }
+        start(intervalMs = 2400) {
+          if (this._timer) return;
+          this._timer = setInterval(() => this._tick(), intervalMs);
+        }
+        stop() {
+          clearInterval(this._timer);
+          this._timer = null;
+        }
+        getLatest(nodeId) {
+          return this._latest.get(nodeId) || null;
+        }
+        getUpdatedAt(nodeId) {
+          return this._updatedAt.get(nodeId) || 0;
+        }
+        _tick() {
+          const liveIds = ["sensor_tension", "control_heater", "asset_sealer", "quality_seal", "batch_current", "aux_sensor_2", "aux_asset_2"];
+          const now = Date.now();
+          liveIds.forEach((id) => {
+            this._updatedAt.set(id, now);
+            this._latest.set(id, { ts: now });
+          });
+          this.dispatchEvent(new CustomEvent("signal", { detail: { nodeIds: liveIds, ts: now } }));
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // LAYER 3 — IncidentEngine
+      // ─────────────────────────────────────────────────────────────────
+      class IncidentEngine {
+        constructor(pkg) {
+          this.pkg = pkg;
+        }
+
+        extract(rootId, maxDepth = 3) {
+          const keep = new Set([rootId]);
+          const upQueue = [rootId];
+          const downQueue = [rootId];
+
+          for (let depth = 0; depth < maxDepth; depth += 1) {
+            const next = [];
+            upQueue.splice(0).forEach((id) => {
+              this.pkg.getRelationsTo(id).forEach((r) => {
+                if (!keep.has(r.from)) { keep.add(r.from); next.push(r.from); }
+              });
+            });
+            upQueue.push(...next);
+          }
+
+          for (let depth = 0; depth < 4; depth += 1) {
+            const next = [];
+            downQueue.splice(0).forEach((id) => {
+              this.pkg.getRelationsFrom(id).forEach((r) => {
+                if (!keep.has(r.to)) { keep.add(r.to); next.push(r.to); }
+              });
+            });
+            downQueue.push(...next);
+          }
+
+          const forced = [
+            "material_foil","sensor_tension","control_heater","asset_sealer","deviation",
+            "quality_seal","batch_current","batch_golden","impact_loss","sim_unchanged","sim_corrected",
+            "sys_mes","sys_qa","sys_erp","aux_sensor_2","aux_asset_2"
+          ];
+          forced.forEach((id) => keep.add(id));
+
+          return {
+            entities: Array.from(keep).map((id) => this.pkg.getEntity(id)).filter(Boolean),
+            relations: this.pkg.relations.filter((r) => keep.has(r.from) && keep.has(r.to))
+          };
+        }
+
+        rankCauses(rootId) {
+          const causes = [];
+          const visited = new Set();
+          const queue = [{ id: rootId, depth: 0 }];
+          while (queue.length) {
+            const { id, depth } = queue.shift();
+            if (visited.has(id) || depth > 4) continue;
+            visited.add(id);
+            const entity = this.pkg.getEntity(id);
+            if (entity && entity.projectionRole === "cause" && Number.isFinite(entity.root_cause_probability)) {
+              const weight = entity.root_cause_probability / Math.max(1, depth);
+              causes.push({ id, entity, probability: entity.root_cause_probability, weight, depth });
+            }
+            this.pkg.getRelationsTo(id).forEach((r) => {
+              if (!visited.has(r.from)) queue.push({ id: r.from, depth: depth + 1 });
+            });
+          }
+          causes.sort((a, b) => b.weight - a.weight);
+          return causes;
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // LAYER 4 — DecisionEngine
+      // ─────────────────────────────────────────────────────────────────
+      class DecisionEngine {
+        constructor(pkg, incidentEngine, liveSignal) {
+          this.pkg            = pkg;
+          this.incidentEngine = incidentEngine;
+          this.liveSignal     = liveSignal;
+        }
+
+        compute(rootId) {
+          const ranked = this.incidentEngine.rankCauses(rootId);
+          const top    = ranked[0] || null;
+
+          const dominantCause = top
+            ? `${top.entity.label} — ${Math.round(top.probability * 100)}% · ${top.entity.metadata?.detail || ""}`
+            : "Unknown";
+
+          const correctedSim = this.pkg.getEntity("sim_corrected");
+          const recommendation = correctedSim
+            ? correctedSim.metadata?.description || "Reduce speed → 260 ppm"
+            : "Reduce speed → 260 ppm";
+
+          const lossEntity = this.pkg.getEntity("impact_loss");
+          const exposure = lossEntity
+            ? (lossEntity.metrics?.Unchanged || "€132K/day")
+            : "€132K/day";
+
+          const touches = ["sys_mes","sys_qa","sys_erp"]
+            .map((id) => this.pkg.getEntity(id)?.label || id)
+            .join(" · ");
+
+          const confidence = top ? top.probability : 0;
+          const path = ranked.map((c) => c.id);
+
+          const status = confidence > 0.5 ? "critical" : confidence > 0.25 ? "warning" : "normal";
+
+          return { dominantCause, recommendation, path, confidence, status, exposure, touches };
+        }
+
+        populateBanner(rootId) {
+          const result = this.compute(rootId);
+          const domEl  = document.getElementById("di-dominant");
+          const recEl  = document.getElementById("di-recommended");
+          const expEl  = document.getElementById("di-exposure");
+          const touEl  = document.getElementById("di-touches");
+          if (domEl) {
+            const top = this.incidentEngine.rankCauses(rootId)[0];
+            if (top) {
+              domEl.innerHTML = `${top.entity.label} <em>${Math.round(top.probability * 100)}% · ${top.entity.metadata?.detail?.match(/\d+ min/) ? top.entity.metadata.detail.match(/\d+ min/)[0] : ""}</em>`;
+            }
+          }
+          if (recEl) recEl.textContent = result.recommendation;
+          if (expEl) expEl.textContent = result.exposure;
+          if (touEl) touEl.textContent = result.touches;
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // LAYER 5 — WhiteboardProjectionEngine
+      // ─────────────────────────────────────────────────────────────────
+      const ZONE_MAP = {
+        batch_golden:   "A",
+        sensor_tension: "B",
+        control_heater: "B",
+        material_foil:  "B",
+        batch_current:  "C",
+        quality_seal:   "C",
+        impact_loss:    "D",
+        action_reduce:  "E",
+        sys_erp:        "F",
+        sys_mes:        "F",
+        sys_qa:         "F"
+      };
+
+      const ZONE_X = { A: 80, B: 340, C: 820, D: 1380, E: 1700, F: 1960 };
+      const ZONE_RANKSEP = 180;
+      const ZONE_NODESEP = 120;
+
+      class WhiteboardProjectionEngine {
+        constructor(pkg, zoneMap) {
+          this.pkg     = pkg;
+          this.zoneMap = zoneMap;
+        }
+
+        layout(containerWidth, containerHeight, subgraphEntities, subgraphRelations) {
+          const positions = new Map();
+          const zoneGroups = {};
+
+          subgraphEntities.forEach((e) => {
+            const zone = this.zoneMap[e.id];
+            if (zone) {
+              if (!zoneGroups[zone]) zoneGroups[zone] = [];
+              zoneGroups[zone].push(e);
+            }
+          });
+
+          Object.entries(zoneGroups).forEach(([zone, entities]) => {
+            const baseX = ZONE_X[zone] || 80;
+            entities.forEach((e, i) => {
+              positions.set(e.id, { x: baseX, y: 80 + i * (280 + ZONE_NODESEP) });
+            });
+          });
+
+          // Dagre fallback for nodes not in ZONE_MAP
+          const unknownEntities = subgraphEntities.filter((e) => !this.zoneMap[e.id]);
+          if (unknownEntities.length) {
+            const g = new dagre.graphlib.Graph();
+            g.setGraph({ rankdir: "LR", ranksep: ZONE_RANKSEP, nodesep: ZONE_NODESEP, marginx: 80, marginy: 80, ranker: "network-simplex" });
+            g.setDefaultEdgeLabel(() => ({}));
+            unknownEntities.forEach((e) => {
+              const sz = WhiteboardProjectionEngine._estimate(e);
+              g.setNode(e.id, { width: sz.width, height: sz.height, rank: e.rankHint || 0 });
+            });
+            subgraphRelations.forEach((r) => {
+              const fromUnknown = !this.zoneMap[r.from];
+              const toUnknown   = !this.zoneMap[r.to];
+              if (fromUnknown && toUnknown) g.setEdge(r.from, r.to, { weight: 2, minlen: 1 });
+            });
+            try {
+              dagre.layout(g);
+              unknownEntities.forEach((e) => {
+                const n = g.node(e.id);
+                if (n) positions.set(e.id, { x: n.x - n.width / 2, y: n.y - n.height / 2 });
+              });
+            } catch (_) {}
+          }
+
+          return positions;
+        }
+
+        static _estimate(entity) {
+          const metricsCount = Object.keys(entity.metrics || {}).length;
+          if (entity.type === "GoldenBatch" || entity.id === "batch_current") {
+            return { width: entity.chart ? 560 : 520, height: entity.chart ? 360 : 240 };
+          }
+          if (entity.type === "SimulationScenario") return { width: 420, height: 220 };
+          if (entity.type === "ExternalSystem") return { width: 320, height: 130 + metricsCount * 26 };
+          return { width: entity.chart ? 440 : 400, height: entity.chart ? 300 : 160 + metricsCount * 28 };
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // Helpers: projection relation filter  &  layout engine (dagre)
+      // ─────────────────────────────────────────────────────────────────
+      function buildProjectionRelations(subgraph) {
+        const byId  = new Map(subgraph.entities.map((e) => [e.id, e]));
+        const allow = new Set([
+          "reference->live","cause->live","live->live","live->consequence",
+          "live->simulation","simulation->consequence","simulation->endpoint","consequence->endpoint"
+        ]);
+        return subgraph.relations.filter((r) => {
+          const fromRole = byId.get(r.from)?.projectionRole;
+          const toRole   = byId.get(r.to)?.projectionRole;
+          if (!fromRole || !toRole) return false;
+          return allow.has(`${fromRole}->${toRole}`);
+        });
+      }
+
+      class LayoutEngine {
+        static persistedPositionsAreValid(p) {
+          if (!p || typeof p !== "object") return false;
+          const core = ["material_foil","sensor_tension","control_heater","asset_sealer","deviation","quality_seal","batch_current","sim_unchanged","sim_corrected","impact_loss","sys_mes","sys_qa","sys_erp"];
+          for (const id of core) {
+            const pos = p[id];
+            if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y)) return false;
+            if (pos.x < 120 || pos.x > 2600 || pos.y < 60 || pos.y > 1900) return false;
+          }
+          return true;
+        }
+
+        static estimate(entity) {
+          const metricsCount = Object.keys(entity.metrics || {}).length;
+          if (entity.type === "GoldenBatch" || entity.id === "batch_current") {
+            return { width: entity.chart ? 560 : 520, height: entity.chart ? 360 : 240 };
+          }
+          if (entity.type === "SimulationScenario") return { width: 420, height: 220 };
+          if (entity.type === "ExternalSystem") return { width: 320, height: 130 + metricsCount * 26 };
+          return { width: entity.chart ? 440 : 400, height: entity.chart ? 300 : 160 + metricsCount * 28 };
+        }
+
+        static run(subgraph, projectionRelations, persistedPositions = {}) {
+          const g = new dagre.graphlib.Graph();
+          g.setGraph({ rankdir: "LR", ranksep: 180, nodesep: 120, marginx: 80, marginy: 80, ranker: "network-simplex" });
+          g.setDefaultEdgeLabel(() => ({}));
+
+          subgraph.entities.forEach((e) => {
+            const sz = LayoutEngine.estimate(e);
+            g.setNode(e.id, { width: sz.width, height: sz.height, rank: e.rankHint });
+          });
+          subgraph.relations.forEach((r) => {
+            g.setEdge(r.from, r.to, { weight: 2, minlen: 1 });
+          });
+
+          dagre.layout(g);
+
+          const positions = {};
+          subgraph.entities.forEach((e) => {
+            const n = g.node(e.id);
+            positions[e.id] = { x: n.x - n.width / 2, y: n.y - n.height / 2 };
+          });
+
+          LayoutEngine.compactProjection(subgraph, positions);
+
+          if (LayoutEngine.persistedPositionsAreValid(persistedPositions)) {
+            Object.keys(persistedPositions || {}).forEach((id) => {
+              if (positions[id]) positions[id] = persistedPositions[id];
+            });
+          }
+
+          LayoutEngine.ensureNoGoldenOverlap(positions);
+          LayoutEngine.ensureScenePadding(positions, 120, 60);
+          return positions;
+        }
+
+        static compactProjection(subgraph, positions) {
+          positions.batch_golden = { x: 80, y: 70 };
+          if (positions.batch_current && positions.sim_unchanged && positions.sim_corrected) {
+            const by = positions.batch_current.y + 350;
+            positions.sim_unchanged.y = by;
+            positions.sim_corrected.y = by;
+          }
+        }
+
+        static ensureNoGoldenOverlap(positions) {
+          const g = positions.batch_golden;
+          if (!g) return;
+          const golden = { x: g.x, y: g.y, w: 560, h: 380 };
+          const candidates = ["material_foil","sensor_tension","control_heater","asset_sealer"];
+          const widths = { material_foil: 380, sensor_tension: 380, control_heater: 380, asset_sealer: 440 };
+          candidates.forEach((id) => {
+            const p = positions[id];
+            if (!p) return;
+            const w = widths[id] || 360;
+            const overlaps = (p.x < golden.x + golden.w && p.x + w > golden.x && p.y < golden.y + golden.h && p.y + 250 > golden.y);
+            if (overlaps) positions[id].y = golden.y + golden.h + 36;
+          });
+        }
+
+        static ensureScenePadding(positions, minX = 72, minY = 36) {
+          const ids = Object.keys(positions || {});
+          if (!ids.length) return;
+          const minPosX = Math.min(...ids.map((id) => Number(positions[id]?.x || 0)));
+          const minPosY = Math.min(...ids.map((id) => Number(positions[id]?.y || 0)));
+          const dx = minPosX < minX ? (minX - minPosX) : 0;
+          const dy = minPosY < minY ? (minY - minPosY) : 0;
+          if (!dx && !dy) return;
+          ids.forEach((id) => {
+            if (!positions[id]) return;
+            positions[id].x += dx;
+            positions[id].y += dy;
+          });
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // LAYER 6a — UIState
+      // ─────────────────────────────────────────────────────────────────
+      class UIState {
+        constructor() {
+          this.storage_key    = "mei_pkg_graph_state_v23";
+          this.zoom           = 1;
+          this.pan            = { x: 0, y: 0 };
+          this.focusedNodeId  = null;
+          this.expandedNodes  = new Set();
+          this.selectedTab    = null;
+          this.transform      = null; // d3 zoom identity set at runtime
+          this.positions      = {};
+          this.focus          = null;
+          this.actionMode     = false;
+          this.simulation     = { corrected: true };
+        }
+        snapshot() {
+          return {
+            storageVersion: "v23",
+            positions:     this.positions,
+            focus:         this.focus,
+            expandedNodes: [...this.expandedNodes]
+          };
+        }
+        save() {
+          try { localStorage.setItem(this.storage_key, JSON.stringify(this.snapshot())); } catch (_) {}
+        }
+        load() {
+          try {
+            const raw = localStorage.getItem(this.storage_key);
+            return raw ? JSON.parse(raw) : null;
+          } catch (_) {
+            return null;
+          }
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // LAYER 6b — Renderer
+      // ─────────────────────────────────────────────────────────────────
+      class Renderer {
+        constructor(pkg, liveSignal, incidentEngine, decisionEngine, projection, uiState) {
+          this.pkg            = pkg;
+          this.liveSignal     = liveSignal;
+          this.incidentEngine = incidentEngine;
+          this.decisionEngine = decisionEngine;
+          this.projection     = projection;
+          this.uiState        = uiState;
+
+          // DOM refs
+          this.board         = document.getElementById("board");
+          this.viewport      = document.getElementById("viewport");
+          this.nodeLayer     = document.getElementById("nodeLayer");
+          this.edgeSvg       = document.getElementById("edgeSvg");
+          this.edgeLayer     = d3.select("#edgeLayer");
+          this.actionsBar    = document.getElementById("actionsBar");
+          this.focusExit     = document.getElementById("focusExit");
+          this.commandBtn    = document.getElementById("commandBtn");
+          this.commandMenu   = document.getElementById("commandMenu");
+          this.commandInput  = document.getElementById("commandInput");
+          this.commandList   = document.getElementById("commandList");
+
+          // Internal state
+          this.chartInstances  = {};
+          this.framePending    = false;
+          this.dragging        = null;
+          this.commandHistory  = [];
+          this.subgraph        = null;
+          this.projRelations   = null;
+
+          // D3 zoom
+          this.zoom = d3.zoom().scaleExtent([0.5, 2.2]).filter((event) => {
+            if (this.dragging) return false;
+            const target = event.target;
+            if (target && target.closest && target.closest(".node")) return false;
+            return !event.ctrlKey || event.type === "wheel";
+          }).on("zoom", (event) => {
+            this.uiState.transform = event.transform;
+            this.viewport.style.transform = `translate(${event.transform.x}px,${event.transform.y}px) scale(${event.transform.k})`;
+            this.renderZoneSwimlanes();
+          });
+
+          d3.select(this.board).call(this.zoom).on("dblclick.zoom", null);
+          d3.select(this.board).on("dblclick", () => { this.fitToScene(true); });
+        }
+
+        boot() {
+          // Build subgraph + projection relations
+          this.subgraph      = this.incidentEngine.extract("deviation");
+          this.projRelations = buildProjectionRelations(this.subgraph);
+
+          // Layout
+          let persisted = this.uiState.load();
+          if (persisted && persisted.positions && !LayoutEngine.persistedPositionsAreValid(persisted.positions)) {
+            try { localStorage.removeItem(this.uiState.storage_key); } catch (_) {}
+            persisted = null;
+          }
+          // Force fresh layout if storage key changed (v23) to pick up zone ordering
+          if (persisted && persisted.storageVersion !== "v23") {
+            try { localStorage.removeItem(this.uiState.storage_key); } catch (_) {}
+            persisted = null;
+          }
+          this.uiState.positions = LayoutEngine.run(this.subgraph, this.projRelations, persisted?.positions || {});
+          if (!LayoutEngine.persistedPositionsAreValid(persisted?.positions || {})) {
+            this._enforceZoneOrder(this.uiState.positions);
+          }
+          this.uiState.focus     = persisted?.focus || null;
+          this.uiState.transform = d3.zoomIdentity;
+
+          // Restore expanded nodes
+          if (persisted?.expandedNodes) {
+            persisted.expandedNodes.forEach((id) => this.uiState.expandedNodes.add(id));
+          }
+
+          // Wire up events
+          this._bindActionEvents();
+          this._bindFocusExit();
+          this._bindCommandSurface();
+          this._bindTimelineEvents();
+          this._bindHotkeys();
+          this._bindBoardClick();
+          this._bindResize();
+
+          // Render
+          this.scheduleRender();
+
+          // Live signal subscription
+          this.liveSignal.addEventListener("signal", () => {
+            this._updateSignalAges();
+            this._tickCharts();
+          });
+          this.liveSignal.start(2400);
+
+          // Age display every second
+          setInterval(() => { this._updateSignalAges(); }, 1000);
+
+          // Initial fit + restore focus
+          requestAnimationFrame(() => {
+            this.fitToScene(false);
+            if (this.uiState.focus) this.enterFocusMode(this.uiState.focus, { center: false });
+          });
+
+          // Decision banner
+          this.decisionEngine.populateBanner("deviation");
+
+          // Save on unload
+          window.addEventListener("beforeunload", () => {
+            this.uiState.save();
+          });
+        }
+
+        // ── Helpers ──────────────────────────────────────────────────
+
+        _bindBoardClick() {
+          this.board.addEventListener("click", (e) => {
+            if (this.uiState.actionMode && !this.dragging && !e.target.closest(".node")) {
+              this.exitFocusMode();
+            }
+          });
+        }
+
+        _bindResize() {
+          window.addEventListener("resize", () => {
+            this.scheduleRender();
+            requestAnimationFrame(() => this.fitToScene(false));
+          });
+        }
+
+        defaultFocusSeeds(focusId) {
+          const map = {
+            deviation:    ["asset_sealer","quality_seal","batch_current","batch_golden","impact_loss","sensor_tension","control_heater","material_foil"],
+            batch_current:["quality_seal","sim_unchanged","sim_corrected","impact_loss"],
+            impact_loss:  ["sim_unchanged","sim_corrected","sys_mes","sys_qa","sys_erp"],
+            sys_mes:      ["impact_loss","sim_unchanged","sim_corrected"],
+            sys_qa:       ["deviation","sim_unchanged"],
+            sys_erp:      ["impact_loss","sim_corrected"]
+          };
+          return map[focusId] || [];
+        }
+
+        getConnectedImpactNeighborhood(rootId) {
+          const relations  = this.projRelations || [];
+          const entityIds  = new Set(this.subgraph.entities.map((e) => e.id));
+          const nodeIds    = new Set([rootId]);
+          const edgeIds    = new Set();
+
+          let frontierUp = [rootId];
+          for (let depth = 0; depth < 3; depth += 1) {
+            const next = [];
+            frontierUp.forEach((id) => {
+              relations.forEach((r) => {
+                if (r.to === id && entityIds.has(r.from) && entityIds.has(r.to)) {
+                  nodeIds.add(r.from); nodeIds.add(r.to); edgeIds.add(r.id); next.push(r.from);
+                }
+              });
+            });
+            frontierUp = next;
+            if (!frontierUp.length) break;
+          }
+
+          let frontierDown = [rootId];
+          for (let depth = 0; depth < 4; depth += 1) {
+            const next = [];
+            frontierDown.forEach((id) => {
+              relations.forEach((r) => {
+                if (r.from === id && entityIds.has(r.from) && entityIds.has(r.to)) {
+                  nodeIds.add(r.from); nodeIds.add(r.to); edgeIds.add(r.id); next.push(r.to);
+                }
+              });
+            });
+            frontierDown = next;
+            if (!frontierDown.length) break;
+          }
+
+          return { nodeIds: Array.from(nodeIds), edgeIds: Array.from(edgeIds) };
+        }
+
+        enterFocusMode(nodeId, options = {}) {
+          const neighborhood = options.neighborhood || this.getConnectedImpactNeighborhood(nodeId);
+          const center = options.center !== false;
+          this.uiState.focus      = nodeId;
+          this.uiState.actionMode = true;
+          this.applyFocus(nodeId, { neighborhood, center, seedIds: options.seedIds || [] });
+          this.nodeLayer.querySelectorAll(".node").forEach((el) => {
+            el.classList.toggle("focus-root", el.getAttribute("data-id") === nodeId);
+          });
+          if (this.focusExit) this.focusExit.classList.add("show");
+          this.updateActionsForFocus(nodeId, new Set(neighborhood.nodeIds || []));
+        }
+
+        exitFocusMode() {
+          this.uiState.focus      = null;
+          this.uiState.actionMode = false;
+          this.nodeLayer.querySelectorAll(".node").forEach((el) => {
+            el.classList.remove("dimmed","focal","focus-root","expanded");
+          });
+          this.edgeLayer.selectAll("path.edge").classed("focused", false).classed("dimmed", false);
+          this.edgeLayer.selectAll("text.edge-label").classed("focused", false);
+          if (this.focusExit) this.focusExit.classList.remove("show");
+          if (this.actionsBar) {
+            this.actionsBar.querySelectorAll(".action-btn").forEach((btn) => {
+              btn.classList.remove("active","dimmed");
+            });
+          }
+          this.fitToScene(true);
+        }
+
+        applyFocus(focusId = this.uiState.focus, options = {}) {
+          const { center = true, seedIds = [], neighborhood = null } = options;
+          if (!focusId) { this.exitFocusMode(); return; }
+          this.uiState.focus = focusId;
+          const resolvedNeighborhood = neighborhood || this.getConnectedImpactNeighborhood(focusId);
+          const keepNodes = new Set((resolvedNeighborhood.nodeIds || []).concat(seedIds || [], [focusId]));
+          const keepEdges = new Set(resolvedNeighborhood.edgeIds || []);
+
+          if (!neighborhood && seedIds && seedIds.length) {
+            seedIds.forEach((sid) => {
+              this.projRelations.forEach((r) => {
+                if ((r.from === sid || r.to === sid) && keepNodes.has(r.from) && keepNodes.has(r.to)) {
+                  keepEdges.add(r.id);
+                }
+              });
+            });
+          }
+
+          this.nodeLayer.querySelectorAll(".node").forEach((el) => {
+            const id        = el.getAttribute("data-id");
+            const isCompact = el.classList.contains("compact-card");
+            el.classList.toggle("dimmed",    !keepNodes.has(id));
+            el.classList.toggle("focal",      id === focusId);
+            el.classList.toggle("focus-root", id === focusId);
+            el.classList.toggle("expanded",  keepNodes.has(id) && isCompact);
+          });
+
+          this.edgeLayer.selectAll("path.edge")
+            .classed("focused", (d) => !!(d && d.r && keepEdges.has(d.r.id)))
+            .classed("dimmed",  (d) => !!(d && d.r && !keepEdges.has(d.r.id)));
+          this.edgeLayer.selectAll("text.edge-label")
+            .classed("focused", (d) => !!(d && d.r && keepEdges.has(d.r.id)));
+
+          this.updateActionsForFocus(focusId, keepNodes);
+          if (this.focusExit) this.focusExit.classList.add("show");
+          if (center) this.centerOnNodes(Array.from(keepNodes), true, 0.72);
+        }
+
+        updateActionsForFocus(focusId, keepNodes) {
+          if (!this.actionsBar) return;
+          this.actionsBar.querySelectorAll(".action-btn").forEach((btn) => {
+            const scope  = (btn.getAttribute("data-focus") || "").split(",").map((s) => s.trim()).filter(Boolean);
+            const active = scope.includes(focusId) || scope.some((id) => keepNodes.has(id));
+            btn.classList.toggle("active",  active);
+            btn.classList.toggle("dimmed", !active);
+          });
+        }
+
+        getBoundsFor(ids) {
+          const targetIds = Array.isArray(ids) && ids.length ? ids : this.subgraph.entities.map((e) => e.id);
+          const rects     = targetIds.map((id) => this._nodeRect(id)).filter(Boolean);
+          if (!rects.length) return null;
+          const minX = Math.min(...rects.map((r) => r.x));
+          const minY = Math.min(...rects.map((r) => r.y));
+          const maxX = Math.max(...rects.map((r) => r.x + r.w));
+          const maxY = Math.max(...rects.map((r) => r.y + r.h));
+          return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+        }
+
+        // Shift nodes so zones appear strictly left-to-right in A→B→C→D→E→F order
+        _enforceZoneOrder(positions) {
+          const ZONE_ORDER = ['A','B','C','D','E','F'];
+          const INTER_ZONE_GAP = 120; // minimum px gap between zone columns
+          const zoneMap = this.projection.zoneMap;
+
+          // Compute current X range per zone
+          const zoneRanges = {};
+          this.subgraph.entities.forEach((e) => {
+            const zone = zoneMap[e.id];
+            if (!zone || !positions[e.id]) return;
+            const x = positions[e.id].x;
+            const w = LayoutEngine.estimate(e).width;
+            if (!zoneRanges[zone]) zoneRanges[zone] = { minX: x, maxX: x + w };
+            else {
+              zoneRanges[zone].minX = Math.min(zoneRanges[zone].minX, x);
+              zoneRanges[zone].maxX = Math.max(zoneRanges[zone].maxX, x + w);
+            }
+          });
+
+          const present = ZONE_ORDER.filter((z) => zoneRanges[z]);
+          if (present.length < 2) return;
+
+          // Walk zones in order and push each one right if it overlaps the previous
+          let cursor = zoneRanges[present[0]].minX; // keep Zone A where it is
+          present.forEach((zone) => {
+            const r = zoneRanges[zone];
+            const needed = cursor - r.minX;
+            if (needed > 0 || r.minX < cursor) {
+              // shift all nodes in this zone
+              this.subgraph.entities.forEach((e) => {
+                if (zoneMap[e.id] === zone && positions[e.id]) {
+                  positions[e.id] = { x: positions[e.id].x + needed, y: positions[e.id].y };
+                }
+              });
+              r.maxX += needed;
+              r.minX  = cursor;
+            }
+            cursor = r.maxX + INTER_ZONE_GAP;
+          });
+        }
+
+        fitToScene(animated = true) {
+          const incidentIds = ["batch_golden","material_foil","sensor_tension","control_heater","asset_sealer","deviation","quality_seal","batch_current","sim_unchanged","sim_corrected","impact_loss","sys_mes","sys_qa","sys_erp"];
+          const b = this.getBoundsFor(incidentIds);
+          if (!b) return;
+          const viewW = this.board.clientWidth;
+          const viewH = this.board.clientHeight;
+          const pad   = 60;
+          const fitW  = (viewW - pad * 2) / Math.max(1, b.width);
+          const fitH  = (viewH - pad * 2) / Math.max(1, b.height);
+          const scale = Math.max(0.55, Math.min(2.2, Math.min(fitW, fitH)));
+          document.documentElement.style.setProperty("--fit-scale", scale);
+          let tx      = (viewW - b.width * scale) / 2 - b.minX * scale;
+          const ty    = (viewH - b.height * scale) / 2 - b.minY * scale;
+          const gutter = 120;
+          const minTx  = gutter - b.minX * scale;
+          const maxTx  = (viewW - gutter) - b.maxX * scale;
+          if (minTx <= maxTx) tx = Math.max(minTx, Math.min(maxTx, tx));
+          else tx = (minTx + maxTx) / 2;
+          const t   = d3.zoomIdentity.translate(tx, ty).scale(scale);
+          const sel = d3.select(this.board);
+          if (animated) sel.transition().duration(260).call(this.zoom.transform, t);
+          else sel.call(this.zoom.transform, t);
+        }
+
+        centerOnNodes(ids, animated = true, minScale = 0.72) {
+          const b = this.getBoundsFor(ids);
+          if (!b) return;
+          const viewW = this.board.clientWidth;
+          const viewH = this.board.clientHeight;
+          const pad   = 160;
+          const scale = Math.max(minScale, Math.min(2.2, Math.min((viewW - pad * 2) / b.width, (viewH - pad * 2) / b.height)));
+          let tx      = (viewW - b.width * scale) / 2 - b.minX * scale;
+          const ty    = (viewH - b.height * scale) / 2 - b.minY * scale;
+          const gutter = 100;
+          const minTx  = gutter - b.minX * scale;
+          const maxTx  = (viewW - gutter) - b.maxX * scale;
+          if (minTx <= maxTx) tx = Math.max(minTx, Math.min(maxTx, tx));
+          else tx = (minTx + maxTx) / 2;
+          const t   = d3.zoomIdentity.translate(tx, ty).scale(scale);
+          const sel = d3.select(this.board);
+          if (animated) sel.transition().duration(260).call(this.zoom.transform, t);
+          else sel.call(this.zoom.transform, t);
+        }
+
+        scheduleRender() {
+          if (this.framePending) return;
+          this.framePending = true;
+          requestAnimationFrame(() => {
+            this.framePending = false;
+            this.render();
+          });
+        }
+
+        render() {
+          this.renderNodes();
+          this.renderEdges();
+          this.renderCharts();
+          requestAnimationFrame(() => {
+            this._resizeCharts();
+            this.renderZoneSwimlanes();
+          });
+          if (this.uiState.actionMode && this.uiState.focus) {
+            const neighborhood = this.getConnectedImpactNeighborhood(this.uiState.focus);
+            this.applyFocus(this.uiState.focus, { center: false, neighborhood });
+          }
+        }
+
+        // ── Node rendering ────────────────────────────────────────────
+
+        _stateToken(entity) {
+          if (entity.type === "ExternalSystem")     return "external";
+          if (entity.type === "SimulationScenario") return "simulation";
+          return entity.state || "normal";
+        }
+
+        _nodeClass(entity) {
+          const typeClass = entity.type.toLowerCase().replace(/\s+/g, '');
+          if (entity.type === "GoldenBatch" || entity.id === "batch_current") return `anchor-card ${typeClass}`;
+          if (entity.type === "SimulationScenario") return `simulation-card ${typeClass}`;
+          if (entity.type === "ExternalSystem")     return `system-card ${typeClass}`;
+          return `process-card ${typeClass}`;
+        }
+
+        _nodeTier(entity) {
+          if (["deviation","batch_current","quality_seal","impact_loss"].includes(entity.id)) return "tier-primary";
+          if (["asset_sealer","batch_golden"].includes(entity.id))                             return "tier-secondary";
+          if (["material_foil","sensor_tension","control_heater"].includes(entity.id))         return "tier-tertiary";
+          if (["sys_mes","sys_qa","sys_erp"].includes(entity.id))                             return "tier-endpoint";
+          return "";
+        }
+
+        _nodeModeClass(entity) {
+          if (["sys_mes","sys_qa","sys_erp"].includes(entity.id))                                                       return "endpoint-card";
+          if (["deviation","batch_current","quality_seal","impact_loss"].includes(entity.id))                           return "analytical-card";
+          if (["asset_sealer","material_foil","sensor_tension","control_heater","batch_golden"].includes(entity.id))    return "operational-card";
+          return "";
+        }
+
+        _ageText(entityId) {
+          const ts  = this.liveSignal.getUpdatedAt(entityId);
+          if (!ts) return "";
+          const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+          if (sec < 60) return `${sec}s ago`;
+          return `${Math.floor(sec / 60)}m ago`;
+        }
+
+        _cardHtml(entity) {
+          const accent  = ACCENT[entity.type] || ["#8d99af", "#edf2fb"];
+          const s       = STATE_STYLE[this._stateToken(entity)] || STATE_STYLE.normal;
+          const metrics = Object.entries(entity.metrics || {}).map(([k, v]) => `<div class="metric"><span>${k}</span><b>${v}</b></div>`).join("");
+          const p = Number.isFinite(entity.root_cause_probability)
+            ? entity.root_cause_probability
+            : null;
+          const probabilityBlock = (entity.projectionRole === "cause" && p !== null)
+            ? `<div class="metric-probability"><span>Root cause likelihood</span><b>${Math.round(p * 100)}%</b></div>`
+            : "";
+          const primaryAnalytical = new Set(["deviation","batch_current","quality_seal","impact_loss"]);
+          const compactIds        = new Set(["material_foil","sensor_tension","control_heater","sys_mes","sys_qa","sys_erp"]);
+          const probClass = (entity.projectionRole === "cause" && p !== null)
+            ? (p > 0.5 ? "prob-high" : p >= 0.25 ? "prob-medium" : "")
+            : "";
+          const extraClass = [
+            primaryAnalytical.has(entity.id) ? "primary-analytical" : "",
+            entity.id === "deviation"     ? "incident-root"  : "",
+            entity.id === "batch_golden"  ? "reference-node" : "",
+            compactIds.has(entity.id)     ? "compact-card"   : "",
+            this._nodeTier(entity),
+            this._nodeModeClass(entity),
+            probClass
+          ].filter(Boolean).join(" ");
+
+          const isSignal  = ["Sensor","QualityState","ControlParameter","Asset"].includes(entity.type);
+          const age       = isSignal ? this._ageText(entity.id) : "";
+          const ageStale  = (isSignal && (Date.now() - this.liveSignal.getUpdatedAt(entity.id)) > 30000) ? " stale" : "";
+          const confidence = entity.metadata?.confidence;
+          const extraDetail = compactIds.has(entity.id)
+            ? `<div class="extra-detail">${entity.metadata?.detail || entity.metadata?.description || ""}</div>`
+            : "";
+          const chartBlock = entity.chart ? (() => {
+            const goldenCompare = new Set(["batch_current","quality_seal","impact_loss"]);
+            const hasRanges     = goldenCompare.has(entity.id);
+            const refLabel      = hasRanges ? `<span class="spark-ref-label">vs. Golden Batch GB-2024-01</span>` : "";
+            const rangeCtrl     = hasRanges
+              ? `<div class="spark-range" id="spark-range-${entity.id}"><button class="spark-range-btn" data-range="30m">30m</button><button class="spark-range-btn active" data-range="1h">1h</button><button class="spark-range-btn" data-range="4h">4h</button></div>`
+              : "";
+            const header = (refLabel || rangeCtrl) ? `<div class="spark-controls">${refLabel}${rangeCtrl}</div>` : "";
+            return `${header}<div class="spark"><canvas id="chart-${entity.id}"></canvas></div>`;
+          })() : "";
+
+          return `
+            <article class="node ${this._nodeClass(entity)} ${extraClass}" id="node-${entity.id}" data-id="${entity.id}" style="--accent:${accent[0]};--icon-bg:${accent[1]};--state-border:${s[0]};--state-bg:${s[1]};--state-fg:${s[2]}">
+              <div class="node-header">
+                <div class="node-header-main">
+                  <div class="icon-chip">${ICON[entity.type] || "•"}</div>
+                  <div><div class="title node-title">${entity.label}</div><div class="section-label">${entity.type}</div></div>
+                </div>
+                <span class="state node-status"><i></i>${this._stateToken(entity).toUpperCase()}</span>
+              </div>
+              <div class="node-body">
+                <div class="sub">${entity.metadata?.description || ""}</div>
+                ${age ? `<div class="signal-age${ageStale}">Updated ${age}</div>` : ""}
+                <div class="metrics">${metrics}</div>
+                ${probabilityBlock}
+                ${entity.insight ? `<button class="insight-chip" data-focus="${entity.id}"><i></i><span><strong>KairOS</strong><br>${entity.insight}${confidence ? `<br><span class="sub">Confidence ${confidence}</span>` : ""}</span></button>` : ""}
+                ${extraDetail}
+                ${chartBlock}
+              </div>
+            </article>`;
+        }
+
+        renderNodes() {
+          const insightFocusMap = {
+            sensor_tension: { root: "deviation",     seeds: ["asset_sealer","quality_seal"] },
+            control_heater: { root: "asset_sealer",  seeds: ["deviation"] },
+            deviation:      { root: "impact_loss",   seeds: ["sim_corrected","sim_unchanged"] },
+            quality_seal:   { root: "batch_current", seeds: ["impact_loss"] },
+            batch_current:  { root: "sim_corrected", seeds: ["impact_loss","batch_golden"] },
+            aux_sensor_2:   { root: "aux_asset_2",   seeds: [] }
+          };
+
+          this.nodeLayer.innerHTML = this.subgraph.entities.map((e) => this._cardHtml(e)).join("");
+
+          this.subgraph.entities.forEach((e) => {
+            const el = this.nodeLayer.querySelector(`[data-id="${e.id}"]`);
+            if (!el) return;
+            const p  = this.uiState.positions[e.id] || { x: 0, y: 0 };
+            el.style.width = "max-content";
+            el.style.left  = `${p.x}px`;
+            el.style.top   = `${p.y}px`;
+
+            el.querySelectorAll(".insight-chip").forEach((chip) => {
+              chip.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                const target = insightFocusMap[e.id];
+                if (target) this.enterFocusMode(target.root, { seedIds: target.seeds, center: true });
+                else this.enterFocusMode(e.id, { center: true });
+              });
+            });
+
+            const nodeBody = el.querySelector(".node-body");
+            if (nodeBody && el.classList.contains("compact-card")) {
+              nodeBody.addEventListener("click", (ev) => {
+                if (ev.target.closest(".insight-chip")) return;
+                ev.stopPropagation();
+                el.classList.toggle("expanded");
+              });
+            }
+
+            el.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              this.enterFocusMode(e.id, { center: false });
+            });
+
+            this._bindNodeDrag(el, e.id);
+          });
+        }
+
+        _nodeRect(id) {
+          const el = this.nodeLayer.querySelector(`[data-id="${id}"]`);
+          const p  = this.uiState.positions[id];
+          if (!el || !p) return null;
+          const w  = el.offsetWidth;
+          const h  = el.offsetHeight;
+          return { x: p.x, y: p.y, w, h, cx: p.x + w / 2, cy: p.y + h / 2 };
+        }
+
+        _bindNodeDrag(el, entityId) {
+          if (entityId === "batch_golden") return;
+          el.addEventListener("pointerdown", (e) => {
+            if (e.button !== 0) return;
+            e.stopPropagation();
+            const rect = el.getBoundingClientRect();
+            this.dragging = { id: entityId, ox: e.clientX - rect.left, oy: e.clientY - rect.top, moved: false };
+            el.classList.add("dragging");
+            el.setPointerCapture(e.pointerId);
+          });
+
+          el.addEventListener("pointermove", (e) => {
+            if (!this.dragging || this.dragging.id !== entityId) return;
+            this.dragging.moved = true;
+            const boardRect = this.board.getBoundingClientRect();
+            const t = this.uiState.transform || d3.zoomIdentity;
+            const localX = (e.clientX - boardRect.left - t.x) / t.k - this.dragging.ox;
+            const localY = (e.clientY - boardRect.top  - t.y) / t.k - this.dragging.oy;
+            this.uiState.positions[entityId] = { x: Math.max(20, localX), y: Math.max(20, localY) };
+            el.style.left = `${this.uiState.positions[entityId].x}px`;
+            el.style.top  = `${this.uiState.positions[entityId].y}px`;
+            this.renderEdges();
+            this.renderZoneSwimlanes();
+            if (this.uiState.focus) {
+              const neighborhood = this.getConnectedImpactNeighborhood(this.uiState.focus);
+              this.applyFocus(this.uiState.focus, { center: false, neighborhood });
+            }
+          });
+
+          const onUp = (e) => {
+            if (!this.dragging || this.dragging.id !== entityId) return;
+            try { el.releasePointerCapture(e.pointerId); } catch (_) {}
+            const moved = this.dragging.moved;
+            this.dragging = null;
+            el.classList.remove("dragging");
+            if (!moved) {
+              this.enterFocusMode(entityId, { center: false });
+            } else {
+              this.uiState.save();
+              if (this.uiState.focus) {
+                const neighborhood = this.getConnectedImpactNeighborhood(this.uiState.focus);
+                this.applyFocus(this.uiState.focus, { center: false, neighborhood });
+              }
+            }
+          };
+
+          el.addEventListener("pointerup",     onUp);
+          el.addEventListener("pointercancel", onUp);
+        }
+
+        _updateSignalAges() {
+          this.nodeLayer.querySelectorAll(".node[data-id]").forEach((el) => {
+            const id    = el.getAttribute("data-id");
+            const ageEl = el.querySelector(".signal-age");
+            if (!id || !ageEl) return;
+            const txt = this._ageText(id);
+            if (txt) ageEl.textContent = `Updated ${txt}`;
+            const ts = this.liveSignal.getUpdatedAt(id) || 0;
+            ageEl.classList.toggle("stale", (Date.now() - ts) > 30000);
+          });
+        }
+
+        // ── Edge rendering ────────────────────────────────────────────
+
+        _edgePath(a, b) {
+          const dx = b.cx - a.cx;
+          const sx = dx >= 0 ? a.x + a.w : a.x;
+          const ex = dx >= 0 ? b.x : b.x + b.w;
+          const c1 = sx + Math.max(30, Math.abs(dx) * 0.26) * Math.sign(dx || 1);
+          const c2 = ex - Math.max(30, Math.abs(dx) * 0.22) * Math.sign(dx || 1);
+          return `M ${sx} ${a.cy} C ${c1} ${a.cy}, ${c2} ${b.cy}, ${ex} ${b.cy}`;
+        }
+
+        renderEdges() {
+          const primarySpineEdges = new Set(["r4","r5","r6","r7"]);
+          const spineEdges        = new Set(["r1","r2","r3","r4","r5","r6","r7"]);
+          const branchEdges       = new Set(["r9","r10","r11","r12"]);
+          const execEdges         = new Set(["r13","r14","r15","r16"]);
+          const entityById        = new Map(this.subgraph.entities.map((e) => [e.id, e]));
+
+          const renderData = this.projRelations.map((r) => {
+            const a = this._nodeRect(r.from);
+            const b = this._nodeRect(r.to);
+            if (!a || !b) return null;
+            const fromEntity = entityById.get(r.from);
+            const probRaw    = fromEntity && (Number.isFinite(fromEntity.root_cause_probability)
+              ? fromEntity.root_cause_probability
+              : null);
+            const priorityCls =
+              r.id === "r8"                 ? "golden-ref reference" :
+              execEdges.has(r.id)           ? "exec" :
+              branchEdges.has(r.id)         ? "branch" :
+              primarySpineEdges.has(r.id)   ? "primary-spine spine" :
+              spineEdges.has(r.id)          ? "spine" : "";
+            const visualCls = branchEdges.has(r.id) ? "simulation" : (EDGE_STYLE[r.type]?.cls || "causal");
+            const probEdge  = (fromEntity?.projectionRole === "cause" && probRaw !== null);
+            let probWidth = null, probOpacity = null, probLabel = null;
+            if (probEdge) {
+              if (probRaw > 0.5)       { probWidth = 3.0; probOpacity = 0.96; }
+              else if (probRaw >= 0.25) { probWidth = 2.2; probOpacity = 0.84; }
+              else                      { probWidth = 1.4; probOpacity = 0.68; }
+              probLabel = `${Math.round(probRaw * 100)}%`;
+            }
+            return { r, d: this._edgePath(a, b), lx: (a.cx + b.cx) / 2, ly: (a.cy + b.cy) / 2, priorityCls, visualCls, probEdge, probWidth, probOpacity, probLabel };
+          }).filter(Boolean);
+
+          const sel = this.edgeLayer.selectAll("path.edge").data(renderData, (d) => d.r.id);
+          sel.enter()
+            .append("path")
+            .attr("class", (d) => `edge ${d.visualCls} ${d.priorityCls}`)
+            .attr("marker-end", (d) => `url(#${EDGE_STYLE[d.r.type]?.marker || "arrow-causal"})`)
+            .on("mouseenter", (event, d) => {
+              d3.select(event.currentTarget).classed("focused", true);
+              this.edgeLayer.selectAll("text.edge-label").classed("focused", (x) => x.r.id === d.r.id);
+            })
+            .on("mouseleave", (event) => {
+              d3.select(event.currentTarget).classed("focused", false);
+              this.edgeLayer.selectAll("text.edge-label").classed("focused", false);
+            })
+            .merge(sel)
+            .attr("class", (d) => `edge ${d.visualCls} ${d.priorityCls}`)
+            .style("stroke-width", (d) => d.probEdge ? `${d.probWidth}px` : null)
+            .style("opacity",      (d) => d.probEdge ? d.probOpacity : null)
+            .attr("d", (d) => d.d);
+          sel.exit().remove();
+
+          const lsel = this.edgeLayer.selectAll("text.edge-label").data(renderData, (d) => `lbl-${d.r.id}`);
+          lsel.enter().append("text").attr("class", "edge-label")
+            .merge(lsel)
+            .attr("x", (d) => d.lx).attr("y", (d) => d.ly - 6)
+            .attr("text-anchor", "middle")
+            .text((d) => d.r.type.replace("_", " "));
+          lsel.exit().remove();
+
+          const probLabels = renderData.filter((d) => d.probEdge && d.probLabel);
+          const pl = this.edgeLayer.selectAll("text.edge-prob-label").data(probLabels, (d) => `pl-${d.r.id}`);
+          pl.enter().append("text").attr("class", "edge-prob-label")
+            .merge(pl)
+            .attr("x", (d) => d.lx + 12).attr("y", (d) => d.ly - 10)
+            .text((d) => d.probLabel);
+          pl.exit().remove();
+
+          const current   = this._nodeRect("batch_current");
+          const unchanged = this._nodeRect("sim_unchanged");
+          const corrected = this._nodeRect("sim_corrected");
+          const forkData  = (current && unchanged && corrected) ? [{
+            x: current.x + current.w * 0.88,  y: current.y + current.h * 0.66,
+            u: { x: unchanged.x + unchanged.w * 0.14, y: unchanged.y + unchanged.h * 0.14 },
+            c: { x: corrected.x + corrected.w * 0.14, y: corrected.y + corrected.h * 0.14 }
+          }] : [];
+
+          const jsel = this.edgeLayer.selectAll("circle.fork-junction").data(forkData);
+          jsel.enter().append("circle").attr("class","fork-junction").attr("r",3.5)
+            .merge(jsel).attr("cx",(d)=>d.x).attr("cy",(d)=>d.y);
+          jsel.exit().remove();
+
+          const fpaths = [
+            ...forkData.map((d) => ({ id:"u", cls:"unchanged", x1:d.x, y1:d.y, x2:d.u.x, y2:d.u.y })),
+            ...forkData.map((d) => ({ id:"c", cls:"corrected",  x1:d.x, y1:d.y, x2:d.c.x, y2:d.c.y }))
+          ];
+          const pf = this.edgeLayer.selectAll("path.fork-link").data(fpaths, (d) => d.id);
+          pf.enter().append("path").attr("class",(d)=>`simulation branch fork-link ${d.cls}`)
+            .merge(pf).attr("class",(d)=>`simulation branch fork-link ${d.cls}`)
+            .attr("d",(d)=>`M ${d.x1} ${d.y1} C ${(d.x1+d.x2)/2} ${d.y1}, ${(d.x1+d.x2)/2} ${d.y2}, ${d.x2} ${d.y2}`);
+          pf.exit().remove();
+
+          const flabels = [
+            ...forkData.map((d) => ({ id:"lu", x:(d.x+d.u.x)/2-18, y:(d.y+d.u.y)/2-6, t:"unchanged" })),
+            ...forkData.map((d) => ({ id:"lc", x:(d.x+d.c.x)/2+4,  y:(d.y+d.c.y)/2-6, t:"corrected" }))
+          ];
+          const ft = this.edgeLayer.selectAll("text.fork-label").data(flabels, (d) => d.id);
+          ft.enter().append("text").attr("class",(d)=>`fork-label ${d.t}`)
+            .merge(ft).attr("class",(d)=>`fork-label ${d.t}`)
+            .attr("x",(d)=>d.x).attr("y",(d)=>d.y).text((d)=>d.t);
+          ft.exit().remove();
+        }
+
+        // ── Chart rendering ───────────────────────────────────────────
+
+        destroyCharts() {
+          Object.values(this.chartInstances).forEach((c) => { try { c.destroy(); } catch (_) {} });
+          this.chartInstances = {};
+        }
+
+        chartPluginDeviationMarker(markerIndex) {
+          return {
+            id: `dev-marker-${markerIndex}`,
+            afterDatasetsDraw(chart) {
+              const { ctx, chartArea, scales } = chart || {};
+              if (!ctx || !chartArea || !scales || !scales.x || !scales.y) return;
+              const x = scales.x.getPixelForValue(markerIndex);
+              if (!Number.isFinite(x)) return;
+              ctx.save();
+              const dark = document.body.classList.contains("dark");
+              ctx.strokeStyle = dark ? "#ff6b6b" : "#DC2626";
+              ctx.setLineDash([4, 3]);
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(x, chartArea.top + 2);
+              ctx.lineTo(x, chartArea.bottom);
+              ctx.stroke();
+              ctx.restore();
+            }
+          };
+        }
+
+        chartPluginCurrentMarker(datasetIndex) {
+          return {
+            id: `current-dot-${datasetIndex}`,
+            afterDatasetsDraw(chart) {
+              if (!chart || !chart.scales || !chart.scales.x || !chart.scales.y) return;
+              const ds = chart.data.datasets[datasetIndex];
+              if (!ds || !ds.data || !ds.data.length) return;
+              let lastIdx = -1;
+              for (let i = ds.data.length - 1; i >= 0; i -= 1) {
+                const v = ds.data[i];
+                if (v !== null && v !== undefined && Number.isFinite(v)) { lastIdx = i; break; }
+              }
+              if (lastIdx < 0) return;
+              const x = chart.scales.x.getPixelForValue(lastIdx);
+              const y = chart.scales.y.getPixelForValue(ds.data[lastIdx]);
+              if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+              const { ctx } = chart;
+              if (!ctx) return;
+              ctx.save();
+              const dark = document.body.classList.contains("dark");
+              ctx.fillStyle = dark ? "#6a93ff" : "#2F6BFF";
+              ctx.beginPath();
+              ctx.arc(x, y, 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          };
+        }
+
+        chartTheme() {
+          const dark = document.body.classList.contains("dark");
+          if (dark) {
+            return {
+              grid:       "rgba(71,85,105,0.18)",
+              axis:       "#475569",
+              gold:       "#FBBF24",
+              live:       "#60A5FA",
+              threshold:  "#64748B",
+              loss:       "#F87171",
+              recovery:   "#4ADE80",
+              simulation: "#A78BFA",
+              fillBlue:   "rgba(96,165,250,0.10)",
+              fillRed:    "rgba(248,113,113,0.10)",
+              fillGold:   "rgba(251,191,36,0.08)",
+              fillGreen:  "rgba(74,222,128,0.08)",
+              fillPurple: "rgba(167,139,250,0.09)"
+            };
+          }
+          return {
+            grid:       "rgba(100,116,139,0.12)",
+            axis:       "#8A9AB0",
+            gold:       "#9B7A2E",
+            live:       "#355C9A",
+            threshold:  "#6B7280",
+            loss:       "#B14A42",
+            recovery:   "#587A3E",
+            simulation: "#7A5CAD",
+            fillBlue:   "rgba(53,92,154,0.07)",
+            fillRed:    "rgba(177,74,66,0.08)",
+            fillGold:   "rgba(155,122,46,0.07)",
+            fillGreen:  "rgba(88,122,62,0.07)",
+            fillPurple: "rgba(109,40,217,0.07)"
+          };
+        }
+
+        baseChartOptions(yMin, yMax, tooltipEnabled = true, yUnit = "") {
+          const theme = this.chartTheme();
+          const dark  = document.body.classList.contains("dark");
+          return {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            normalized: true,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                enabled: tooltipEnabled,
+                backgroundColor: dark ? "rgba(28,28,30,0.96)" : "rgba(255,255,255,0.98)",
+                borderColor: dark ? "rgba(255,255,255,0.10)" : "rgba(60,60,67,0.13)",
+                borderWidth: 1,
+                titleColor: dark ? "#FFFFFF" : "#000000",
+                bodyColor:  dark ? "#EBEBF5" : "#3C3C43",
+                padding: { x: 12, y: 10 },
+                cornerRadius: 10,
+                titleFont: { size: 12, weight: "700" },
+                bodyFont:  { size: 12 },
+                callbacks: {
+                  label: (ctx) => {
+                    const v = ctx.parsed.y;
+                    if (v === null || v === undefined) return null;
+                    return ` ${ctx.dataset.label || ""} ${Number(v).toFixed(1)}${yUnit}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid:   { color: theme.grid, drawTicks: false },
+                ticks:  { color: theme.axis, maxTicksLimit: 5, font: { size: 11, weight: "600" } },
+                border: { color: theme.grid }
+              },
+              y: {
+                min: yMin, max: yMax,
+                grid:   { color: theme.grid, drawTicks: false },
+                ticks:  { color: theme.axis, maxTicksLimit: 5, font: { size: 11, weight: "600" }, callback: (v) => yUnit ? `${v}${yUnit}` : `${v}` },
+                border: { color: theme.grid }
+              }
+            },
+            elements: {
+              point: { radius: 0, hitRadius: 8, hoverRadius: 5 },
+              line:  { tension: 0.32, borderWidth: 2.2, spanGaps: true }
+            }
+          };
+        }
+
+        renderZoneSwimlanes() {
+          const layer = document.getElementById("swimlaneLayer");
+          if (!layer) return;
+
+          const ZONE_MAP   = this.projection.zoneMap;
+          const PAD_X = 48, PAD_Y = 72;
+          const GAP   = 32; // minimum gap between adjacent bands
+
+          // 1. Collect node bounds per zone
+          const rawBounds = {};
+          this.subgraph.entities.forEach((e) => {
+            const zone = ZONE_MAP[e.id];
+            if (!zone) return;
+            const el = this.nodeLayer.querySelector(`[data-id="${e.id}"]`);
+            const p  = this.uiState.positions[e.id];
+            if (!el || !p) return;
+            const w = el.offsetWidth  || 0;
+            const h = el.offsetHeight || 0;
+            if (!rawBounds[zone]) {
+              rawBounds[zone] = { minX: p.x, maxX: p.x + w, minY: p.y, maxY: p.y + h };
+            } else {
+              rawBounds[zone].minX = Math.min(rawBounds[zone].minX, p.x);
+              rawBounds[zone].maxX = Math.max(rawBounds[zone].maxX, p.x + w);
+              rawBounds[zone].minY = Math.min(rawBounds[zone].minY, p.y);
+              rawBounds[zone].maxY = Math.max(rawBounds[zone].maxY, p.y + h);
+            }
+          });
+
+          if (!Object.keys(rawBounds).length) { layer.innerHTML = ""; return; }
+
+          // 2. Build sorted list of bands with padded left/right
+          const bands = Object.entries(rawBounds)
+            .map(([zone, b]) => ({ zone, left: b.minX - PAD_X, right: b.maxX + PAD_X, minY: b.minY, maxY: b.maxY }))
+            .sort((a, b) => a.left - b.left);
+
+          // 3. Resolve overlaps: for each adjacent pair that overlaps, split the overlap at the midpoint
+          for (let i = 0; i < bands.length - 1; i++) {
+            const a = bands[i], b = bands[i + 1];
+            if (a.right + GAP > b.left) {
+              const mid = (a.right + b.left) / 2;
+              a.right = mid - GAP / 2;
+              b.left  = mid + GAP / 2;
+            }
+          }
+
+          // 4. Shared Y span
+          let globalMinY = Infinity, globalMaxY = -Infinity;
+          bands.forEach((b) => {
+            globalMinY = Math.min(globalMinY, b.minY);
+            globalMaxY = Math.max(globalMaxY, b.maxY);
+          });
+          const topY   = globalMinY - PAD_Y;
+          const totalH = (globalMaxY + PAD_Y) - topY;
+
+          const ZONE_LABELS = { A:"Reference", B:"Root Causes", C:"Live Process", D:"Analytics", E:"Decision", F:"Execution" };
+          const k = (this.uiState.transform || d3.zoomIdentity).k || 1;
+          const labelSize = Math.round(Math.min(22, Math.max(11, 14 / k)));
+
+          layer.innerHTML = bands.map(({ zone, left, right }) => {
+            const width = Math.max(0, right - left);
+            const label = ZONE_LABELS[zone] || zone;
+            return `<div class="swimlane zone-${zone}" style="left:${left}px;width:${width}px;top:${topY}px;height:${totalH}px;"><span class="swimlane-label" style="font-size:${labelSize}px;">${label}</span></div>`;
+          }).join("");
+        }
+
+        renderCharts() {
+          this.destroyCharts();
+          const ChartJS = window.Chart;
+          if (!ChartJS) return;
+          const theme    = this.chartTheme();
+          const labels   = Array.from({ length: 24 }, (_, i) => `t-${(23 - i) * 2}`);
+          const labels30m = Array.from({ length: 15 }, (_, i) => `t-${(14 - i) * 2}`);
+          const labels4h  = Array.from({ length: 48 }, (_, i) => `t-${(47 - i) * 2}`);
+
+          const goldenCanvas = document.getElementById("chart-batch_golden");
+          if (goldenCanvas) {
+            this.chartInstances.batch_golden = new ChartJS(goldenCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  { label:"Upper limit", data:Array(24).fill(18.8), borderColor:"rgba(212,166,58,0.28)", borderWidth:1.2, borderDash:[3,3], fill:false, pointRadius:0 },
+                  { label:"Golden ref", data:[18.02,18.00,18.01,18.02,18.00,18.01,18.02,18.00,18.01,18.02,18.00,18.01,18.00,18.01,18.02,18.00,18.01,18.02,18.00,18.01,18.02,18.00,18.01,18.00], borderColor:theme.gold, backgroundColor:"rgba(212,166,58,0.10)", borderDash:[6,4], borderWidth:2.4, fill:"-1", pointRadius:0 },
+                  { label:"Lower limit", data:Array(24).fill(17.2), borderColor:"rgba(212,166,58,0.28)", borderWidth:1.2, borderDash:[3,3], backgroundColor:"rgba(212,166,58,0.07)", fill:"-1", pointRadius:0 }
+                ]
+              },
+              options: this.baseChartOptions(16, 20, false, "°")
+            });
+          }
+
+          const currentCanvas = document.getElementById("chart-batch_current");
+          if (currentCanvas) {
+            this.chartInstances.batch_current = new ChartJS(currentCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  { label:"Golden ref", data:[18,18,18,18,18.1,18.1,18.1,18.1,18.1,18.1,18.2,18.2,18.2,18.2,18.2,18.2,18.3,18.3,18.3,18.3,18.3,18.3,18.3,18.3], borderColor:theme.gold, backgroundColor:"rgba(0,0,0,0)", borderDash:[6,4], borderWidth:2.2, fill:false, pointRadius:0, order:1 },
+                  { label:"Live temp", data:[18,18,18.1,18.2,18.4,18.7,19.1,19.7,20.5,21.4,22.4,23.4,24.3,25.1,25.9,26.5,27.1,27.6,28.0,28.4,28.7,28.9,29.0,29.1], borderColor:theme.live, backgroundColor:theme.fillBlue, borderWidth:2.4, fill:"origin", pointRadius:0 }
+                ]
+              },
+              plugins: [this.chartPluginDeviationMarker(9), this.chartPluginCurrentMarker(1)],
+              options: this.baseChartOptions(16, 32, true, "°")
+            });
+          }
+
+          const qualityCanvas = document.getElementById("chart-quality_seal");
+          if (qualityCanvas) {
+            this.chartInstances.quality_seal = new ChartJS(qualityCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  { label:"Golden ref", data:[22.2,22.2,22.1,22.2,22.2,22.1,22.2,22.1,22.2,22.2,22.1,22.2,22.1,22.2,22.2,22.1,22.2,22.1,22.2,22.2,22.1,22.2,22.1,22.2], borderColor:theme.gold, borderDash:[6,4], borderWidth:2, fill:false, pointRadius:0 },
+                  { label:"Seal index", data:[22.3,22.2,22.1,21.9,21.6,21.2,20.7,20.0,19.2,18.3,17.2,16.1,14.9,13.7,12.5,11.4,10.4,9.6,8.9,8.4,8.0,7.7,7.5,7.4], borderColor:theme.live, backgroundColor:theme.fillBlue, borderWidth:2.4, fill:"origin", pointRadius:0 },
+                  { label:"Upper limit", data:Array(24).fill(22.5), borderColor:theme.threshold, borderWidth:1.4, borderDash:[4,3], pointRadius:0, fill:false },
+                  { label:"Lower limit", data:Array(24).fill(16.2), borderColor:theme.threshold, borderWidth:1.4, borderDash:[4,3], backgroundColor:theme.fillThreshold, fill:"-1", pointRadius:0 },
+                  { label:"Breach", data:[null,null,null,null,null,null,null,null,null,null,null,16.1,14.9,13.7,12.5,11.4,10.4,9.6,8.9,8.4,8.0,7.7,7.5,7.4], borderColor:theme.loss, backgroundColor:theme.fillRed, borderWidth:2.4, fill:"origin", pointRadius:0 }
+                ]
+              },
+              plugins: [this.chartPluginCurrentMarker(1)],
+              options: this.baseChartOptions(4, 24, true, "")
+            });
+          }
+
+          const financeCanvas = document.getElementById("chart-impact_loss");
+          if (financeCanvas) {
+            const correctedActive = this.uiState.simulation.corrected;
+            this.chartInstances.impact_loss = new ChartJS(financeCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  { label:"Golden baseline", data:Array(24).fill(2.1), borderColor:theme.gold, borderDash:[6,4], borderWidth:2, fill:false, pointRadius:0 },
+                  { label:"Unchanged €K", data:[5,5.6,6.4,7.5,9.0,10.8,13.0,15.5,18.2,21.1,24.0,26.8,29.4,31.7,33.7,35.5,37.0,38.3,39.4,40.3,41.1,41.8,42.4,42.8], borderColor:theme.loss, backgroundColor:theme.fillRed, borderWidth:2.4, fill:"origin", pointRadius:0 },
+                  { label:"Corrected €K", data: correctedActive ? [5,5.2,5.4,5.7,6.1,6.5,7.0,7.5,8.1,8.7,9.3,9.9,10.5,11.1,11.7,12.3,12.9,13.5,14.1,14.7,15.2,15.7,16.2,16.6] : [], borderColor:theme.recovery, backgroundColor:theme.fillGreen, borderWidth:2.4, fill: correctedActive ? "origin" : false, pointRadius:0 }
+                ]
+              },
+              options: this.baseChartOptions(0, 48, true, "K")
+            });
+          }
+
+          const bindRangeButtons = (nodeId, chart, rangeData) => {
+            const container = document.getElementById(`spark-range-${nodeId}`);
+            if (!container) return;
+            container.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const btn = e.target.closest(".spark-range-btn");
+              if (!btn) return;
+              const range = btn.getAttribute("data-range");
+              const d     = rangeData[range];
+              if (!d) return;
+              container.querySelectorAll(".spark-range-btn").forEach((b) => b.classList.remove("active"));
+              btn.classList.add("active");
+              chart.data.labels = d.labels;
+              d.datasets.forEach((data, i) => {
+                if (chart.data.datasets[i]) chart.data.datasets[i].data = data;
+              });
+              chart.update("none");
+            });
+          };
+
+          if (this.chartInstances.batch_current) {
+            const live1h  = [18,18,18.1,18.2,18.4,18.7,19.1,19.7,20.5,21.4,22.4,23.4,24.3,25.1,25.9,26.5,27.1,27.6,28.0,28.4,28.7,28.9,29.0,29.1];
+            const gold1h  = [18,18,18,18,18.1,18.1,18.1,18.1,18.1,18.1,18.2,18.2,18.2,18.2,18.2,18.2,18.3,18.3,18.3,18.3,18.3,18.3,18.3,18.3];
+            const normal24 = [18,18.1,18,17.9,18,18.1,18,18,17.9,18,18.1,18,17.9,18,18,18.1,18,17.9,18,18.1,18,18,17.9,18];
+            bindRangeButtons("batch_current", this.chartInstances.batch_current, {
+              "30m": { labels: labels30m, datasets: [gold1h.slice(-15), live1h.slice(-15)] },
+              "1h":  { labels,            datasets: [gold1h, live1h] },
+              "4h":  { labels: labels4h,  datasets: [[...Array(24).fill(18), ...gold1h], [...normal24, ...live1h]] }
+            });
+          }
+
+          if (this.chartInstances.quality_seal) {
+            const gold1h   = Array(24).fill(22.2);
+            const live1h   = [22.3,22.2,22.1,21.9,21.6,21.2,20.7,20.0,19.2,18.3,17.2,16.1,14.9,13.7,12.5,11.4,10.4,9.6,8.9,8.4,8.0,7.7,7.5,7.4];
+            const upper1h  = Array(24).fill(22.5);
+            const lower1h  = Array(24).fill(16.2);
+            const breach1h = [null,null,null,null,null,null,null,null,null,null,null,16.1,14.9,13.7,12.5,11.4,10.4,9.6,8.9,8.4,8.0,7.7,7.5,7.4];
+            const stable24 = Array.from({length:24},(_,i)=>22.2+(i%3===0?0.1:i%3===1?-0.1:0));
+            bindRangeButtons("quality_seal", this.chartInstances.quality_seal, {
+              "30m": { labels: labels30m, datasets: [gold1h.slice(-15), live1h.slice(-15), upper1h.slice(-15), lower1h.slice(-15), breach1h.slice(-15)] },
+              "1h":  { labels,            datasets: [gold1h, live1h, upper1h, lower1h, breach1h] },
+              "4h":  { labels: labels4h,  datasets: [[...stable24,...gold1h],[...stable24,...live1h],Array(48).fill(22.5),Array(48).fill(16.2),[...Array(35).fill(null),...breach1h.slice(11)]] }
+            });
+          }
+
+          if (this.chartInstances.impact_loss) {
+            const correctedActive = this.uiState.simulation.corrected;
+            const gold1h = Array(24).fill(2.1);
+            const loss1h = [5,5.6,6.4,7.5,9.0,10.8,13.0,15.5,18.2,21.1,24.0,26.8,29.4,31.7,33.7,35.5,37.0,38.3,39.4,40.3,41.1,41.8,42.4,42.8];
+            const corr1h = correctedActive ? [5,5.2,5.4,5.7,6.1,6.5,7.0,7.5,8.1,8.7,9.3,9.9,10.5,11.1,11.7,12.3,12.9,13.5,14.1,14.7,15.2,15.7,16.2,16.6] : [];
+            const flat24 = Array.from({length:24},(_,i)=>2.1+(i%4===0?0.1:0));
+            bindRangeButtons("impact_loss", this.chartInstances.impact_loss, {
+              "30m": { labels: labels30m, datasets: [gold1h.slice(-15), loss1h.slice(-15), correctedActive ? corr1h.slice(-15) : []] },
+              "1h":  { labels,            datasets: [gold1h, loss1h, corr1h] },
+              "4h":  { labels: labels4h,  datasets: [Array(48).fill(2.1), [...flat24,...loss1h], correctedActive ? [...flat24,...corr1h] : []] }
+            });
+          }
+
+          const tensionCanvas = document.getElementById("chart-sensor_tension");
+          if (tensionCanvas) {
+            this.chartInstances.sensor_tension = new ChartJS(tensionCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  { label:"Normal band", data:Array(24).fill(100), borderColor:theme.gold, borderDash:[5,4], borderWidth:1.6, fill:false, pointRadius:0 },
+                  { label:"Tension %", data:[100,100,100.2,100.1,100,100.2,100.3,100.4,100.6,100.8,101.2,101.7,102.2,102.8,103.4,104.0,104.7,105.4,106.0,106.6,107.1,107.4,107.7,107.8], borderColor:theme.loss, backgroundColor:theme.fillRed, borderWidth:2.4, fill:"1", pointRadius:0 }
+                ]
+              },
+              options: this.baseChartOptions(98, 110, true, "%")
+            });
+          }
+
+          const heaterCanvas = document.getElementById("chart-control_heater");
+          if (heaterCanvas) {
+            this.chartInstances.control_heater = new ChartJS(heaterCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  { label:"Setpoint 183°C", data:Array(24).fill(183), borderColor:theme.gold, borderDash:[5,4], borderWidth:1.6, fill:false, pointRadius:0 },
+                  { label:"Actual °C", data:[183,183,183.1,183.1,183.2,183.3,183.4,183.5,183.6,183.8,184.0,184.2,184.5,184.7,184.9,185.0,185.1,185.2,185.2,185.2,185.2,185.2,185.2,185.2], borderColor:"#f97316", backgroundColor:"rgba(249,115,22,0.12)", borderWidth:2.4, fill:"1", pointRadius:0 }
+                ]
+              },
+              options: this.baseChartOptions(181, 187, true, "°C")
+            });
+          }
+
+          const foilCanvas = document.getElementById("chart-material_foil");
+          if (foilCanvas) {
+            this.chartInstances.material_foil = new ChartJS(foilCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  { label:"Expected", data:Array(24).fill(100), borderColor:theme.gold, borderDash:[5,4], borderWidth:1.6, fill:false, pointRadius:0 },
+                  { label:"Foil tension %", data:[100,100.1,100,100.2,100.3,100.4,100.6,100.9,101.2,101.7,102.2,102.8,103.4,104.0,104.6,105.1,105.6,106.0,106.4,106.7,107.0,107.2,107.4,107.6], borderColor:theme.live, backgroundColor:theme.fillBlue, borderWidth:2.2, fill:"1", pointRadius:0 }
+                ]
+              },
+              options: this.baseChartOptions(98, 110, true, "%")
+            });
+          }
+        }
+
+        _resizeCharts() {
+          Object.values(this.chartInstances).forEach((c) => {
+            try { if (c && c.canvas && c.canvas.isConnected) c.resize(); } catch (_) {}
+          });
+        }
+
+        _tickCharts() {
+          const batchChart = this.chartInstances.batch_current;
+          if (batchChart && batchChart.canvas && batchChart.canvas.isConnected && batchChart.data?.datasets?.[1]?.data) {
+            const ds   = batchChart.data.datasets[1].data;
+            const next = Math.max(18, Math.min(31, ds[ds.length - 1] + (Math.random() - 0.30) * 0.55));
+            ds.push(Number(next.toFixed(2)));
+            ds.shift();
+            try { batchChart.update("none"); } catch (_) {}
+          }
+          const qualityChart = this.chartInstances.quality_seal;
+          if (qualityChart && qualityChart.canvas && qualityChart.canvas.isConnected && qualityChart.data?.datasets?.[0]?.data) {
+            const q     = qualityChart.data.datasets[0].data;
+            const nextQ = Math.max(4, Math.min(24, q[q.length - 1] + (Math.random() - 0.68) * 0.52));
+            q.push(Number(nextQ.toFixed(2)));
+            q.shift();
+            const breach = q.map((v) => (v !== null && (v < 16.2 || v > 22.5) ? v : null));
+            if (qualityChart.data.datasets[3]) qualityChart.data.datasets[3].data = breach;
+            try { qualityChart.update("none"); } catch (_) {}
+          }
+        }
+
+        // ── Event bindings ────────────────────────────────────────────
+
+        _bindActionEvents() {
+          if (!this.actionsBar) return;
+          const focusMap = {
+            reduce_speed: "batch_current",
+            adjust_heater:"control_heater",
+            log_mes:      "deviation",
+            notify_qa:    "deviation",
+            update_erp:   "impact_loss"
+          };
+          this.actionsBar.querySelectorAll(".action-btn").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const action = btn.getAttribute("data-action");
+              const root   = focusMap[action] || "deviation";
+              this.enterFocusMode(root);
+              btn.classList.add("active");
+              if (!btn.dataset.confirming) {
+                btn.dataset.confirming = "1";
+                btn.classList.add("queued");
+                setTimeout(() => {
+                  btn.classList.remove("queued");
+                  delete btn.dataset.confirming;
+                }, 1800);
+              }
+            });
+          });
+        }
+
+        _bindFocusExit() {
+          if (this.focusExit) {
+            this.focusExit.addEventListener("click", (e) => {
+              e.stopPropagation();
+              this.exitFocusMode();
+            });
+          }
+          window.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && this.uiState.actionMode && !this.dragging) this.exitFocusMode();
+          });
+        }
+
+        _bindHotkeys() {
+          window.addEventListener("keydown", (e) => {
+            if (e.metaKey || e.ctrlKey) {
+              if (e.key.toLowerCase() === "k") {
+                e.preventDefault();
+                this._openCommandSurface();
+              }
+              return;
+            }
+            if (/^[1-5]$/.test(e.key)) {
+              const idx = Number(e.key) - 1;
+              const btn = this.actionsBar?.querySelectorAll(".action-btn")?.[idx];
+              if (btn) btn.click();
+            }
+            if (e.key.toLowerCase() === "f") {
+              if (this.uiState.actionMode) this.exitFocusMode();
+              else this.enterFocusMode("deviation");
+            }
+          });
+        }
+
+        _bindCommandSurface() {
+          if (!this.commandBtn || !this.commandMenu || !this.commandInput || !this.commandList) return;
+          const commands = [
+            "show drift path","isolate root cause","show affected systems",
+            "compare to golden batch","simulate correction","explain deviation"
+          ];
+          const renderList = (q = "") => {
+            const pool     = [...this.commandHistory.slice(-3).reverse(), ...commands];
+            const uniq     = Array.from(new Set(pool));
+            const filtered = uniq.filter((c) => c.toLowerCase().includes(q.toLowerCase())).slice(0, 8);
+            this.commandList.innerHTML = filtered.map((c) => `<button class="command-item" data-cmd="${c}">${c}</button>`).join("");
+            this.commandList.querySelectorAll(".command-item").forEach((el) => {
+              el.addEventListener("click", () => {
+                this._executeGraphCommand(el.getAttribute("data-cmd") || "");
+                this._closeCommandSurface();
+              });
+            });
+          };
+          this.commandBtn.addEventListener("click", () => this._openCommandSurface());
+          this.commandInput.addEventListener("input", () => renderList(this.commandInput.value));
+          this.commandInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              const cmd = this.commandInput.value.trim();
+              if (cmd) { this._executeGraphCommand(cmd); this._closeCommandSurface(); }
+            }
+          });
+          document.addEventListener("click", (e) => {
+            if (!this.commandMenu.classList.contains("show")) return;
+            if (e.target.closest("#commandMenu") || e.target.closest("#commandBtn")) return;
+            this._closeCommandSurface();
+          });
+          this._renderCommandList = renderList;
+        }
+
+        _bindTimelineEvents() {
+          const timeline = document.getElementById("timeline");
+          if (!timeline) return;
+          timeline.querySelectorAll(".event").forEach((el) => {
+            el.addEventListener("click", () => {
+              const ids = (el.getAttribute("data-focus") || "").split(",").map((s) => s.trim()).filter(Boolean);
+              if (!ids.length) return this.enterFocusMode("deviation");
+              this.enterFocusMode(ids[0], { seedIds: ids.slice(1) });
+            });
+          });
+        }
+
+        _openCommandSurface() {
+          if (!this.commandMenu) return;
+          this.commandMenu.classList.add("show");
+          this._renderCommandList?.("");
+          requestAnimationFrame(() => this.commandInput?.focus());
+        }
+
+        _closeCommandSurface() {
+          if (!this.commandMenu) return;
+          this.commandMenu.classList.remove("show");
+          if (this.commandInput) this.commandInput.value = "";
+        }
+
+        _executeGraphCommand(cmdRaw) {
+          const cmd = cmdRaw.toLowerCase().trim();
+          if (!cmd) return;
+          this.commandHistory.push(cmdRaw);
+          if (cmd.includes("drift path"))         return this.enterFocusMode("sensor_tension", { seedIds: ["material_foil","control_heater","asset_sealer","deviation"] });
+          if (cmd.includes("root cause"))          return this.enterFocusMode("sensor_tension", { seedIds: ["material_foil","control_heater"] });
+          if (cmd.includes("affected systems"))    return this.enterFocusMode("impact_loss",    { seedIds: ["sys_mes","sys_qa","sys_erp"] });
+          if (cmd.includes("golden"))              return this.enterFocusMode("batch_golden",   { seedIds: ["batch_current"] });
+          if (cmd.includes("simulate correction")) return this.enterFocusMode("sim_corrected",  { seedIds: ["impact_loss","batch_current"] });
+          if (cmd.includes("explain deviation"))   return this.enterFocusMode("deviation",      { seedIds: ["asset_sealer","quality_seal"] });
+          this.enterFocusMode("deviation");
+        }
+      } // end Renderer
+
+      // ─────────────────────────────────────────────────────────────────
+      // Utility functions
+      // ─────────────────────────────────────────────────────────────────
+      function startClock() {
+        const clock = document.getElementById("clock");
+        const tick  = () => { clock.textContent = new Date().toLocaleTimeString([], { hour12: false }); };
+        tick();
+        setInterval(tick, 1000);
+      }
+
+      function initThemeToggle(renderer) {
+        const btn  = document.getElementById("themeToggle");
+        if (!btn) return;
+        const saved  = localStorage.getItem(THEME_KEY);
+        const isDark = saved === "dark";
+        document.body.classList.toggle("dark", isDark);
+        btn.dataset.mode = isDark ? "Night" : "Day";
+        btn.addEventListener("click", () => {
+          const nextDark = !document.body.classList.contains("dark");
+          document.body.classList.toggle("dark", nextDark);
+          localStorage.setItem(THEME_KEY, nextDark ? "dark" : "light");
+          btn.dataset.mode = nextDark ? "Night" : "Day";
+          renderer.scheduleRender();
+        });
+      }
+
+      function initSimToggle(uiState, renderer) {
+        const btn = document.getElementById("simToggle");
+        if (!btn) return;
+        const update = () => { btn.dataset.mode = uiState.simulation.corrected ? "Corrected" : "Unchanged"; };
+        update();
+        btn.addEventListener("click", () => {
+          uiState.simulation.corrected = !uiState.simulation.corrected;
+          update();
+          renderer.scheduleRender();
+        });
+      }
+
+      function initDensityToggle(renderer) {
+        const btn  = document.getElementById("densityToggle");
+        if (!btn) return;
+        const saved   = localStorage.getItem(DENSITY_KEY);
+        const compact = saved === "compact";
+        document.body.classList.toggle("compact", compact);
+        btn.dataset.mode = compact ? "Compact" : "Expanded";
+        btn.addEventListener("click", () => {
+          const nextCompact = !document.body.classList.contains("compact");
+          document.body.classList.toggle("compact", nextCompact);
+          localStorage.setItem(DENSITY_KEY, nextCompact ? "compact" : "expanded");
+          btn.dataset.mode = nextCompact ? "Compact" : "Expanded";
+          renderer?.scheduleRender();
+          requestAnimationFrame(() => renderer?.fitToScene(false));
+        });
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // Boot sequence
+      // ─────────────────────────────────────────────────────────────────
+      function boot() {
+        startClock();
+        if (!window.Chart) {
+          console.error("Chart.js failed to load. Verify chart.umd.min.js is reachable.");
+        }
+
+        const pkg        = new PlantKnowledgeGraph();
+        seedGraph(pkg);
+
+        const liveSignal = new LiveSignalModel(pkg);
+        const incident   = new IncidentEngine(pkg);
+        const decision   = new DecisionEngine(pkg, incident, liveSignal);
+        const projection = new WhiteboardProjectionEngine(pkg, ZONE_MAP);
+        const uiState    = new UIState();
+        const renderer   = new Renderer(pkg, liveSignal, incident, decision, projection, uiState);
+
+        initThemeToggle(renderer);
+        initDensityToggle(renderer);
+        initSimToggle(uiState, renderer);
+
+        renderer.boot();
+      }
+
+      boot();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,3223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KairOS Dynamic Plant Graph</title>
+  <style>
+    :root {
+      --bg: #f1f2f7;
+      --panel: #f6f7fb;
+      --text: #1d1b20;
+      --muted: #625b71;
+
+      --material: #6750a4;
+      --sensor: #006a6a;
+      --control: #386a20;
+      --asset: #00639b;
+      --deviation: #ba1a1a;
+      --quality: #7a5900;
+      --batch: #4a4458;
+      --financial: #4d5d2a;
+      --simulation: #7e57c2;
+      --system: #5f6368;
+
+      --gold-ref: #b68c2d;
+      --live-blue: #2b66d9;
+      --threshold: #7b8190;
+      --loss: #ba1a1a;
+      --recovery: #2e7d32;
+
+      --radius: 10px;
+      --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      font-size: 16px;
+      overflow: hidden;
+      background: var(--bg);
+      color: #1e293b;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: 64px 42px 40px 1fr 72px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      border-bottom: 1px solid rgba(99, 106, 128, 0.16);
+      background: rgba(246, 247, 252, 0.72);
+      backdrop-filter: blur(18px) saturate(130%);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 20;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .mark {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid #6076c2;
+      background: #ebf0ff;
+    }
+    .brand b { font-size: 22px; font-weight: 650; letter-spacing: 0.01em; }
+    .context {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .command {
+      height: 40px;
+      width: min(640px, 58vw);
+      border: 1px solid rgba(99, 106, 128, 0.2);
+      border-radius: 999px;
+      background: rgba(251, 252, 255, 0.58);
+      backdrop-filter: blur(14px) saturate(125%);
+      -webkit-backdrop-filter: blur(10px);
+      color: #4a5163;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .command:focus-visible,
+    .action-btn:focus-visible,
+    .theme-toggle:focus-visible,
+    .focus-exit:focus-visible,
+    .insight-chip:focus-visible {
+      outline: 2px solid #7aa2ff;
+      outline-offset: 2px;
+    }
+
+    .command-menu {
+      position: absolute;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(680px, 72vw);
+      border: 1px solid rgba(99, 106, 128, 0.18);
+      border-radius: 14px;
+      background: rgba(247, 248, 253, 0.76);
+      backdrop-filter: blur(18px) saturate(120%);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+      padding: 10px;
+      display: none;
+      z-index: 40;
+    }
+    .command-menu.show { display: block; }
+    .command-menu input {
+      width: 100%;
+      height: 40px;
+      border: 1px solid rgba(99, 106, 128, 0.18);
+      border-radius: 10px;
+      padding: 0 12px;
+      font-size: 14px;
+      background: rgba(255,255,255,0.62);
+      color: #1e293b;
+    }
+    .command-list {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+      max-height: 220px;
+      overflow: auto;
+    }
+    .command-item {
+      border: 1px solid rgba(99, 106, 128, 0.18);
+      border-radius: 10px;
+      background: rgba(251,252,255,0.58);
+      color: #3b4253;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 10px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .status { justify-self: end; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #44536e; }
+    .live {
+      border: 1px solid rgba(103, 80, 164, 0.24);
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: rgba(242, 236, 255, 0.64);
+      color: #5e46a5;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .live i { width: 7px; height: 7px; border-radius: 50%; background: #5c78de; display: inline-block; }
+
+    .board {
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(95, 106, 126, 0.16) 1px, transparent 1.2px) 0 0 / 22px 22px,
+        radial-gradient(circle at 1px 1px, rgba(122, 116, 152, 0.06) 1px, transparent 1.2px) 11px 11px / 22px 22px,
+        linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(241,242,247,0.14) 100%),
+        var(--bg);
+    }
+    .timeline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-bottom: 1px solid rgba(99, 106, 128, 0.14);
+      background: rgba(246, 247, 252, 0.54);
+      backdrop-filter: blur(14px) saturate(120%);
+      -webkit-backdrop-filter: blur(8px);
+      overflow-x: auto;
+      white-space: nowrap;
+      z-index: 15;
+    }
+    .timeline .event {
+      border: 1px solid rgba(99, 106, 128, 0.16);
+      border-radius: 999px;
+      background: rgba(251,252,255,0.52);
+      color: #454d5f;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .timeline .event b {
+      color: #24364f;
+      margin-right: 6px;
+      font-weight: 700;
+    }
+
+    #viewport {
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 0;
+    }
+
+    #edgeSvg, #nodeLayer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    #edgeSvg { pointer-events: none; }
+
+    .node {
+      position: absolute;
+      border-radius: 24px;
+      border: 1px solid rgba(73, 69, 79, 0.16);
+      background: linear-gradient(160deg, rgba(255,255,255,0.86) 0%, rgba(252,248,255,0.76) 100%);
+      backdrop-filter: blur(18px) saturate(130%);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow:
+        0 18px 36px rgba(30, 27, 32, 0.12),
+        inset 0 1px 0 rgba(255,255,255,0.76);
+      padding: 26px 28px 24px;
+      font-size: 15px;
+      line-height: 1.65;
+      color: #1e293b;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+      overflow: hidden;
+      transition:
+        transform 120ms ease,
+        box-shadow 120ms ease,
+        opacity 120ms ease;
+      min-height: 220px;
+    }
+    .node.dragging { cursor: grabbing; }
+    .node:hover {
+      box-shadow:
+        0 20px 42px rgba(30, 27, 32, 0.16),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+    .node:active {
+      cursor: grabbing;
+      transform: scale(1.02);
+    }
+
+    .node::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      border-radius: 24px 0 0 24px;
+      background: var(--accent, #90a0b9);
+    }
+
+    .node::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      top: 0;
+      height: 2px;
+      border-radius: 0 0 4px 4px;
+      background: var(--accent, #90a0b9);
+      opacity: 0.35;
+    }
+
+    .anchor-card {
+      min-width: 520px;
+      border-radius: 24px;
+    }
+    .process-card {
+      min-width: 400px;
+      border-radius: 24px;
+    }
+    .simulation-card {
+      min-width: 380px;
+      border-style: dashed;
+      background: linear-gradient(180deg, rgba(245, 241, 255, 0.82) 0%, rgba(238, 233, 255, 0.74) 100%);
+      border-radius: 24px;
+    }
+    .system-card {
+      min-width: 300px;
+      min-height: 130px;
+      padding: 16px 16px 14px 16px;
+      border-radius: 20px;
+    }
+    .system-card .spark { display: none; }
+    .system-card .metrics { gap: 6px; margin-bottom: 0; }
+    .system-card .metric { font-size: 15px; }
+    .system-card .metric b { font-size: 18px; }
+
+    .tier-primary {
+      border-color: #b2c6de;
+      box-shadow: 0 28px 56px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255,255,255,0.82);
+    }
+    .tier-secondary {
+      border-color: #cfdae8;
+      box-shadow: 0 14px 26px rgba(15, 23, 42, 0.11), inset 0 1px 0 rgba(255,255,255,0.68);
+    }
+    .tier-tertiary {
+      border-color: #dde5ee;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.58);
+      opacity: 0.78;
+    }
+    .tier-endpoint {
+      border-color: #e0e7f0;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.56);
+      opacity: 0.72;
+    }
+    .operational-card .insight-chip { opacity: 0.92; }
+    .analytical-card .insight-chip {
+      border-color: #ccdaf7;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.7),
+        0 5px 14px rgba(21, 43, 82, 0.12);
+    }
+    .analytical-card .spark { border-top-color: #d5e0f2; }
+    .endpoint-card .sub { font-size: 15px; }
+    .endpoint-card .metrics { margin-bottom: 0; gap: 6px; }
+    .endpoint-card .metric { font-size: 15px; }
+    .endpoint-card .metric b { font-size: 14px; }
+
+    .node-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      gap: 14px;
+    }
+    .node-header-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .icon-chip {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border: 1.5px solid rgba(0, 0, 0, 0.08);
+      background: var(--icon-bg, #edf2fb);
+    }
+    .icon-chip svg {
+      width: 22px;
+      height: 22px;
+      display: block;
+    }
+
+    .node-title,
+    .node .title {
+      font-size: clamp(30px, 2.8vw, 42px);
+      font-weight: 750;
+      line-height: 1.18;
+      letter-spacing: 0.01em;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+
+    .tier-primary .node-title,
+    .tier-primary .title {
+      font-size: 24px;
+      font-weight: 760;
+    }
+
+    .tier-secondary .node-title,
+    .tier-secondary .title {
+      font-size: 20px;
+    }
+
+    .tier-tertiary .node-title,
+    .tier-tertiary .title {
+      font-size: 17px;
+    }
+
+    .tier-endpoint .node-title,
+    .tier-endpoint .title {
+      font-size: 16px;
+    }
+
+    .node .section-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-weight: 750;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .node-status,
+    .state {
+      font-size: clamp(13px, 1.1vw, 17px);
+      font-weight: 750;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: 1px solid var(--state-border, #cbd5e1);
+      color: var(--state-fg, #5f6f89);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .state i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; display: inline-block; }
+    .node-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .signal-age {
+      font-size: clamp(14px, 1.2vw, 18px);
+      color: #6b7c95;
+      font-weight: 650;
+      margin-top: 2px;
+      margin-bottom: 2px;
+    }
+    .signal-age.stale { color: #a16207; }
+    .sub { font-size: clamp(18px, 1.6vw, 26px); font-weight: 600; line-height: 1.5; color: #4b5d74; margin-bottom: 0; }
+
+    .metrics { display: grid; gap: 8px; margin-top: 0; margin-bottom: 16px; }
+    .node .metric {
+      display: flex;
+      justify-content: space-between;
+      font-size: clamp(16px, 1.4vw, 22px);
+      font-weight: 600;
+      color: #475569;
+      margin-top: 0;
+    }
+    .node .metric b {
+      font-size: clamp(28px, 2.4vw, 38px);
+      font-weight: 780;
+      line-height: 1.08;
+      color: #0f172a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      font-size: clamp(17px, 1.5vw, 24px);
+      font-weight: 650;
+      color: #475569;
+    }
+    .metric b {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: clamp(30px, 2.6vw, 40px);
+      font-weight: 780;
+      line-height: 1.08;
+      color: #0f172a;
+    }
+
+    .metric-probability {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #475569;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      border-top: 1px dashed rgba(100,116,139,0.22);
+      padding-top: 8px;
+      margin-top: 2px;
+    }
+    .metric-probability b {
+      font-size: 20px;
+      font-weight: 750;
+      color: #0f172a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .simulation-card .node-title,
+    .simulation-card .title {
+      font-size: 18px;
+      font-weight: 720;
+    }
+
+    .node.prob-high:not(.focus-root):not(.focal) { transform: scale(1.04); }
+    .node.prob-medium:not(.focus-root):not(.focal) { transform: scale(1.02); }
+
+    .insight-chip {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      width: 100%;
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid #d7e3ff;
+      background: linear-gradient(180deg, rgba(248,251,255,0.96) 0%, rgba(238,244,255,0.90) 100%);
+      color: #24364f;
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1.48;
+      text-align: left;
+      cursor: pointer;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.72),
+        0 4px 12px rgba(21, 43, 82, 0.08);
+    }
+
+    .insight-chip i {
+      width: 10px;
+      height: 10px;
+      margin-top: 5px;
+      border-radius: 50%;
+      background: #3b66c2;
+      display: inline-block;
+      box-shadow: 0 0 0 8px rgba(59,102,194,0.10);
+      flex: 0 0 10px;
+    }
+
+    .insight-chip strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 780;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: #5b74a8;
+      margin-bottom: 4px;
+    }
+
+    @keyframes meiPulse {
+      0% { box-shadow: 0 0 0 0 rgba(59,102,194,0.35); }
+      70% { box-shadow: 0 0 0 8px rgba(59,102,194,0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,102,194,0); }
+    }
+
+    .spark-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 18px;
+      margin-bottom: 4px;
+      gap: 8px;
+    }
+    .spark-ref-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #b68c2d;
+      opacity: 0.82;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .spark-ref-label::before {
+      content: "";
+      display: inline-block;
+      width: 20px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 1px;
+      opacity: 0.65;
+    }
+    .spark-range { display: flex; gap: 3px; }
+    .spark-range-btn {
+      border: 1px solid rgba(99,106,128,0.18);
+      border-radius: 999px;
+      background: transparent;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 2px 8px;
+      cursor: pointer;
+      transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+    }
+    .spark-range-btn:hover { border-color: rgba(47,107,255,0.22); color: #3b5fc0; }
+    .spark-range-btn.active {
+      background: rgba(47,107,255,0.10);
+      border-color: rgba(47,107,255,0.30);
+      color: #2f6bff;
+    }
+    body.dark .spark-ref-label { color: #e0b85a; opacity: 0.7; }
+    body.dark .spark-range-btn { color: #94a3b8; border-color: rgba(208,188,255,0.18); }
+    body.dark .spark-range-btn:hover { border-color: rgba(137,180,255,0.36); color: #89b4ff; }
+    body.dark .spark-range-btn.active { background: rgba(105,147,255,0.16); border-color: rgba(105,147,255,0.38); color: #89b4ff; }
+
+    .spark {
+      margin-top: 0;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 16px;
+      width: 100%;
+      min-width: 340px;
+      height: 240px;
+      position: relative;
+    }
+
+    .spark canvas { width: 100%; height: 100%; display: block; }
+    .anchor-card .spark { width: 600px; height: 280px; }
+    .process-card .spark { width: 520px; height: 300px; }
+    .simulation-card .spark { width: 480px; height: 220px; }
+    #node-batch_current .spark { width: 660px; height: 320px; }
+    #node-quality_seal .spark { width: 620px; height: 310px; }
+    #node-impact_loss .spark { width: 620px; height: 320px; }
+    #node-batch_golden .spark { width: 580px; height: 240px; }
+    #node-sensor_tension .spark { width: 400px; height: 200px; }
+    #node-control_heater .spark { width: 400px; height: 200px; }
+    #node-material_foil .spark { width: 400px; height: 200px; }
+    .system-card .spark { display: none; }
+
+    .primary-analytical {
+      box-shadow: 0 14px 34px rgba(15,23,42,0.12);
+      border-color: #cfd9e8;
+    }
+
+    .theme-toggle {
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 10px;
+      padding: 6px 10px;
+      background: rgba(242, 246, 255, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #3f5ea5;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .theme-toggle::after {
+      content: attr(data-mode);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      height: 20px;
+      border-radius: 999px;
+      background: rgba(63, 94, 165, 0.12);
+      color: #2f4f8f;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .edge { fill: none; opacity: 0.32; transition: opacity 120ms ease; stroke-linecap: round; stroke-linejoin: round; }
+    .edge.material   { stroke: #6750a4; stroke-width: 3px; }
+    .edge.causal     { stroke: #625b71; stroke-width: 2px; }
+    .edge.deviation  { stroke: #ba1a1a; stroke-width: 3.5px; stroke-dasharray: 8 5; }
+    .edge.control    { stroke: #386a20; stroke-width: 2.5px; }
+    .edge.simulation { stroke: #7e57c2; stroke-width: 2.5px; stroke-dasharray: 4 6; opacity: 0.38; }
+    .edge.system     { stroke: #cac4d0; stroke-width: 1.5px; opacity: 0.22; }
+    .edge.spine         { opacity: 0.82; stroke-width: 5px; }
+    .edge.primary-spine { opacity: 1;    stroke-width: 7px; }
+    .edge.branch        { opacity: 0.52; stroke-width: 3px; }
+    .edge.exec          { opacity: 0.18; stroke-width: 1.5px; }
+    .edge.reference     { opacity: 0.10; stroke-width: 1.5px; stroke-dasharray: 5 5; }
+    .edge.focused {
+      opacity: 1 !important;
+      stroke: #6750a4 !important;
+      stroke-width: 4px !important;
+      filter: drop-shadow(0 0 4px rgba(103,80,164,0.45));
+    }
+    .edge.focused.primary-spine {
+      stroke-width: 8px !important;
+      filter: drop-shadow(0 0 6px rgba(103,80,164,0.55));
+    }
+    .edge.focused.spine {
+      stroke-width: 6px !important;
+    }
+    .edge.focused.golden-ref {
+      stroke: #b68c2d !important;
+      filter: drop-shadow(0 0 4px rgba(182,140,45,0.40));
+    }
+    .edge.dimmed { opacity: 0.05 !important; }
+    .fork-link {
+      fill: none;
+      stroke: #8a74ee;
+      stroke-width: 2px;
+      stroke-dasharray: 4 4;
+      opacity: 0.78;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+    .fork-link.unchanged { stroke: #b56a79; }
+    .fork-link.corrected { stroke: #7a68e8; }
+    .edge-label {
+      font-size: 18px;
+      font-weight: 700;
+      fill: #334155;
+      opacity: 0.72;
+      pointer-events: none;
+      transition: opacity 120ms ease;
+      letter-spacing: 0.01em;
+    }
+    .edge-label.focused { opacity: 1; }
+    .edge-prob-label {
+      font-size: 16px;
+      fill: #475569;
+      opacity: 0.80;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      pointer-events: none;
+    }
+    .fork-label {
+      font-size: 16px;
+      fill: #6c5db8;
+      opacity: 0.94;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    .fork-label.unchanged { fill: #9b5662; }
+    .fork-label.corrected { fill: #5d6cb6; }
+    .fork-junction {
+      fill: #9a76ff;
+      opacity: 0.72;
+      pointer-events: none;
+    }
+
+    .node.focal {
+      opacity: 1 !important;
+      transform: scale(1.02);
+      border-color: rgba(103,80,164,0.40) !important;
+      box-shadow:
+        0 0 0 1.5px rgba(103,80,164,0.28),
+        0 16px 40px rgba(15,23,42,0.18),
+        inset 0 1px 0 rgba(255,255,255,0.9);
+      z-index: 8;
+    }
+    .node.focus-root {
+      opacity: 1 !important;
+      transform: scale(1.06) !important;
+      border-color: #6750a4 !important;
+      background: linear-gradient(160deg, rgba(255,255,255,0.98) 0%, rgba(243,237,247,0.96) 100%) !important;
+      box-shadow:
+        0 0 0 3px #6750a4,
+        0 0 0 8px rgba(103,80,164,0.18),
+        0 0 32px rgba(103,80,164,0.22),
+        0 28px 56px rgba(15,23,42,0.26),
+        inset 0 1px 0 rgba(255,255,255,1) !important;
+      z-index: 30;
+    }
+    .node.incident-root {
+      transform: scale(1.06);
+      box-shadow:
+        0 0 0 3px rgba(220,38,38,0.50),
+        0 0 0 7px rgba(220,38,38,0.10),
+        0 28px 56px rgba(15,23,42,0.26);
+      border-color: rgba(220,38,38,0.60);
+      z-index: 30;
+    }
+    #node-batch_golden { z-index: 1; }
+    .node.dimmed { opacity: 0.09 !important; filter: grayscale(0.6); pointer-events: none; }
+    .reference-node {
+      opacity: 0.86;
+      border-style: dashed;
+      cursor: default;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 22px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 12px 14px;
+      border-top: 1px solid rgba(99, 106, 128, 0.14);
+      background: rgba(246, 247, 252, 0.74);
+      backdrop-filter: blur(16px) saturate(120%);
+      -webkit-backdrop-filter: blur(16px);
+      align-content: center;
+    }
+    .quick-action-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-right: 18px;
+      border-right: 1px dashed rgba(99,106,128,0.2);
+      flex: 0 0 auto;
+    }
+    .quick-action-group:last-child {
+      border-right: none;
+      padding-right: 0;
+    }
+    .quick-action-group .group-label {
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    body.compact .node { padding: 18px 20px 16px; font-size: 14px; }
+    body.compact .node .title, body.compact .node-title { font-size: 22px; }
+    body.compact .spark { height: 190px; }
+    body.compact .anchor-card .spark { height: 180px; }
+    body.compact .process-card .spark { height: 200px; }
+
+    /* ── Responsive font scaling: smaller viewport = lower fit-zoom = bigger source fonts ── */
+    @media (max-width: 1600px) {
+      .node-title, .node .title { font-size: clamp(32px, 3.2vw, 48px); }
+      .sub { font-size: clamp(20px, 1.9vw, 30px); }
+      .node .metric { font-size: clamp(18px, 1.6vw, 26px); }
+      .node .metric b { font-size: clamp(30px, 2.8vw, 42px); }
+      .metric { font-size: clamp(19px, 1.8vw, 28px); }
+      .metric b { font-size: clamp(32px, 3.0vw, 46px); }
+    }
+    @media (max-width: 1280px) {
+      .node-title, .node .title { font-size: clamp(36px, 3.8vw, 56px); }
+      .sub { font-size: clamp(22px, 2.2vw, 34px); }
+      .node .metric { font-size: clamp(20px, 1.9vw, 28px); }
+      .node .metric b { font-size: clamp(32px, 3.2vw, 48px); }
+      .metric { font-size: clamp(21px, 2.0vw, 32px); }
+      .metric b { font-size: clamp(34px, 3.4vw, 52px); }
+    }
+
+    /* ── Compact card: full text, chart hidden ── */
+    .compact-card {
+      min-width: 340px;
+    }
+    .compact-card .spark { display: none; }
+    .compact-card .extra-detail {
+      display: none;
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.5;
+      color: #5f6f89;
+      border-top: 1px dashed rgba(100,116,139,0.24);
+      padding-top: 10px;
+    }
+
+    /* ── Expanded: reveal chart + extra detail ── */
+    .compact-card.expanded { max-width: none; }
+    .compact-card.expanded .spark { display: block; }
+    .compact-card.expanded .extra-detail { display: block; }
+
+    .action-btn {
+      border: 1px solid rgba(99, 106, 128, 0.2);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(251,252,255,0.7) 0%, rgba(241,244,249,0.62) 100%);
+      backdrop-filter: blur(14px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px);
+      color: #32394a;
+      padding: 12px 15px;
+      font-size: 16px;
+      font-weight: 650;
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(33, 43, 69, 0.08), inset 0 1px 0 rgba(255,255,255,0.72);
+      flex: 0 0 auto;
+      min-width: 230px;
+      max-width: 360px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .action-btn:hover {
+      background: linear-gradient(180deg, rgba(255,255,255,0.76) 0%, rgba(245,247,252,0.68) 100%);
+      border-color: rgba(87, 95, 120, 0.26);
+    }
+    .action-btn .tag {
+      margin-left: 8px;
+      border: 1px solid #c7cfde;
+      border-radius: 999px;
+      background: rgba(236, 240, 247, 0.9);
+      color: #5a6379;
+      padding: 2px 6px;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    @media (max-width: 1200px) {
+      .action-btn {
+        min-width: 210px;
+      }
+      .action-btn .tag {
+        display: none;
+      }
+    }
+
+    body.dark {
+      --bg: #1d1b20;
+      --panel: #211f26;
+      --panel-2: #2b2930;
+      --panel-3: #35323a;
+      --text: #e6e1e5;
+      --muted: #cac4d0;
+      --material: #d0bcff;
+      --sensor: #4fd8eb;
+      --control: #8fd26e;
+      --asset: #8fc9ff;
+      --deviation: #ffb4ab;
+      --quality: #f0c86e;
+      --batch: #c9c2dc;
+      --financial: #b9cc8b;
+      --simulation: #d8c0ff;
+      --system: #c9c5d0;
+      --gold-ref: #e7c266;
+      --live-blue: #89b4ff;
+      --threshold: #a9a2b2;
+      --loss: #ffb4ab;
+      --recovery: #84d48c;
+    }
+
+    body.dark .topbar {
+      background: rgba(33, 31, 38, 0.62);
+      border-bottom: 1px solid rgba(208, 188, 255, 0.16);
+      backdrop-filter: blur(18px) saturate(140%);
+    }
+
+    body.dark .board {
+      background:
+      radial-gradient(circle at 1px 1px, rgba(202,196,208,0.18) 1px, transparent 1.2px) 0 0 / 22px 22px,
+      radial-gradient(circle at 1px 1px, rgba(208,188,255,0.10) 1px, transparent 1.2px) 11px 11px / 22px 22px,
+      linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.04) 100%),
+      linear-gradient(180deg, #1b1c20 0%, #121316 100%);
+    }
+    body.dark .timeline {
+      background: rgba(33, 31, 38, 0.5);
+      border-bottom: 1px solid rgba(208, 188, 255, 0.14);
+    }
+    body.dark .timeline .event {
+      background: rgba(53, 50, 58, 0.44);
+      border-color: rgba(208,188,255,0.18);
+      color: #e7dff4;
+    }
+    body.dark .timeline .event b { color: #e5edfb; }
+
+    body.dark .command {
+      background: rgba(53, 50, 58, 0.42);
+      border: 1px solid rgba(208, 188, 255, 0.2);
+      color: #f0e9fa;
+      backdrop-filter: blur(16px) saturate(135%);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    body.dark .command-menu {
+      background: rgba(33, 31, 38, 0.62);
+      border-color: rgba(208, 188, 255, 0.22);
+    }
+    body.dark .command-menu input {
+      background: rgba(20, 28, 40, 0.9);
+      border-color: rgba(131, 152, 184, 0.24);
+      color: #e6e1e5;
+    }
+    body.dark .command-item {
+      background: rgba(53, 50, 58, 0.4);
+      border-color: rgba(208, 188, 255, 0.16);
+      color: #f0e9fa;
+    }
+
+    body.dark .context {
+      color: #c4c7cf;
+    }
+
+    body.dark .brand b {
+      color: #f4eff4;
+    }
+
+    body.dark .node {
+      background: linear-gradient(160deg, rgba(36,33,44,0.90) 0%, rgba(28,27,31,0.86) 100%);
+      border-color: rgba(202,196,208,0.18);
+      box-shadow:
+      0 16px 32px rgba(0,0,0,0.34),
+      inset 0 1px 0 rgba(255,255,255,0.03);
+      backdrop-filter: blur(18px) saturate(130%);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    body.dark .node:hover {
+      box-shadow:
+      0 18px 36px rgba(0,0,0,0.42),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    body.dark .node.focal {
+      opacity: 1 !important;
+      border-color: rgba(208,188,255,0.48) !important;
+      box-shadow:
+        0 0 0 1.5px rgba(208,188,255,0.32),
+        0 22px 42px rgba(0,0,0,0.46),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    body.dark .node.focus-root {
+      border-color: #d0bcff !important;
+      background: linear-gradient(160deg, rgba(46,40,58,0.98) 0%, rgba(38,34,50,0.96) 100%) !important;
+      box-shadow:
+        0 0 0 3px #d0bcff,
+        0 0 0 8px rgba(208,188,255,0.16),
+        0 0 32px rgba(208,188,255,0.20),
+        0 28px 56px rgba(0,0,0,0.52),
+        inset 0 1px 0 rgba(255,255,255,0.08) !important;
+    }
+    body.dark .node.dimmed { opacity: 0.07 !important; }
+    body.dark .edge.focused { filter: drop-shadow(0 0 5px rgba(208,188,255,0.55)); }
+
+    body.dark .icon-chip { border-color: rgba(255,255,255,0.10); }
+
+    body.dark .node-title,
+    body.dark .title {
+      color: #f4eff4;
+    }
+
+    body.dark .section-label {
+      color: #c4c7cf;
+    }
+
+    body.dark .sub,
+    body.dark .metric {
+      color: #d0d4dc;
+    }
+    body.dark .section-label,
+    body.dark .signal-age {
+      color: #d0d4dc;
+    }
+
+    body.dark .metric b {
+      color: #f4eff4;
+    }
+
+    body.dark .state,
+    body.dark .node-status {
+      background: rgba(255,255,255,0.04);
+    }
+
+    body.dark .insight-chip {
+      background: linear-gradient(180deg, #32384a 0%, #2a3142 100%);
+      border: 1px solid rgba(208,188,255,0.3);
+      color: #efe7ff;
+      box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.05),
+      0 4px 12px rgba(0,0,0,0.18);
+    }
+
+    body.dark .insight-chip strong {
+      color: #d0bcff;
+    }
+
+    body.dark .insight-chip i {
+      background: #d0bcff;
+      box-shadow: 0 0 0 6px rgba(208,188,255,0.16);
+    }
+
+    body.dark .edge.material {
+      stroke: #5f8fff;
+      opacity: 0.88;
+    }
+
+    body.dark .edge.causal {
+      stroke: #8291a7;
+      opacity: 0.52;
+    }
+
+    body.dark .edge.deviation {
+      stroke: #ff6b6b;
+      opacity: 0.82;
+    }
+
+    body.dark .edge.control {
+      stroke: #38b26e;
+      opacity: 0.78;
+    }
+
+    body.dark .edge.simulation {
+      stroke: #9a76ff;
+      opacity: 0.72;
+    }
+
+    body.dark .edge.system {
+      stroke: #a3b1c6;
+      opacity: 0.34;
+    }
+
+    body.dark .edge.focused {
+      opacity: 1 !important;
+    }
+    body.dark .edge.spine { opacity: 0.88; }
+    body.dark .edge.primary-spine { opacity: 1; }
+    body.dark .edge.branch { opacity: 0.52; }
+    body.dark .edge.exec { opacity: 0.22; }
+    body.dark .edge.reference { opacity: 0.14; }
+    body.dark .fork-label { fill: #c8b8ff; }
+    body.dark .fork-junction { fill: #b89cff; }
+    body.dark .edge-label { fill: #b4c2d8; }
+
+    body.dark .node::before {
+      opacity: 1;
+      box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
+    }
+
+    body.dark .node::after {
+      opacity: 0.5;
+    }
+
+    body.dark .actions {
+      background: rgba(33, 31, 38, 0.62);
+      border-top: 1px solid rgba(208,188,255,0.14);
+    }
+    body.dark .quick-action-group {
+      border-right-color: rgba(208,188,255,0.2);
+    }
+    body.dark .quick-action-group .group-label {
+      color: #d0bcff;
+    }
+
+    body.dark .action-btn {
+      background: linear-gradient(180deg, rgba(53,50,58,0.5) 0%, rgba(43,41,48,0.42) 100%);
+      border-color: rgba(208,188,255,0.2);
+      color: #f0e9fa;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    body.dark .action-btn.primary {
+      background: linear-gradient(180deg, rgba(70, 95, 84, 0.46) 0%, rgba(55, 79, 69, 0.40) 100%);
+      border-color: rgba(132, 170, 150, 0.28);
+      color: #d9efe3;
+    }
+
+    body.dark .action-btn.warn {
+      background: linear-gradient(180deg, rgba(98, 83, 58, 0.44) 0%, rgba(82, 69, 49, 0.38) 100%);
+      border-color: rgba(190, 164, 118, 0.28);
+      color: #f0e3cc;
+    }
+
+    body.dark .action-btn.system {
+      background: linear-gradient(180deg, rgba(53,50,58,0.5) 0%, rgba(43,41,48,0.42) 100%);
+      color: #e7e0f4;
+    }
+
+    body.dark .live,
+    body.dark .focus-exit {
+      background: #1c2636;
+      border-color: rgba(126,146,176,0.22);
+      color: #dce7f9;
+    }
+
+    body.dark .theme-toggle {
+      background: #1c2636;
+      border-color: rgba(126,146,176,0.22);
+      color: #dce7f9;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    body.dark .theme-toggle::after {
+      background: rgba(155, 183, 255, 0.16);
+      color: #c8dafc;
+    }
+
+    .action-btn.primary { background: linear-gradient(180deg, rgba(244,248,246,0.84) 0%, rgba(236,243,239,0.74) 100%); border-color: #ccd8d2; color: #3b5f4e; font-weight: 700; }
+    .action-btn.warn { background: linear-gradient(180deg, rgba(249,245,236,0.84) 0%, rgba(244,238,227,0.74) 100%); border-color: #ddd2b8; color: #6f5a33; font-weight: 700; }
+    .action-btn.system { background: linear-gradient(180deg, rgba(243,246,252,0.86) 0%, rgba(236,241,249,0.76) 100%); border-color: #cfd6e4; color: #3f4f6d; }
+    .action-btn.dimmed { opacity: 0.3; filter: grayscale(0.25); }
+    .action-btn.active { box-shadow: 0 0 0 2px rgba(47, 107, 255, 0.18) inset; border-color: #7f9ddf; }
+    .action-btn.queued { background: linear-gradient(180deg, rgba(236,248,243,0.88) 0%, rgba(224,240,233,0.78) 100%) !important; border-color: #86b5a0 !important; color: #2d6b51 !important; }
+
+    .focus-exit {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 30;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(248, 250, 255, 0.82);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #334155;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      display: none;
+    }
+    .focus-exit.show { display: inline-flex; align-items: center; gap: 6px; }
+
+    @media (max-width: 1120px) {
+      .topbar { grid-template-columns: 1fr; gap: 8px; padding: 8px 12px; }
+      .status { justify-self: start; }
+      .command { width: 100%; }
+    }
+
+    /* Decision banner */
+    .decision-banner {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      padding: 0 18px;
+      border-bottom: 1px solid rgba(99,106,128,0.14);
+      background: rgba(246,247,252,0.82);
+      backdrop-filter: blur(14px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px);
+      overflow-x: auto;
+      white-space: nowrap;
+      z-index: 14;
+    }
+    .decision-item {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 20px 0 0;
+      margin-right: 20px;
+      border-right: 1px dashed rgba(99,106,128,0.16);
+      flex: 0 0 auto;
+    }
+    .decision-item:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+    .di-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 1px;
+    }
+    .di-value {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: 0.01em;
+    }
+    .di-value em { font-style: normal; color: #64748b; font-weight: 600; margin-left: 4px; }
+    .decision-item.dominant-cause .di-value { color: #dc2626; }
+    .decision-item.recommended .di-value { color: #16a34a; }
+    .decision-item.exposure .di-value { color: #b45309; }
+    body.dark .decision-banner { background: rgba(28,26,34,0.82); border-bottom-color: rgba(208,188,255,0.14); }
+    body.dark .di-label { color: #94a3b8; }
+    body.dark .di-value { color: #f4eff4; }
+    body.dark .decision-item.dominant-cause .di-value { color: #fca5a5; }
+    body.dark .decision-item.recommended .di-value { color: #6ee7a0; }
+    body.dark .decision-item.exposure .di-value { color: #fbbf72; }
+
+    /* Simulation fork path contrast */
+    #node-sim_unchanged {
+      background: linear-gradient(180deg, rgba(255,245,245,0.96) 0%, rgba(254,228,228,0.88) 100%) !important;
+      border-color: rgba(220,38,38,0.28) !important;
+    }
+    #node-sim_corrected {
+      background: linear-gradient(180deg, rgba(240,253,244,0.96) 0%, rgba(213,249,226,0.88) 100%) !important;
+      border-color: rgba(22,163,74,0.28) !important;
+    }
+    body.dark #node-sim_unchanged {
+      background: linear-gradient(180deg, rgba(80,32,32,0.56) 0%, rgba(64,24,24,0.50) 100%) !important;
+      border-color: rgba(252,165,165,0.28) !important;
+    }
+    body.dark #node-sim_corrected {
+      background: linear-gradient(180deg, rgba(20,60,38,0.56) 0%, rgba(15,48,30,0.50) 100%) !important;
+      border-color: rgba(110,231,183,0.28) !important;
+    }
+
+    /* Cause confidence visual weighting */
+    .node.prob-high:not(.focus-root):not(.focal) {
+      transform: scale(1.06);
+      opacity: 1 !important;
+      box-shadow: 0 0 0 2px rgba(220,38,38,0.24), 0 16px 32px rgba(15,23,42,0.18) !important;
+      z-index: 5;
+    }
+    .node.prob-medium:not(.focus-root):not(.focal) {
+      transform: scale(1.01);
+      opacity: 0.82 !important;
+    }
+    .tier-tertiary:not(.prob-high):not(.prob-medium) { opacity: 0.58; }
+
+    /* Golden reference edge */
+    .edge.golden-ref {
+      stroke: #b68c2d !important;
+      opacity: 0.54 !important;
+      stroke-width: 2px !important;
+      stroke-dasharray: 8 4 !important;
+    }
+    body.dark .edge.golden-ref { stroke: #e0b85a !important; opacity: 0.48 !important; }
+
+    /* Recommended action elevation */
+    .action-btn.primary-recommendation {
+      box-shadow: 0 0 0 2px rgba(22,163,74,0.32), 0 4px 16px rgba(22,163,74,0.14), inset 0 1px 0 rgba(255,255,255,0.82) !important;
+      border-color: #7db89a !important;
+    }
+    body.dark .action-btn.primary-recommendation {
+      box-shadow: 0 0 0 2px rgba(110,231,183,0.32), 0 4px 16px rgba(110,231,183,0.10) !important;
+      border-color: rgba(110,231,183,0.36) !important;
+    }
+
+    /* Compact card expand affordance */
+    .compact-card:not(.expanded) .node-body::after {
+      content: "▾  Show detail";
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #4a6fa5;
+      background: rgba(74,111,165,0.08);
+      border: 1px solid rgba(74,111,165,0.20);
+      border-radius: 999px;
+      padding: 5px 14px;
+      margin-top: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .compact-card.expanded .node-body::after {
+      content: "▴  Collapse";
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #64748b;
+      background: rgba(100,116,139,0.06);
+      border: 1px solid rgba(100,116,139,0.18);
+      border-radius: 999px;
+      padding: 5px 14px;
+      margin-top: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+    body.dark .compact-card:not(.expanded) .node-body::after { color: #89b4ff; background: rgba(137,180,255,0.10); border-color: rgba(137,180,255,0.24); }
+    body.dark .compact-card.expanded .node-body::after { color: #94a3b8; background: rgba(148,163,184,0.08); border-color: rgba(148,163,184,0.20); }
+
+    /* (focus-root styles defined earlier) */
+
+    /* Analytical node vertical reduction */
+    .analytical-card { padding-bottom: 18px; }
+    .analytical-card .metrics { gap: 5px; margin-bottom: 10px; }
+
+    /* Action bar reduction */
+    .actions { padding: 8px 14px; min-height: 0; }
+    .action-btn { padding: 9px 14px; font-size: 15px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark"></div>
+        <div>
+          <b>KairOS</b>
+          <div class="context">PLANT / AREA A / BLISTER PACKAGING CELL</div>
+        </div>
+      </div>
+      <button id="commandBtn" class="command">Ask KairOS anything… <span>⌘K</span></button>
+      <div class="status">
+        <span class="live"><i></i>LIVE</span>
+        <button id="themeToggle" class="theme-toggle" type="button" data-mode="Day">Theme</button>
+        <button id="densityToggle" class="theme-toggle" type="button" data-mode="Expanded">Density</button>
+        <button id="simToggle" class="theme-toggle" type="button" data-mode="Corrected">Sim</button>
+        <span id="clock">--:--:--</span>
+      </div>
+    </header>
+    <div id="timeline" class="timeline">
+      <button class="event" data-focus="batch_current,batch_golden"><b>12:22</b>Batch started</button>
+      <button class="event" data-focus="sensor_tension,material_foil,asset_sealer"><b>12:31</b>Tension drift detected</button>
+      <button class="event" data-focus="control_heater,asset_sealer,deviation"><b>12:36</b>Heater offset detected</button>
+      <button class="event" data-focus="deviation,quality_seal,batch_current"><b>12:41</b>Seal deviation triggered</button>
+      <button class="event" data-focus="impact_loss,sim_unchanged,sim_corrected,sys_mes,sys_erp"><b>12:47</b>Projection updated</button>
+    </div>
+    <div class="decision-banner">
+      <div class="decision-item dominant-cause">
+        <span class="di-label">Dominant cause</span>
+        <span class="di-value">Web Tension Sensor <em>62% · 19 min</em></span>
+      </div>
+      <div class="decision-item recommended">
+        <span class="di-label">Recommended</span>
+        <span class="di-value">Reduce speed → 260 ppm</span>
+      </div>
+      <div class="decision-item exposure">
+        <span class="di-label">If unchanged</span>
+        <span class="di-value">€42.8K / day</span>
+      </div>
+      <div class="decision-item systems">
+        <span class="di-label">Touches</span>
+        <span class="di-value">MES · QA · ERP</span>
+      </div>
+    </div>
+    <div id="commandMenu" class="command-menu" role="dialog" aria-label="Command palette">
+      <input id="commandInput" type="text" placeholder="Type command: show drift path, simulate correction..." />
+      <div id="commandList" class="command-list"></div>
+    </div>
+
+    <main class="board" id="board">
+      <button id="focusExit" class="focus-exit">Exit Focus <span>Esc</span></button>
+      <div id="viewport">
+        <svg id="edgeSvg" aria-hidden="true">
+          <defs>
+            <marker id="arrow-material" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#2F6BFF"></path></marker>
+            <marker id="arrow-causal" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#6B7280"></path></marker>
+            <marker id="arrow-deviation" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,1.5 L7.2,1.5 L9,4.5 L7.2,7.5 L0,7.5 L1.2,4.5 z" fill="#D14343"></path></marker>
+            <marker id="arrow-control" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#2FA36B"></path></marker>
+            <marker id="arrow-simulation" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,4.5 L7.8,0 L7.8,9 z" fill="#7B61FF"></path></marker>
+            <marker id="arrow-system" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#94A3B8"></path></marker>
+          </defs>
+          <g id="edgeLayer"></g>
+        </svg>
+        <div id="nodeLayer"></div>
+      </div>
+    </main>
+
+    <footer class="actions" id="actionsBar">
+      <div class="quick-action-group">
+        <span class="group-label">Control</span>
+        <button class="action-btn primary primary-recommendation" data-action="reduce_speed" data-focus="deviation,asset_sealer,batch_current,sim_corrected,impact_loss,sys_mes">Reduce speed to 260 ppm <span class="tag">ASSET | SIMULATION</span><span class="tag">Confidence 0.86</span></button>
+        <button class="action-btn warn" data-action="adjust_heater" data-focus="deviation,control_heater,asset_sealer,quality_seal">Adjust heater to 183C <span class="tag">CONTROL | SIMULATION</span><span class="tag">Risk Low</span></button>
+      </div>
+      <div class="quick-action-group">
+        <span class="group-label">Document</span>
+        <button class="action-btn system" data-action="log_mes" data-focus="deviation,sys_mes">Log deviation in MES <span class="tag">MES | EXECUTE</span><span class="tag">Ready</span></button>
+      </div>
+      <div class="quick-action-group">
+        <span class="group-label">Escalate</span>
+        <button class="action-btn system" data-action="notify_qa" data-focus="deviation,sys_qa">Notify QA <span class="tag">QA | EXECUTE</span><span class="tag">Immediate</span></button>
+      </div>
+      <div class="quick-action-group">
+        <span class="group-label">Financial</span>
+        <button class="action-btn system" data-action="update_erp" data-focus="impact_loss,sys_erp">Update ERP <span class="tag">ERP | EXECUTE</span><span class="tag">Sync</span></button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "mei_pkg_graph_state_v22";
+      const THEME_KEY = "mei_theme_mode";
+
+      const ICON = {
+        // Layers / raw material roll
+        Material: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="7" rx="8" ry="4"/><path d="M4 7v5c0 2.2 3.6 4 8 4s8-1.8 8-4V7"/><path d="M4 12v5c0 2.2 3.6 4 8 4s8-1.8 8-4v-5"/></svg>`,
+        // Sensor / signal wave
+        Sensor: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2l3-7 4 14 3-9 2 4h6"/><circle cx="21" cy="12" r="1" fill="var(--accent)"/></svg>`,
+        // Control / sliders
+        ControlParameter: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2.5" fill="var(--icon-bg)" stroke="var(--accent)"/><circle cx="15" cy="12" r="2.5" fill="var(--icon-bg)" stroke="var(--accent)"/><circle cx="10" cy="18" r="2.5" fill="var(--icon-bg)" stroke="var(--accent)"/></svg>`,
+        // Asset / industrial machine cog
+        Asset: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`,
+        // Deviation / warning triangle
+        Deviation: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+        // Quality / shield with check
+        QualityState: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`,
+        // Batch / clipboard list
+        Batch: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>`,
+        // Golden Batch / award / star
+        GoldenBatch: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+        // Financial / trending up
+        FinancialImpact: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+        // Simulation / git branch / fork
+        SimulationScenario: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>`,
+        // External System / server
+        ExternalSystem: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>`,
+        // Action / check circle
+        Action: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+      };
+
+      const ACCENT = {
+        Material:           ["#6750a4", "#f3edf7"],
+        Sensor:             ["#006a6a", "#cce8e8"],
+        ControlParameter:   ["#386a20", "#d6eacb"],
+        Asset:              ["#00639b", "#cde5ff"],
+        Deviation:          ["#ba1a1a", "#ffdad6"],
+        QualityState:       ["#7a5900", "#ffdea9"],
+        Batch:              ["#4a4458", "#ece6f0"],
+        GoldenBatch:        ["#b68c2d", "#fff3cf"],
+        FinancialImpact:    ["#4d5d2a", "#d4edc0"],
+        SimulationScenario: ["#7e57c2", "#ede7f6"],
+        ExternalSystem:     ["#5f6368", "#e4e2e6"],
+        Action:             ["#625b71", "#ece6f0"]
+      };
+
+      const STATE_STYLE = {
+        normal:     ["#cac4d0", "#f3f6fc", "#49454f"],
+        warning:    ["#f59e0b", "#fdf8e6", "#7c5500"],
+        critical:   ["#ba1a1a", "#ffdad6", "#93000a"],
+        simulation: ["#7c3aed", "#f0ebff", "#4a0072"],
+        external:   ["#8e9099", "#f3f6fc", "#44474f"]
+      };
+
+      const EDGE_STYLE = {
+        feeds: { cls: "material", marker: "arrow-material" },
+        measured_by: { cls: "causal", marker: "arrow-causal" },
+        controls: { cls: "control", marker: "arrow-control" },
+        causes: { cls: "causal", marker: "arrow-causal" },
+        affects: { cls: "deviation", marker: "arrow-deviation" },
+        references: { cls: "causal", marker: "arrow-causal" },
+        impacts_cost: { cls: "deviation", marker: "arrow-deviation" },
+        logged_in: { cls: "system", marker: "arrow-system" },
+        approved_by: { cls: "system", marker: "arrow-system" },
+        simulated_as: { cls: "simulation", marker: "arrow-simulation" },
+        mitigates: { cls: "control", marker: "arrow-control" }
+      };
+
+      class GraphEntity {
+        constructor({ id, type, label, state = "normal", metrics = {}, metadata = {}, tags = [], chart = null, rankHint = 0, projectionRole = "live", pinned = null, insight = "", root_cause_probability = null }) {
+          this.id = id;
+          this.type = type;
+          this.label = label;
+          this.state = state;
+          this.metrics = metrics;
+          this.metadata = metadata;
+          this.tags = tags;
+          this.chart = chart;
+          this.rankHint = rankHint;
+          this.projectionRole = projectionRole;
+          this.pinned = pinned;
+          this.insight = insight;
+          this.root_cause_probability = Number.isFinite(root_cause_probability) ? root_cause_probability : null;
+        }
+      }
+
+      class GraphRelation {
+        constructor({ id, from, to, type }) {
+          this.id = id;
+          this.from = from;
+          this.to = to;
+          this.type = type;
+        }
+      }
+
+      class PlantKnowledgeGraph {
+        constructor() {
+          this.entities = new Map();
+          this.relations = [];
+        }
+        addEntity(e) { this.entities.set(e.id, e); }
+        addRelation(r) { this.relations.push(r); }
+        getEntity(id) { return this.entities.get(id); }
+        getRelationsFrom(id) { return this.relations.filter((r) => r.from === id); }
+        getRelationsTo(id) { return this.relations.filter((r) => r.to === id); }
+      }
+
+      class GraphStateStore {
+        static save(state) {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+        }
+        static load() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : null;
+          } catch (_) {
+            return null;
+          }
+        }
+      }
+
+      class IncidentSubgraphExtractor {
+        static extract(graph, incidentId) {
+          const keep = new Set([incidentId]);
+          const upQueue = [incidentId];
+          const downQueue = [incidentId];
+
+          for (let depth = 0; depth < 3; depth += 1) {
+            const next = [];
+            upQueue.splice(0).forEach((id) => {
+              graph.getRelationsTo(id).forEach((r) => {
+                if (!keep.has(r.from)) {
+                  keep.add(r.from);
+                  next.push(r.from);
+                }
+              });
+            });
+            upQueue.push(...next);
+          }
+
+          for (let depth = 0; depth < 4; depth += 1) {
+            const next = [];
+            downQueue.splice(0).forEach((id) => {
+              graph.getRelationsFrom(id).forEach((r) => {
+                if (!keep.has(r.to)) {
+                  keep.add(r.to);
+                  next.push(r.to);
+                }
+              });
+            });
+            downQueue.push(...next);
+          }
+
+          const forced = [
+            "material_foil", "sensor_tension", "control_heater", "asset_sealer", "deviation",
+            "quality_seal", "batch_current", "batch_golden", "impact_loss", "sim_unchanged", "sim_corrected",
+            "sys_mes", "sys_qa", "sys_erp",
+            "aux_sensor_2", "aux_asset_2"
+          ];
+          forced.forEach((id) => keep.add(id));
+
+          return {
+            entities: Array.from(keep).map((id) => graph.getEntity(id)).filter(Boolean),
+            relations: graph.relations.filter((r) => keep.has(r.from) && keep.has(r.to))
+          };
+        }
+      }
+
+      function buildProjectionRelations(subgraph) {
+        const byId = new Map(subgraph.entities.map((e) => [e.id, e]));
+        const allow = new Set([
+          "reference->live",
+          "cause->live",
+          "live->live",
+          "live->consequence",
+          "live->simulation",
+          "simulation->consequence",
+          "simulation->endpoint",
+          "consequence->endpoint"
+        ]);
+        return subgraph.relations.filter((r) => {
+          const fromRole = byId.get(r.from)?.projectionRole;
+          const toRole = byId.get(r.to)?.projectionRole;
+          if (!fromRole || !toRole) return false;
+          return allow.has(`${fromRole}->${toRole}`);
+        });
+      }
+
+      class LayoutEngine {
+        static persistedPositionsAreValid(persistedPositions) {
+          if (!persistedPositions || typeof persistedPositions !== "object") return false;
+          const core = [
+            "material_foil", "sensor_tension", "control_heater", "asset_sealer",
+            "deviation", "quality_seal", "batch_current", "sim_unchanged",
+            "sim_corrected", "impact_loss", "sys_mes", "sys_qa", "sys_erp"
+          ];
+          for (const id of core) {
+            const p = persistedPositions[id];
+            if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return false;
+            if (p.x < 120 || p.x > 2600 || p.y < 60 || p.y > 1900) return false;
+          }
+          return true;
+        }
+
+        static sizeClass(entity) {
+          if (entity.type === "GoldenBatch" || entity.id === "batch_current") return "anchor-card";
+          if (entity.type === "SimulationScenario") return "simulation-card";
+          if (entity.type === "ExternalSystem") return "system-card";
+          return "process-card";
+        }
+
+        static estimate(entity) {
+          const cls = LayoutEngine.sizeClass(entity);
+          const metricsCount = Object.keys(entity.metrics || {}).length;
+          let width, height;
+          if (cls === "anchor-card") {
+            width = entity.chart ? 560 : 520;
+            height = entity.chart ? 360 : 240;
+          } else if (cls === "simulation-card") {
+            width = 420;
+            height = 220;
+          } else if (cls === "system-card") {
+            width = 320;
+            height = 130 + metricsCount * 26;
+          } else {
+            width = entity.chart ? 440 : 400;
+            height = entity.chart ? 300 : 160 + metricsCount * 28;
+          }
+          return { width, height };
+        }
+
+        static run(subgraph, projectionRelations, persistedPositions = {}) {
+          const g = new dagre.graphlib.Graph();
+          g.setGraph({
+            rankdir: "LR",
+            ranksep: 180,
+            nodesep: 120,
+            marginx: 80,
+            marginy: 80,
+            ranker: "network-simplex"
+          });
+          g.setDefaultEdgeLabel(() => ({}));
+
+          subgraph.entities.forEach((e) => {
+            const sz = LayoutEngine.estimate(e);
+            g.setNode(e.id, {
+              width: sz.width,
+              height: sz.height,
+              rank: e.rankHint
+            });
+          });
+
+          subgraph.relations.forEach((r) => {
+            g.setEdge(r.from, r.to, { weight: 2, minlen: 1 });
+          });
+
+          dagre.layout(g);
+
+          const positions = {};
+          subgraph.entities.forEach((e) => {
+            const n = g.node(e.id);
+            positions[e.id] = {
+              x: n.x - n.width / 2,
+              y: n.y - n.height / 2
+            };
+          });
+
+          // Backup layout behavior: pinned golden reference + simple simulation row alignment.
+          LayoutEngine.compactProjection(subgraph, positions);
+
+          if (LayoutEngine.persistedPositionsAreValid(persistedPositions)) {
+            Object.keys(persistedPositions || {}).forEach((id) => {
+              if (positions[id]) positions[id] = persistedPositions[id];
+            });
+          }
+
+          LayoutEngine.ensureNoGoldenOverlap(positions);
+          LayoutEngine.ensureScenePadding(positions, 120, 60);
+
+          return positions;
+        }
+
+        static compactProjection(subgraph, positions) {
+          positions.batch_golden = { x: 80, y: 70 };
+
+          if (positions.batch_current && positions.sim_unchanged && positions.sim_corrected) {
+            const by = positions.batch_current.y + 350;
+            positions.sim_unchanged.y = by;
+            positions.sim_corrected.y = by;
+          }
+        }
+
+        static ensureNoGoldenOverlap(positions) {
+          const g = positions.batch_golden;
+          if (!g) return;
+          const golden = { x: g.x, y: g.y, w: 560, h: 380 };
+          const candidates = ["material_foil", "sensor_tension", "control_heater", "asset_sealer"];
+          const widths = {
+            material_foil: 380, sensor_tension: 380, control_heater: 380, asset_sealer: 440
+          };
+          candidates.forEach((id) => {
+            const p = positions[id];
+            if (!p) return;
+            const w = widths[id] || 360;
+            const h = 250;
+            const overlaps = (
+              p.x < golden.x + golden.w &&
+              p.x + w > golden.x &&
+              p.y < golden.y + golden.h &&
+              p.y + h > golden.y
+            );
+            if (overlaps) {
+              positions[id].y = golden.y + golden.h + 36;
+            }
+          });
+        }
+
+        static ensureScenePadding(positions, minX = 72, minY = 36) {
+          const ids = Object.keys(positions || {});
+          if (!ids.length) return;
+          const minPosX = Math.min(...ids.map((id) => Number(positions[id]?.x || 0)));
+          const minPosY = Math.min(...ids.map((id) => Number(positions[id]?.y || 0)));
+          const dx = minPosX < minX ? (minX - minPosX) : 0;
+          const dy = minPosY < minY ? (minY - minPosY) : 0;
+          if (!dx && !dy) return;
+          ids.forEach((id) => {
+            if (!positions[id]) return;
+            positions[id].x += dx;
+            positions[id].y += dy;
+          });
+        }
+      }
+
+      class Renderer {
+        constructor(state) {
+          this.state = state;
+          this.board = document.getElementById("board");
+          this.viewport = document.getElementById("viewport");
+          this.nodeLayer = document.getElementById("nodeLayer");
+          this.edgeSvg = document.getElementById("edgeSvg");
+          this.edgeLayer = d3.select("#edgeLayer");
+          this.actionsBar = document.getElementById("actionsBar");
+          this.focusExit = document.getElementById("focusExit");
+          this.commandBtn = document.getElementById("commandBtn");
+          this.commandMenu = document.getElementById("commandMenu");
+          this.commandInput = document.getElementById("commandInput");
+          this.commandList = document.getElementById("commandList");
+          this.chartInstances = {};
+          this.framePending = false;
+          this.dragging = null;
+          this.commandHistory = [];
+          this.zoom = d3.zoom().scaleExtent([0.5, 2.2]).filter((event) => {
+            if (this.dragging) return false;
+            const target = event.target;
+            if (target && target.closest && target.closest(".node")) return false;
+            return !event.ctrlKey || event.type === "wheel";
+          }).on("zoom", (event) => {
+            this.state.transform = event.transform;
+            this.viewport.style.transform = `translate(${event.transform.x}px, ${event.transform.y}px) scale(${event.transform.k})`;
+          });
+          d3.select(this.board).call(this.zoom).on("dblclick.zoom", null);
+          d3.select(this.board).on("dblclick", () => {
+            this.resetView();
+          });
+          this.bindActionEvents();
+          this.bindFocusExit();
+          this.bindCommandSurface();
+          this.bindTimelineEvents();
+          this.bindHotkeys();
+        }
+
+        defaultFocusSeeds(focusId) {
+          const map = {
+            deviation: ["asset_sealer", "quality_seal", "batch_current", "batch_golden", "impact_loss", "sensor_tension", "control_heater", "material_foil"],
+            batch_current: ["quality_seal", "sim_unchanged", "sim_corrected", "impact_loss"],
+            impact_loss: ["sim_unchanged", "sim_corrected", "sys_mes", "sys_qa", "sys_erp"],
+            sys_mes: ["impact_loss", "sim_unchanged", "sim_corrected"],
+            sys_qa: ["deviation", "sim_unchanged"],
+            sys_erp: ["impact_loss", "sim_corrected"]
+          };
+          return map[focusId] || [];
+        }
+
+        cameraScopeForFocus(focusId, seedIds = []) {
+          const map = {
+            deviation: ["material_foil", "sensor_tension", "control_heater", "asset_sealer", "deviation", "quality_seal", "batch_current"],
+            batch_current: ["quality_seal", "batch_current", "sim_unchanged", "sim_corrected", "impact_loss"],
+            impact_loss: ["impact_loss", "sim_unchanged", "sim_corrected", "sys_mes", "sys_qa", "sys_erp"],
+            sys_mes: ["sim_unchanged", "sim_corrected", "impact_loss", "sys_mes", "sys_qa", "sys_erp"],
+            sys_qa: ["sim_unchanged", "impact_loss", "sys_mes", "sys_qa", "sys_erp"],
+            sys_erp: ["sim_corrected", "impact_loss", "sys_mes", "sys_qa", "sys_erp"]
+          };
+          const scoped = map[focusId] || [focusId, ...seedIds];
+          return Array.from(new Set(scoped.filter(Boolean)));
+        }
+
+        getConnectedImpactNeighborhood(rootId) {
+          const relations = this.state.projection?.relations || [];
+          const entityIds = new Set(this.state.subgraph.entities.map((e) => e.id));
+          const nodeIds = new Set([rootId]);
+          const edgeIds = new Set();
+
+          let frontierUp = [rootId];
+          for (let depth = 0; depth < 3; depth += 1) {
+            const next = [];
+            frontierUp.forEach((id) => {
+              relations.forEach((r) => {
+                if (r.to === id && entityIds.has(r.from) && entityIds.has(r.to)) {
+                  nodeIds.add(r.from);
+                  nodeIds.add(r.to);
+                  edgeIds.add(r.id);
+                  next.push(r.from);
+                }
+              });
+            });
+            frontierUp = next;
+            if (!frontierUp.length) break;
+          }
+
+          let frontierDown = [rootId];
+          for (let depth = 0; depth < 4; depth += 1) {
+            const next = [];
+            frontierDown.forEach((id) => {
+              relations.forEach((r) => {
+                if (r.from === id && entityIds.has(r.from) && entityIds.has(r.to)) {
+                  nodeIds.add(r.from);
+                  nodeIds.add(r.to);
+                  edgeIds.add(r.id);
+                  next.push(r.to);
+                }
+              });
+            });
+            frontierDown = next;
+            if (!frontierDown.length) break;
+          }
+
+          return {
+            nodeIds: Array.from(nodeIds),
+            edgeIds: Array.from(edgeIds)
+          };
+        }
+
+        enterFocusMode(nodeId, options = {}) {
+          const neighborhood = options.neighborhood || this.getConnectedImpactNeighborhood(nodeId);
+          const center = options.center !== false;
+          this.state.focus = nodeId;
+          this.state.actionMode = true;
+          this.applyFocus(nodeId, {
+            neighborhood,
+            center,
+            seedIds: options.seedIds || []
+          });
+          this.nodeLayer.querySelectorAll(".node").forEach((el) => {
+            const id = el.getAttribute("data-id");
+            el.classList.toggle("focus-root", id === nodeId);
+          });
+          if (this.focusExit) this.focusExit.classList.add("show");
+          this.updateActionsForFocus(nodeId, new Set(neighborhood.nodeIds || []));
+        }
+
+        bindFocusExit() {
+          if (this.focusExit) {
+            this.focusExit.addEventListener("click", (e) => {
+              e.stopPropagation();
+              this.exitFocusMode();
+            });
+          }
+          window.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && this.state.actionMode && !this.dragging) this.exitFocusMode();
+          });
+        }
+
+        bindHotkeys() {
+          window.addEventListener("keydown", (e) => {
+            if (e.metaKey || e.ctrlKey) {
+              if (e.key.toLowerCase() === "k") {
+                e.preventDefault();
+                this.openCommandSurface();
+              }
+              return;
+            }
+            if (/^[1-5]$/.test(e.key)) {
+              const idx = Number(e.key) - 1;
+              const btn = this.actionsBar?.querySelectorAll(".action-btn")?.[idx];
+              if (btn) btn.click();
+            }
+            if (e.key.toLowerCase() === "f") {
+              if (this.state.actionMode) this.exitFocusMode();
+              else this.enterFocusMode("deviation");
+            }
+          });
+        }
+
+        bindCommandSurface() {
+          if (!this.commandBtn || !this.commandMenu || !this.commandInput || !this.commandList) return;
+          const commands = [
+            "show drift path",
+            "isolate root cause",
+            "show affected systems",
+            "compare to golden batch",
+            "simulate correction",
+            "explain deviation"
+          ];
+          const renderList = (q = "") => {
+            const pool = [...this.commandHistory.slice(-3).reverse(), ...commands];
+            const uniq = Array.from(new Set(pool));
+            const filtered = uniq.filter((c) => c.toLowerCase().includes(q.toLowerCase())).slice(0, 8);
+            this.commandList.innerHTML = filtered.map((c) => `<button class="command-item" data-cmd="${c}">${c}</button>`).join("");
+            this.commandList.querySelectorAll(".command-item").forEach((el) => {
+              el.addEventListener("click", () => {
+                this.executeGraphCommand(el.getAttribute("data-cmd") || "");
+                this.closeCommandSurface();
+              });
+            });
+          };
+          this.commandBtn.addEventListener("click", () => this.openCommandSurface());
+          this.commandInput.addEventListener("input", () => renderList(this.commandInput.value));
+          this.commandInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              const cmd = this.commandInput.value.trim();
+              if (cmd) {
+                this.executeGraphCommand(cmd);
+                this.closeCommandSurface();
+              }
+            }
+          });
+          document.addEventListener("click", (e) => {
+            if (!this.commandMenu.classList.contains("show")) return;
+            if (e.target.closest("#commandMenu") || e.target.closest("#commandBtn")) return;
+            this.closeCommandSurface();
+          });
+          this.renderCommandList = renderList;
+        }
+
+        bindTimelineEvents() {
+          const timeline = document.getElementById("timeline");
+          if (!timeline) return;
+          timeline.querySelectorAll(".event").forEach((el) => {
+            el.addEventListener("click", () => {
+              const ids = (el.getAttribute("data-focus") || "").split(",").map((s) => s.trim()).filter(Boolean);
+              if (!ids.length) return this.enterFocusMode("deviation");
+              this.enterFocusMode(ids[0], { seedIds: ids.slice(1) });
+            });
+          });
+        }
+
+        openCommandSurface() {
+          if (!this.commandMenu) return;
+          this.commandMenu.classList.add("show");
+          this.renderCommandList?.("");
+          requestAnimationFrame(() => this.commandInput?.focus());
+        }
+
+        closeCommandSurface() {
+          if (!this.commandMenu) return;
+          this.commandMenu.classList.remove("show");
+          if (this.commandInput) this.commandInput.value = "";
+        }
+
+        executeGraphCommand(cmdRaw) {
+          const cmd = cmdRaw.toLowerCase().trim();
+          if (!cmd) return;
+          this.commandHistory.push(cmdRaw);
+          if (cmd.includes("drift path")) return this.enterFocusMode("sensor_tension", { seedIds: ["material_foil", "control_heater", "asset_sealer", "deviation"] });
+          if (cmd.includes("root cause")) return this.enterFocusMode("sensor_tension", { seedIds: ["material_foil", "control_heater"] });
+          if (cmd.includes("affected systems")) return this.enterFocusMode("impact_loss", { seedIds: ["sys_mes", "sys_qa", "sys_erp"] });
+          if (cmd.includes("golden")) return this.enterFocusMode("batch_golden", { seedIds: ["batch_current"] });
+          if (cmd.includes("simulate correction")) return this.enterFocusMode("sim_corrected", { seedIds: ["impact_loss", "batch_current"] });
+          if (cmd.includes("explain deviation")) return this.enterFocusMode("deviation", { seedIds: ["asset_sealer", "quality_seal"] });
+          this.enterFocusMode("deviation");
+        }
+
+        bindActionEvents() {
+          if (!this.actionsBar) return;
+          const focusMap = {
+            reduce_speed: "batch_current",
+            adjust_heater: "control_heater",
+            log_mes: "deviation",
+            notify_qa: "deviation",
+            update_erp: "impact_loss"
+          };
+          this.actionsBar.querySelectorAll(".action-btn").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const action = btn.getAttribute("data-action");
+              const root = focusMap[action] || "deviation";
+              this.enterFocusMode(root);
+              btn.classList.add("active");
+              if (!btn.dataset.confirming) {
+                btn.dataset.confirming = "1";
+                btn.classList.add("queued");
+                setTimeout(() => {
+                  btn.classList.remove("queued");
+                  delete btn.dataset.confirming;
+                }, 1800);
+              }
+            });
+          });
+        }
+
+        scheduleRender() {
+          if (this.framePending) return;
+          this.framePending = true;
+          requestAnimationFrame(() => {
+            this.framePending = false;
+            this.render();
+          });
+        }
+
+        getBoundsFor(ids) {
+          const targetIds = Array.isArray(ids) && ids.length ? ids : this.state.subgraph.entities.map((e) => e.id);
+          const rects = targetIds.map((id) => this.nodeRect(id)).filter(Boolean);
+          if (!rects.length) return null;
+          const minX = Math.min(...rects.map((r) => r.x));
+          const minY = Math.min(...rects.map((r) => r.y));
+          const maxX = Math.max(...rects.map((r) => r.x + r.w));
+          const maxY = Math.max(...rects.map((r) => r.y + r.h));
+          return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+        }
+
+        fitToScene(animated = true) {
+          const incidentIds = [
+            "batch_golden","material_foil","sensor_tension","control_heater","asset_sealer",
+            "deviation","quality_seal","batch_current","sim_unchanged","sim_corrected",
+            "impact_loss","sys_mes","sys_qa","sys_erp"
+          ];
+          const b = this.getBoundsFor(incidentIds);
+          if (!b) return;
+          const viewW = this.board.clientWidth;
+          const viewH = this.board.clientHeight;
+          const pad = 60;
+          const fitW = (viewW - pad * 2) / Math.max(1, b.width);
+          const fitH = (viewH - pad * 2) / Math.max(1, b.height);
+          const scale = Math.max(0.28, Math.min(2.2, Math.min(fitW, fitH)));
+          document.documentElement.style.setProperty("--fit-scale", scale);
+          let tx = (viewW - b.width * scale) / 2 - b.minX * scale;
+          const ty = (viewH - b.height * scale) / 2 - b.minY * scale;
+          const gutter = 120;
+          const minTx = gutter - b.minX * scale;
+          const maxTx = (viewW - gutter) - b.maxX * scale;
+          if (minTx <= maxTx) {
+            tx = Math.max(minTx, Math.min(maxTx, tx));
+          } else {
+            tx = (minTx + maxTx) / 2;
+          }
+
+          const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
+          const sel = d3.select(this.board);
+          if (animated) sel.transition().duration(260).call(this.zoom.transform, t);
+          else sel.call(this.zoom.transform, t);
+        }
+
+        centerOnNodes(ids, animated = true, minScale = 0.72) {
+          const b = this.getBoundsFor(ids);
+          if (!b) return;
+          const viewW = this.board.clientWidth;
+          const viewH = this.board.clientHeight;
+          const pad = 160;
+          const scale = Math.max(minScale, Math.min(2.2, Math.min((viewW - pad * 2) / b.width, (viewH - pad * 2) / b.height)));
+          let tx = (viewW - b.width * scale) / 2 - b.minX * scale;
+          const ty = (viewH - b.height * scale) / 2 - b.minY * scale;
+          const gutter = 100;
+          const minTx = gutter - b.minX * scale;
+          const maxTx = (viewW - gutter) - b.maxX * scale;
+          if (minTx <= maxTx) {
+            tx = Math.max(minTx, Math.min(maxTx, tx));
+          } else {
+            tx = (minTx + maxTx) / 2;
+          }
+          const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
+          const sel = d3.select(this.board);
+          if (animated) sel.transition().duration(260).call(this.zoom.transform, t);
+          else sel.call(this.zoom.transform, t);
+        }
+
+        resetView() {
+          this.fitToScene(true);
+        }
+
+        exitFocusMode() {
+          this.state.focus = null;
+          this.state.actionMode = false;
+          this.nodeLayer.querySelectorAll(".node").forEach((el) => {
+            el.classList.remove("dimmed", "focal", "focus-root", "expanded");
+          });
+          this.edgeLayer.selectAll("path.edge")
+            .classed("focused", false)
+            .classed("dimmed", false);
+          this.edgeLayer.selectAll("text.edge-label").classed("focused", false);
+          if (this.focusExit) this.focusExit.classList.remove("show");
+          if (this.actionsBar) {
+            this.actionsBar.querySelectorAll(".action-btn").forEach((btn) => {
+              btn.classList.remove("active", "dimmed");
+            });
+          }
+          this.fitToScene(true);
+        }
+
+        destroyCharts() {
+          Object.values(this.chartInstances).forEach((c) => { try { c.destroy(); } catch (_) {} });
+          this.chartInstances = {};
+        }
+
+        chartPluginDeviationMarker(markerIndex) {
+          return {
+            id: `dev-marker-${markerIndex}`,
+            afterDatasetsDraw(chart) {
+              const { ctx, chartArea, scales } = chart || {};
+              if (!ctx || !chartArea || !scales || !scales.x || !scales.y) return;
+              const x = scales.x.getPixelForValue(markerIndex);
+              if (!Number.isFinite(x)) return;
+              ctx.save();
+              const dark = document.body.classList.contains("dark");
+              ctx.strokeStyle = dark ? "#ff6b6b" : "#DC2626";
+              ctx.setLineDash([4, 3]);
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(x, chartArea.top + 2);
+              ctx.lineTo(x, chartArea.bottom);
+              ctx.stroke();
+              ctx.restore();
+            }
+          };
+        }
+
+        chartPluginCurrentMarker(datasetIndex) {
+          return {
+            id: `current-dot-${datasetIndex}`,
+            afterDatasetsDraw(chart) {
+              if (!chart || !chart.scales || !chart.scales.x || !chart.scales.y) return;
+              const ds = chart.data.datasets[datasetIndex];
+              if (!ds || !ds.data || !ds.data.length) return;
+              let lastIdx = -1;
+              for (let i = ds.data.length - 1; i >= 0; i -= 1) {
+                const v = ds.data[i];
+                if (v !== null && v !== undefined && Number.isFinite(v)) {
+                  lastIdx = i;
+                  break;
+                }
+              }
+              if (lastIdx < 0) return;
+              const x = chart.scales.x.getPixelForValue(lastIdx);
+              const y = chart.scales.y.getPixelForValue(ds.data[lastIdx]);
+              if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+              const { ctx } = chart;
+              if (!ctx) return;
+              ctx.save();
+              const dark = document.body.classList.contains("dark");
+              ctx.fillStyle = dark ? "#6a93ff" : "#2F6BFF";
+              ctx.beginPath();
+              ctx.arc(x, y, 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          };
+        }
+
+        chartTheme() {
+          const dark = document.body.classList.contains("dark");
+          if (dark) {
+            return {
+              grid: "rgba(148,163,184,0.14)",
+              axis: "#9fb0c7",
+              gold: "#e0b85a",
+              live: "#6a93ff",
+              threshold: "#8ea0b8",
+              loss: "#ff6b6b",
+              recovery: "#38b26e",
+              fillBlue: "rgba(95,143,255,0.14)",
+              fillRed: "rgba(255,107,107,0.12)",
+              fillGreen: "rgba(56,178,110,0.10)",
+              fillGold: "rgba(224,184,90,0.10)",
+              fillThreshold: "rgba(142,160,184,0.08)"
+            };
+          }
+          return {
+            grid: "rgba(148,163,184,0.12)",
+            axis: "#6B7280",
+            gold: "#D4A63A",
+            live: "#2F6BFF",
+            threshold: "#94A3B8",
+            loss: "#DC2626",
+            recovery: "#16A34A",
+            fillBlue: "rgba(47,107,255,0.14)",
+            fillRed: "rgba(220,38,38,0.18)",
+            fillGreen: "rgba(22,163,74,0.14)",
+            fillGold: "rgba(212,166,58,0.10)",
+            fillThreshold: "rgba(148,163,184,0.08)"
+          };
+        }
+
+        baseChartOptions(yMin, yMax, tooltipEnabled = true, yUnit = "") {
+          const theme = this.chartTheme();
+          const dark = document.body.classList.contains("dark");
+          return {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            normalized: true,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                enabled: tooltipEnabled,
+                backgroundColor: dark ? "rgba(30,28,36,0.92)" : "rgba(255,255,255,0.96)",
+                borderColor: dark ? "rgba(208,188,255,0.22)" : "rgba(99,106,128,0.18)",
+                borderWidth: 1,
+                titleColor: dark ? "#e6e1e5" : "#0f172a",
+                bodyColor: dark ? "#c4c7cf" : "#475569",
+                padding: { x: 12, y: 10 },
+                cornerRadius: 10,
+                titleFont: { size: 12, weight: "700" },
+                bodyFont: { size: 12 },
+                callbacks: {
+                  label: (ctx) => {
+                    const v = ctx.parsed.y;
+                    if (v === null || v === undefined) return null;
+                    return ` ${ctx.dataset.label || ""} ${Number(v).toFixed(1)}${yUnit}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: theme.grid, drawTicks: false },
+                ticks: { color: theme.axis, maxTicksLimit: 5, font: { size: 11, weight: "600" } },
+                border: { color: theme.grid }
+              },
+              y: {
+                min: yMin,
+                max: yMax,
+                grid: { color: theme.grid, drawTicks: false },
+                ticks: {
+                  color: theme.axis,
+                  maxTicksLimit: 5,
+                  font: { size: 11, weight: "600" },
+                  callback: (v) => yUnit ? `${v}${yUnit}` : `${v}`
+                },
+                border: { color: theme.grid }
+              }
+            },
+            elements: {
+              point: { radius: 0, hitRadius: 8, hoverRadius: 5 },
+              line: { tension: 0.32, borderWidth: 2.2, spanGaps: true }
+            }
+          };
+        }
+
+        renderCharts() {
+          this.destroyCharts();
+          const ChartJS = window.Chart;
+          if (!ChartJS) return;
+          const theme = this.chartTheme();
+
+          const labels = Array.from({ length: 24 }, (_, i) => `t-${(23 - i) * 2}`);
+          const labels30m = Array.from({ length: 15 }, (_, i) => `t-${(14 - i) * 2}`);
+          const labels4h  = Array.from({ length: 48 }, (_, i) => `t-${(47 - i) * 2}`);
+
+          const goldenCanvas = document.getElementById("chart-batch_golden");
+          if (goldenCanvas) {
+            this.chartInstances.batch_golden = new ChartJS(goldenCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "Upper limit",
+                    data: Array(24).fill(18.8),
+                    borderColor: "rgba(212,166,58,0.28)",
+                    borderWidth: 1.2,
+                    borderDash: [3, 3],
+                    fill: false,
+                    pointRadius: 0
+                  },
+                  {
+                    label: "Golden ref",
+                    data: [18.02,18.00,18.01,18.02,18.00,18.01,18.02,18.00,18.01,18.02,18.00,18.01,18.00,18.01,18.02,18.00,18.01,18.02,18.00,18.01,18.02,18.00,18.01,18.00],
+                    borderColor: theme.gold,
+                    backgroundColor: "rgba(212,166,58,0.10)",
+                    borderDash: [6, 4],
+                    borderWidth: 2.4,
+                    fill: "-1",
+                    pointRadius: 0
+                  },
+                  {
+                    label: "Lower limit",
+                    data: Array(24).fill(17.2),
+                    borderColor: "rgba(212,166,58,0.28)",
+                    borderWidth: 1.2,
+                    borderDash: [3, 3],
+                    backgroundColor: "rgba(212,166,58,0.07)",
+                    fill: "-1",
+                    pointRadius: 0
+                  }
+                ]
+              },
+              options: this.baseChartOptions(16, 20, false, "°")
+            });
+          }
+
+          const currentCanvas = document.getElementById("chart-batch_current");
+          if (currentCanvas) {
+            this.chartInstances.batch_current = new ChartJS(currentCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "Golden ref",
+                    data: [18,18,18,18,18.1,18.1,18.1,18.1,18.1,18.1,18.2,18.2,18.2,18.2,18.2,18.2,18.3,18.3,18.3,18.3,18.3,18.3,18.3,18.3],
+                    borderColor: theme.gold,
+                    backgroundColor: "rgba(0,0,0,0)",
+                    borderDash: [6, 4],
+                    borderWidth: 2.2,
+                    fill: false,
+                    pointRadius: 0,
+                    order: 1
+                  },
+                  {
+                    label: "Live temp",
+                    data: [18,18,18.1,18.2,18.4,18.7,19.1,19.7,20.5,21.4,22.4,23.4,24.3,25.1,25.9,26.5,27.1,27.6,28.0,28.4,28.7,28.9,29.0,29.1],
+                    borderColor: theme.live,
+                    backgroundColor: theme.fillBlue,
+                    borderWidth: 2.4,
+                    fill: "origin",
+                    pointRadius: 0
+                  }
+                ]
+              },
+              plugins: [this.chartPluginDeviationMarker(9), this.chartPluginCurrentMarker(1)],
+              options: this.baseChartOptions(16, 32, true, "°")
+            });
+          }
+
+          const qualityCanvas = document.getElementById("chart-quality_seal");
+          if (qualityCanvas) {
+            this.chartInstances.quality_seal = new ChartJS(qualityCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "Golden ref",
+                    data: [22.2,22.2,22.1,22.2,22.2,22.1,22.2,22.1,22.2,22.2,22.1,22.2,22.1,22.2,22.2,22.1,22.2,22.1,22.2,22.2,22.1,22.2,22.1,22.2],
+                    borderColor: theme.gold,
+                    borderDash: [6, 4],
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0
+                  },
+                  {
+                    label: "Seal index",
+                    data: [22.3,22.2,22.1,21.9,21.6,21.2,20.7,20.0,19.2,18.3,17.2,16.1,14.9,13.7,12.5,11.4,10.4,9.6,8.9,8.4,8.0,7.7,7.5,7.4],
+                    borderColor: theme.live,
+                    backgroundColor: theme.fillBlue,
+                    borderWidth: 2.4,
+                    fill: "origin",
+                    pointRadius: 0
+                  },
+                  {
+                    label: "Upper limit",
+                    data: Array(24).fill(22.5),
+                    borderColor: theme.threshold,
+                    borderWidth: 1.4,
+                    borderDash: [4, 3],
+                    pointRadius: 0,
+                    fill: false
+                  },
+                  {
+                    label: "Lower limit",
+                    data: Array(24).fill(16.2),
+                    borderColor: theme.threshold,
+                    borderWidth: 1.4,
+                    borderDash: [4, 3],
+                    backgroundColor: theme.fillThreshold,
+                    fill: "-1",
+                    pointRadius: 0
+                  },
+                  {
+                    label: "Breach",
+                    data: [null,null,null,null,null,null,null,null,null,null,null,16.1,14.9,13.7,12.5,11.4,10.4,9.6,8.9,8.4,8.0,7.7,7.5,7.4],
+                    borderColor: theme.loss,
+                    backgroundColor: theme.fillRed,
+                    borderWidth: 2.4,
+                    fill: "origin",
+                    pointRadius: 0
+                  }
+                ]
+              },
+              plugins: [this.chartPluginCurrentMarker(1)],
+              options: this.baseChartOptions(4, 24, true, "")
+            });
+          }
+
+          const financeCanvas = document.getElementById("chart-impact_loss");
+          if (financeCanvas) {
+            const correctedActive = this.state.simulation.corrected;
+            this.chartInstances.impact_loss = new ChartJS(financeCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "Golden baseline",
+                    data: Array(24).fill(2.1),
+                    borderColor: theme.gold,
+                    borderDash: [6, 4],
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0
+                  },
+                  {
+                    label: "Unchanged €K",
+                    data: [5,5.6,6.4,7.5,9.0,10.8,13.0,15.5,18.2,21.1,24.0,26.8,29.4,31.7,33.7,35.5,37.0,38.3,39.4,40.3,41.1,41.8,42.4,42.8],
+                    borderColor: theme.loss,
+                    backgroundColor: theme.fillRed,
+                    borderWidth: 2.4,
+                    fill: "origin",
+                    pointRadius: 0
+                  },
+                  {
+                    label: "Corrected €K",
+                    data: correctedActive ? [5,5.2,5.4,5.7,6.1,6.5,7.0,7.5,8.1,8.7,9.3,9.9,10.5,11.1,11.7,12.3,12.9,13.5,14.1,14.7,15.2,15.7,16.2,16.6] : [],
+                    borderColor: theme.recovery,
+                    backgroundColor: theme.fillGreen,
+                    borderWidth: 2.4,
+                    fill: correctedActive ? "origin" : false,
+                    pointRadius: 0
+                  }
+                ]
+              },
+              options: this.baseChartOptions(0, 48, true, "K")
+            });
+          }
+
+          const bindRangeButtons = (nodeId, chart, rangeData) => {
+            const container = document.getElementById(`spark-range-${nodeId}`);
+            if (!container) return;
+            container.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const btn = e.target.closest(".spark-range-btn");
+              if (!btn) return;
+              const range = btn.getAttribute("data-range");
+              const d = rangeData[range];
+              if (!d) return;
+              container.querySelectorAll(".spark-range-btn").forEach((b) => b.classList.remove("active"));
+              btn.classList.add("active");
+              chart.data.labels = d.labels;
+              d.datasets.forEach((data, i) => {
+                if (chart.data.datasets[i]) chart.data.datasets[i].data = data;
+              });
+              chart.update("none");
+            });
+          };
+
+          if (this.chartInstances.batch_current) {
+            const live1h = [18,18,18.1,18.2,18.4,18.7,19.1,19.7,20.5,21.4,22.4,23.4,24.3,25.1,25.9,26.5,27.1,27.6,28.0,28.4,28.7,28.9,29.0,29.1];
+            const gold1h = [18,18,18,18,18.1,18.1,18.1,18.1,18.1,18.1,18.2,18.2,18.2,18.2,18.2,18.2,18.3,18.3,18.3,18.3,18.3,18.3,18.3,18.3];
+            const normal24 = [18,18.1,18,17.9,18,18.1,18,18,17.9,18,18.1,18,17.9,18,18,18.1,18,17.9,18,18.1,18,18,17.9,18];
+            bindRangeButtons("batch_current", this.chartInstances.batch_current, {
+              "30m": { labels: labels30m, datasets: [gold1h.slice(-15), live1h.slice(-15)] },
+              "1h":  { labels, datasets: [gold1h, live1h] },
+              "4h":  { labels: labels4h, datasets: [[...Array(24).fill(18), ...gold1h], [...normal24, ...live1h]] }
+            });
+          }
+
+          if (this.chartInstances.quality_seal) {
+            const gold1h   = Array(24).fill(22.2);
+            const live1h   = [22.3,22.2,22.1,21.9,21.6,21.2,20.7,20.0,19.2,18.3,17.2,16.1,14.9,13.7,12.5,11.4,10.4,9.6,8.9,8.4,8.0,7.7,7.5,7.4];
+            const upper1h  = Array(24).fill(22.5);
+            const lower1h  = Array(24).fill(16.2);
+            const breach1h = [null,null,null,null,null,null,null,null,null,null,null,16.1,14.9,13.7,12.5,11.4,10.4,9.6,8.9,8.4,8.0,7.7,7.5,7.4];
+            const stable24 = Array.from({length:24},(_,i)=>22.2+(i%3===0?0.1:i%3===1?-0.1:0));
+            bindRangeButtons("quality_seal", this.chartInstances.quality_seal, {
+              "30m": { labels: labels30m, datasets: [gold1h.slice(-15), live1h.slice(-15), upper1h.slice(-15), lower1h.slice(-15), breach1h.slice(-15)] },
+              "1h":  { labels, datasets: [gold1h, live1h, upper1h, lower1h, breach1h] },
+              "4h":  { labels: labels4h, datasets: [[...stable24,...gold1h],[...stable24,...live1h],Array(48).fill(22.5),Array(48).fill(16.2),[...Array(35).fill(null),...breach1h.slice(11)]] }
+            });
+          }
+
+          if (this.chartInstances.impact_loss) {
+            const correctedActive = this.state.simulation.corrected;
+            const gold1h = Array(24).fill(2.1);
+            const loss1h = [5,5.6,6.4,7.5,9.0,10.8,13.0,15.5,18.2,21.1,24.0,26.8,29.4,31.7,33.7,35.5,37.0,38.3,39.4,40.3,41.1,41.8,42.4,42.8];
+            const corr1h = correctedActive ? [5,5.2,5.4,5.7,6.1,6.5,7.0,7.5,8.1,8.7,9.3,9.9,10.5,11.1,11.7,12.3,12.9,13.5,14.1,14.7,15.2,15.7,16.2,16.6] : [];
+            const flat24 = Array.from({length:24},(_,i)=>2.1+(i%4===0?0.1:0));
+            bindRangeButtons("impact_loss", this.chartInstances.impact_loss, {
+              "30m": { labels: labels30m, datasets: [gold1h.slice(-15), loss1h.slice(-15), correctedActive ? corr1h.slice(-15) : []] },
+              "1h":  { labels, datasets: [gold1h, loss1h, corr1h] },
+              "4h":  { labels: labels4h, datasets: [Array(48).fill(2.1), [...flat24,...loss1h], correctedActive ? [...flat24,...corr1h] : []] }
+            });
+          }
+
+          /* ── Compact node charts ── */
+          const tensionCanvas = document.getElementById("chart-sensor_tension");
+          if (tensionCanvas) {
+            this.chartInstances.sensor_tension = new ChartJS(tensionCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  { label: "Normal band", data: Array(24).fill(100), borderColor: theme.gold, borderDash: [5,4], borderWidth: 1.6, fill: false, pointRadius: 0 },
+                  { label: "Tension %", data: [100,100,100.2,100.1,100,100.2,100.3,100.4,100.6,100.8,101.2,101.7,102.2,102.8,103.4,104.0,104.7,105.4,106.0,106.6,107.1,107.4,107.7,107.8], borderColor: theme.loss, backgroundColor: theme.fillRed, borderWidth: 2.4, fill: "1", pointRadius: 0 }
+                ]
+              },
+              options: this.baseChartOptions(98, 110, true, "%")
+            });
+          }
+
+          const heaterCanvas = document.getElementById("chart-control_heater");
+          if (heaterCanvas) {
+            this.chartInstances.control_heater = new ChartJS(heaterCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  { label: "Setpoint 183°C", data: Array(24).fill(183), borderColor: theme.gold, borderDash: [5,4], borderWidth: 1.6, fill: false, pointRadius: 0 },
+                  { label: "Actual °C", data: [183,183,183.1,183.1,183.2,183.3,183.4,183.5,183.6,183.8,184.0,184.2,184.5,184.7,184.9,185.0,185.1,185.2,185.2,185.2,185.2,185.2,185.2,185.2], borderColor: "#f97316", backgroundColor: "rgba(249,115,22,0.12)", borderWidth: 2.4, fill: "1", pointRadius: 0 }
+                ]
+              },
+              options: this.baseChartOptions(181, 187, true, "°C")
+            });
+          }
+
+          const foilCanvas = document.getElementById("chart-material_foil");
+          if (foilCanvas) {
+            this.chartInstances.material_foil = new ChartJS(foilCanvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  { label: "Expected", data: Array(24).fill(100), borderColor: theme.gold, borderDash: [5,4], borderWidth: 1.6, fill: false, pointRadius: 0 },
+                  { label: "Foil tension %", data: [100,100.1,100,100.2,100.3,100.4,100.6,100.9,101.2,101.7,102.2,102.8,103.4,104.0,104.6,105.1,105.6,106.0,106.4,106.7,107.0,107.2,107.4,107.6], borderColor: theme.live, backgroundColor: theme.fillBlue, borderWidth: 2.2, fill: "1", pointRadius: 0 }
+                ]
+              },
+              options: this.baseChartOptions(98, 110, true, "%")
+            });
+          }
+        }
+
+        nodeClass(entity) {
+          if (entity.type === "GoldenBatch" || entity.id === "batch_current") return "anchor-card";
+          if (entity.type === "SimulationScenario") return "simulation-card";
+          if (entity.type === "ExternalSystem") return "system-card";
+          return "process-card";
+        }
+
+        nodeTier(entity) {
+          if (["deviation", "batch_current", "quality_seal", "impact_loss"].includes(entity.id)) return "tier-primary";
+          if (["asset_sealer", "batch_golden"].includes(entity.id)) return "tier-secondary";
+          if (["material_foil", "sensor_tension", "control_heater"].includes(entity.id)) return "tier-tertiary";
+          if (["sys_mes", "sys_qa", "sys_erp"].includes(entity.id)) return "tier-endpoint";
+          return "";
+        }
+
+        nodeModeClass(entity) {
+          if (["sys_mes", "sys_qa", "sys_erp"].includes(entity.id)) return "endpoint-card";
+          if (["deviation", "batch_current", "quality_seal", "impact_loss"].includes(entity.id)) return "analytical-card";
+          if (["asset_sealer", "material_foil", "sensor_tension", "control_heater", "batch_golden"].includes(entity.id)) return "operational-card";
+          return "";
+        }
+
+        dynamicWidth(entity) {
+          const widths = {
+            "batch_golden": 560,
+            "batch_current": 680,
+            "deviation": 620,
+            "quality_seal": 620,
+            "impact_loss": 620,
+            "asset_sealer": 440,
+            "material_foil": 300,
+            "sensor_tension": 300,
+            "control_heater": 300,
+            "sim_unchanged": 400,
+            "sim_corrected": 400,
+            "sys_mes": 300,
+            "sys_qa": 300,
+            "sys_erp": 300,
+            "aux_sensor_2": 320,
+            "aux_asset_2": 320
+          };
+          return widths[entity.id] || 380;
+        }
+
+        measureContentWidth(el, entity) {
+          if (!el) return 0;
+          const widestChild = Array.from(el.children || []).reduce((maxW, child) => {
+            return Math.max(maxW, child.scrollWidth || child.clientWidth || 0);
+          }, 0);
+          const titleEstimate = Math.max(0, (entity.label || "").length * 8.4);
+          const metricsEstimate = Object.keys(entity.metrics || {}).length * 44;
+          const chartEstimate = entity.chart ? 280 : 0;
+          return Math.max(widestChild, titleEstimate, metricsEstimate, chartEstimate);
+        }
+
+        bindNodeDrag(el, entityId) {
+          if (entityId === "batch_golden") return;
+          el.addEventListener("pointerdown", (e) => {
+            if (e.button !== 0) return;
+            e.stopPropagation();
+            const rect = el.getBoundingClientRect();
+            this.dragging = {
+              id: entityId,
+              ox: e.clientX - rect.left,
+              oy: e.clientY - rect.top,
+              moved: false
+            };
+            el.classList.add("dragging");
+            el.setPointerCapture(e.pointerId);
+          });
+
+          el.addEventListener("pointermove", (e) => {
+            if (!this.dragging || this.dragging.id !== entityId) return;
+            this.dragging.moved = true;
+            const boardRect = this.board.getBoundingClientRect();
+            const t = this.state.transform || d3.zoomIdentity;
+            const localX = (e.clientX - boardRect.left - t.x) / t.k - this.dragging.ox;
+            const localY = (e.clientY - boardRect.top - t.y) / t.k - this.dragging.oy;
+            this.state.positions[entityId] = { x: Math.max(20, localX), y: Math.max(20, localY) };
+            el.style.left = `${this.state.positions[entityId].x}px`;
+            el.style.top = `${this.state.positions[entityId].y}px`;
+            this.renderEdges();
+            if (this.state.focus) {
+              const neighborhood = this.getConnectedImpactNeighborhood(this.state.focus);
+              this.applyFocus(this.state.focus, { center: false, neighborhood });
+            }
+          });
+
+          const onUp = (e) => {
+            if (!this.dragging || this.dragging.id !== entityId) return;
+            try { el.releasePointerCapture(e.pointerId); } catch (_) {}
+            const moved = this.dragging.moved;
+            this.dragging = null;
+            el.classList.remove("dragging");
+            if (!moved) {
+              this.enterFocusMode(entityId, { center: false });
+            } else {
+              GraphStateStore.save({ positions: this.state.positions, focus: this.state.focus });
+              if (this.state.focus) {
+                const neighborhood = this.getConnectedImpactNeighborhood(this.state.focus);
+                this.applyFocus(this.state.focus, { center: false, neighborhood });
+              }
+            }
+          };
+
+          el.addEventListener("pointerup", onUp);
+          el.addEventListener("pointercancel", onUp);
+        }
+
+        stateToken(entity) {
+          if (entity.type === "ExternalSystem") return "external";
+          if (entity.type === "SimulationScenario") return "simulation";
+          return entity.state || "normal";
+        }
+
+        ageText(entityId) {
+          const ts = this.state.signalUpdatedAt?.[entityId];
+          if (!ts) return "";
+          const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+          if (sec < 60) return `${sec}s ago`;
+          return `${Math.floor(sec / 60)}m ago`;
+        }
+
+        updateSignalAges() {
+          this.nodeLayer.querySelectorAll(".node[data-id]").forEach((el) => {
+            const id = el.getAttribute("data-id");
+            const ageEl = el.querySelector(".signal-age");
+            if (!id || !ageEl) return;
+            const txt = this.ageText(id);
+            if (txt) ageEl.textContent = `Updated ${txt}`;
+            const ts = this.state.signalUpdatedAt?.[id] || 0;
+            ageEl.classList.toggle("stale", (Date.now() - ts) > 30000);
+          });
+        }
+
+        cardHtml(entity) {
+          const accent = ACCENT[entity.type] || ["#8d99af", "#edf2fb"];
+          const s = STATE_STYLE[this.stateToken(entity)] || STATE_STYLE.normal;
+          const metrics = Object.entries(entity.metrics || {}).map(([k, v]) => `<div class=\"metric\"><span>${k}</span><b>${v}</b></div>`).join("");
+          const p = Number.isFinite(entity.root_cause_probability)
+            ? entity.root_cause_probability
+            : Number.isFinite(entity.metadata?.root_cause_probability)
+              ? entity.metadata.root_cause_probability
+              : null;
+          const probabilityBlock = (entity.projectionRole === "cause" && p !== null)
+            ? `<div class="metric-probability"><span>Root cause likelihood</span><b>${Math.round(p * 100)}%</b></div>`
+            : "";
+          const primaryAnalytical = new Set(["deviation", "batch_current", "quality_seal", "impact_loss"]);
+          const compactIds = new Set(["material_foil", "sensor_tension", "control_heater", "sys_mes", "sys_qa", "sys_erp"]);
+          const probClass = (entity.projectionRole === "cause" && p !== null)
+            ? (p > 0.5 ? "prob-high" : (p >= 0.25 ? "prob-medium" : ""))
+            : "";
+          const extraClass = `${primaryAnalytical.has(entity.id) ? " primary-analytical" : ""} ${entity.id === "deviation" ? " incident-root" : ""} ${entity.id === "batch_golden" ? " reference-node" : ""} ${compactIds.has(entity.id) ? " compact-card" : ""} ${this.nodeTier(entity)} ${this.nodeModeClass(entity)} ${probClass}`.trim();
+          const isSignal = ["Sensor", "QualityState", "ControlParameter", "Asset"].includes(entity.type);
+          const age = isSignal ? this.ageText(entity.id) : "";
+          const ageClass = (isSignal && this.state.signalUpdatedAt && (Date.now() - (this.state.signalUpdatedAt[entity.id] || 0)) > 30000) ? " stale" : "";
+          const confidence = entity.metadata?.confidence;
+          const extraDetail = compactIds.has(entity.id)
+            ? `<div class="extra-detail">${entity.metadata?.detail || entity.metadata?.description || ""}</div>`
+            : "";
+          return `
+            <article class="node ${this.nodeClass(entity)} ${extraClass}" id="node-${entity.id}" data-id="${entity.id}" style="--accent:${accent[0]};--icon-bg:${accent[1]};--state-border:${s[0]};--state-bg:${s[1]};--state-fg:${s[2]}">
+              <div class="node-header">
+                <div class="node-header-main">
+                  <div class="icon-chip">${ICON[entity.type] || "•"}</div>
+                  <div><div class="title node-title">${entity.label}</div><div class="section-label">${entity.type}</div></div>
+                </div>
+                <span class="state node-status"><i></i>${(this.stateToken(entity)).toUpperCase()}</span>
+              </div>
+              <div class="node-body">
+                <div class="sub">${entity.metadata.description || ""}</div>
+                ${age ? `<div class="signal-age${ageClass}">Updated ${age}</div>` : ""}
+                <div class="metrics">${metrics}</div>
+                ${probabilityBlock}
+                ${entity.insight ? `<button class=\"insight-chip\" data-focus=\"${entity.id}\"><i></i><span><strong>KairOS</strong><br>${entity.insight}${confidence ? `<br><span class=\"sub\">Confidence ${confidence}</span>` : ""}</span></button>` : ""}
+                ${extraDetail}
+                ${entity.chart ? (() => {
+                  const goldenCompare = new Set(["batch_current", "quality_seal", "impact_loss"]);
+                  const hasRanges = goldenCompare.has(entity.id);
+                  const refLabel = hasRanges ? `<span class="spark-ref-label">vs. Golden Batch GB-2024-01</span>` : "";
+                  const rangeCtrl = hasRanges
+                    ? `<div class="spark-range" id="spark-range-${entity.id}"><button class="spark-range-btn" data-range="30m">30m</button><button class="spark-range-btn active" data-range="1h">1h</button><button class="spark-range-btn" data-range="4h">4h</button></div>`
+                    : "";
+                  const header = (refLabel || rangeCtrl) ? `<div class="spark-controls">${refLabel}${rangeCtrl}</div>` : "";
+                  return `${header}<div class="spark"><canvas id="chart-${entity.id}"></canvas></div>`;
+                })() : ""}
+              </div>
+            </article>`;
+        }
+
+        renderNodes() {
+          const insightFocusMap = {
+            sensor_tension: { root: "deviation", seeds: ["asset_sealer", "quality_seal"] },
+            control_heater: { root: "asset_sealer", seeds: ["deviation"] },
+            deviation: { root: "impact_loss", seeds: ["sim_corrected", "sim_unchanged"] },
+            quality_seal: { root: "batch_current", seeds: ["impact_loss"] },
+            batch_current: { root: "sim_corrected", seeds: ["impact_loss", "batch_golden"] },
+            aux_sensor_2: { root: "aux_asset_2", seeds: [] }
+          };
+          this.nodeLayer.innerHTML = this.state.subgraph.entities.map((e) => this.cardHtml(e)).join("");
+          this.state.subgraph.entities.forEach((e) => {
+            const el = this.nodeLayer.querySelector(`[data-id="${e.id}"]`);
+            const p = this.state.positions[e.id] || { x: 0, y: 0 };
+            el.style.width = "max-content";
+            el.style.left = `${p.x}px`;
+            el.style.top = `${p.y}px`;
+            el.querySelectorAll(".insight-chip").forEach((chip) => {
+              chip.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                const target = insightFocusMap[e.id];
+                if (target) this.enterFocusMode(target.root, { seedIds: target.seeds, center: true });
+                else this.enterFocusMode(e.id, { center: true });
+              });
+            });
+            const nodeBody = el.querySelector(".node-body");
+            if (nodeBody && el.classList.contains("compact-card")) {
+              nodeBody.addEventListener("click", (ev) => {
+                if (ev.target.closest(".insight-chip")) return;
+                ev.stopPropagation();
+                el.classList.toggle("expanded");
+              });
+            }
+            el.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              this.enterFocusMode(e.id, { center: false });
+            });
+            this.bindNodeDrag(el, e.id);
+          });
+        }
+
+        nodeRect(id) {
+          const el = this.nodeLayer.querySelector(`[data-id="${id}"]`);
+          const p = this.state.positions[id];
+          if (!el || !p) return null;
+          const w = el.offsetWidth;
+          const h = el.offsetHeight;
+          return { x: p.x, y: p.y, w, h, cx: p.x + w / 2, cy: p.y + h / 2 };
+        }
+
+        edgePath(a, b) {
+          const dx = b.cx - a.cx;
+          const sx = dx >= 0 ? a.x + a.w : a.x;
+          const ex = dx >= 0 ? b.x : b.x + b.w;
+          const c1 = sx + Math.max(30, Math.abs(dx) * 0.26) * Math.sign(dx || 1);
+          const c2 = ex - Math.max(30, Math.abs(dx) * 0.22) * Math.sign(dx || 1);
+          return `M ${sx} ${a.cy} C ${c1} ${a.cy}, ${c2} ${b.cy}, ${ex} ${b.cy}`;
+        }
+
+        renderEdges() {
+          const primarySpineEdges = new Set(["r4", "r5", "r6", "r7"]);
+          const spineEdges = new Set(["r1", "r2", "r3", "r4", "r5", "r6", "r7"]);
+          const branchEdges = new Set(["r9", "r10", "r11", "r12"]);
+          const execEdges = new Set(["r13", "r14", "r15", "r16"]);
+          const entityById = new Map(this.state.subgraph.entities.map((e) => [e.id, e]));
+          const renderData = this.state.projection.relations.map((r) => {
+            const a = this.nodeRect(r.from);
+            const b = this.nodeRect(r.to);
+            if (!a || !b) return null;
+            const fromEntity = entityById.get(r.from);
+            const probRaw = fromEntity && (Number.isFinite(fromEntity.root_cause_probability)
+              ? fromEntity.root_cause_probability
+              : Number.isFinite(fromEntity?.metadata?.root_cause_probability)
+                ? fromEntity.metadata.root_cause_probability
+                : null);
+            const priorityCls =
+              r.id === "r8" ? "golden-ref reference" :
+              execEdges.has(r.id) ? "exec" :
+              branchEdges.has(r.id) ? "branch" :
+              primarySpineEdges.has(r.id) ? "primary-spine spine" :
+              spineEdges.has(r.id) ? "spine" : "";
+            const visualCls = branchEdges.has(r.id)
+              ? "simulation"
+              : (EDGE_STYLE[r.type]?.cls || "causal");
+            const probEdge = (fromEntity?.projectionRole === "cause" && probRaw !== null);
+            let probWidth = null;
+            let probOpacity = null;
+            let probLabel = null;
+            if (probEdge) {
+              if (probRaw > 0.5) {
+                probWidth = 3.0;
+                probOpacity = 0.96;
+              } else if (probRaw >= 0.25) {
+                probWidth = 2.2;
+                probOpacity = 0.84;
+              } else {
+                probWidth = 1.4;
+                probOpacity = 0.68;
+              }
+              probLabel = `${Math.round(probRaw * 100)}%`;
+            }
+            return { r, d: this.edgePath(a, b), lx: (a.cx + b.cx) / 2, ly: (a.cy + b.cy) / 2, priorityCls, visualCls, probEdge, probWidth, probOpacity, probLabel };
+          }).filter(Boolean);
+
+          const sel = this.edgeLayer.selectAll("path.edge").data(renderData, (d) => d.r.id);
+          sel.enter()
+            .append("path")
+            .attr("class", (d) => `edge ${d.visualCls} ${d.priorityCls}`)
+            .attr("marker-end", (d) => `url(#${EDGE_STYLE[d.r.type]?.marker || "arrow-causal"})`)
+            .on("mouseenter", (event, d) => {
+              d3.select(event.currentTarget).classed("focused", true);
+              this.edgeLayer.selectAll("text.edge-label").classed("focused", (x) => x.r.id === d.r.id);
+            })
+            .on("mouseleave", (event) => {
+              d3.select(event.currentTarget).classed("focused", false);
+              this.edgeLayer.selectAll("text.edge-label").classed("focused", false);
+            })
+            .merge(sel)
+            .attr("class", (d) => `edge ${d.visualCls} ${d.priorityCls}`)
+            .style("stroke-width", (d) => d.probEdge ? `${d.probWidth}px` : null)
+            .style("opacity", (d) => d.probEdge ? d.probOpacity : null)
+            .attr("d", (d) => d.d);
+          sel.exit().remove();
+
+          const lsel = this.edgeLayer.selectAll("text.edge-label").data(renderData, (d) => `lbl-${d.r.id}`);
+          lsel.enter()
+            .append("text")
+            .attr("class", "edge-label")
+            .merge(lsel)
+            .attr("x", (d) => d.lx)
+            .attr("y", (d) => d.ly - 6)
+            .attr("text-anchor", "middle")
+            .text((d) => d.r.type.replace("_", " "));
+          lsel.exit().remove();
+
+          const probLabels = renderData.filter((d) => d.probEdge && d.probLabel);
+          const pl = this.edgeLayer.selectAll("text.edge-prob-label").data(probLabels, (d) => `pl-${d.r.id}`);
+          pl.enter()
+            .append("text")
+            .attr("class", "edge-prob-label")
+            .merge(pl)
+            .attr("x", (d) => d.lx + 12)
+            .attr("y", (d) => d.ly - 10)
+            .text((d) => d.probLabel);
+          pl.exit().remove();
+
+          const current = this.nodeRect("batch_current");
+          const unchanged = this.nodeRect("sim_unchanged");
+          const corrected = this.nodeRect("sim_corrected");
+          const forkData = (current && unchanged && corrected) ? [{
+            x: current.x + current.w * 0.88,
+            y: current.y + current.h * 0.66,
+            u: { x: unchanged.x + unchanged.w * 0.14, y: unchanged.y + unchanged.h * 0.14 },
+            c: { x: corrected.x + corrected.w * 0.14, y: corrected.y + corrected.h * 0.14 }
+          }] : [];
+
+          const jsel = this.edgeLayer.selectAll("circle.fork-junction").data(forkData);
+          jsel.enter().append("circle").attr("class", "fork-junction").attr("r", 3.5)
+            .merge(jsel).attr("cx", (d) => d.x).attr("cy", (d) => d.y);
+          jsel.exit().remove();
+
+          const fpaths = [
+            ...forkData.map((d) => ({ id: "u", cls: "unchanged", x1: d.x, y1: d.y, x2: d.u.x, y2: d.u.y })),
+            ...forkData.map((d) => ({ id: "c", cls: "corrected", x1: d.x, y1: d.y, x2: d.c.x, y2: d.c.y }))
+          ];
+          const pf = this.edgeLayer.selectAll("path.fork-link").data(fpaths, (d) => d.id);
+          pf.enter().append("path").attr("class", (d) => `simulation branch fork-link ${d.cls}`)
+            .merge(pf)
+            .attr("class", (d) => `simulation branch fork-link ${d.cls}`)
+            .attr("d", (d) => `M ${d.x1} ${d.y1} C ${(d.x1 + d.x2)/2} ${d.y1}, ${(d.x1 + d.x2)/2} ${d.y2}, ${d.x2} ${d.y2}`);
+          pf.exit().remove();
+
+          const flabels = [
+            ...forkData.map((d) => ({ id: "lu", x: (d.x + d.u.x) / 2 - 18, y: (d.y + d.u.y) / 2 - 6, t: "unchanged" })),
+            ...forkData.map((d) => ({ id: "lc", x: (d.x + d.c.x) / 2 + 4, y: (d.y + d.c.y) / 2 - 6, t: "corrected" }))
+          ];
+          const ft = this.edgeLayer.selectAll("text.fork-label").data(flabels, (d) => d.id);
+          ft.enter().append("text").attr("class", (d) => `fork-label ${d.t}`)
+            .merge(ft)
+            .attr("class", (d) => `fork-label ${d.t}`)
+            .attr("x", (d) => d.x)
+            .attr("y", (d) => d.y)
+            .text((d) => d.t);
+          ft.exit().remove();
+        }
+
+        applyFocus(focusId = this.state.focus, options = {}) {
+          const { center = true, seedIds = [], neighborhood = null } = options;
+          if (!focusId) {
+            this.exitFocusMode();
+            return;
+          }
+          this.state.focus = focusId;
+          const resolvedNeighborhood = neighborhood || this.getConnectedImpactNeighborhood(focusId);
+          const keepNodes = new Set((resolvedNeighborhood.nodeIds || []).concat(seedIds || [], [focusId]));
+          const keepEdges = new Set(resolvedNeighborhood.edgeIds || []);
+
+          if (!neighborhood && seedIds && seedIds.length) {
+            seedIds.forEach((sid) => {
+              this.state.projection.relations.forEach((r) => {
+                if ((r.from === sid || r.to === sid) && keepNodes.has(r.from) && keepNodes.has(r.to)) {
+                  keepEdges.add(r.id);
+                }
+              });
+            });
+          }
+
+          this.nodeLayer.querySelectorAll(".node").forEach((el) => {
+            const id = el.getAttribute("data-id");
+            const isCompact = el.classList.contains("compact-card");
+            const willExpand = keepNodes.has(id) && isCompact;
+            el.classList.toggle("dimmed", !keepNodes.has(id));
+            el.classList.toggle("focal", id === focusId);
+            el.classList.toggle("focus-root", id === focusId);
+            el.classList.toggle("expanded", willExpand);
+          });
+
+          this.edgeLayer.selectAll("path.edge")
+            .classed("focused", (d) => !!(d && d.r && keepEdges.has(d.r.id)))
+            .classed("dimmed", (d) => !!(d && d.r && !keepEdges.has(d.r.id)));
+          this.edgeLayer.selectAll("text.edge-label")
+            .classed("focused", (d) => !!(d && d.r && keepEdges.has(d.r.id)));
+
+          this.updateActionsForFocus(focusId, keepNodes);
+          if (this.focusExit) this.focusExit.classList.add("show");
+          if (center) {
+            this.centerOnNodes(Array.from(keepNodes), true, 0.72);
+          }
+        }
+
+        updateActionsForFocus(focusId, keepNodes) {
+          if (!this.actionsBar) return;
+          this.actionsBar.querySelectorAll(".action-btn").forEach((btn) => {
+            const scope = (btn.getAttribute("data-focus") || "").split(",").map((s) => s.trim()).filter(Boolean);
+            const active = scope.includes(focusId) || scope.some((id) => keepNodes.has(id));
+            btn.classList.toggle("active", active);
+            btn.classList.toggle("dimmed", !active);
+          });
+        }
+
+        render() {
+          this.renderNodes();
+          this.renderEdges();
+          this.renderCharts();
+          if (this.state.actionMode && this.state.focus) {
+            const neighborhood = this.getConnectedImpactNeighborhood(this.state.focus);
+            this.applyFocus(this.state.focus, { center: false, neighborhood });
+          }
+        }
+      }
+
+      function createPlantKnowledgeGraph() {
+        const g = new PlantKnowledgeGraph();
+
+        [
+          new GraphEntity({ id: "batch_golden", type: "GoldenBatch", label: "Golden Batch GB-2024-01", state: "normal", chart: "golden", rankHint: 0, projectionRole: "reference", pinned: { x: 80, y: 70 }, metadata: { description: "Reference profile", detail: "Validated baseline for blister packaging line B4" }, metrics: { Yield: "98.7%", Speed: "280 ppm" } }),
+          new GraphEntity({ id: "material_foil", type: "Material", label: "Foil Roll A12", state: "warning", chart: "foil", rankHint: 1, projectionRole: "cause", root_cause_probability: 0.20, metadata: { description: "Lot FR-A12-09", detail: "Supplier lot FR-A12-09 in active web feed" }, metrics: { Tension: "+7.8%", Temp: "27.4C" } }),
+          new GraphEntity({ id: "sensor_tension", type: "Sensor", label: "Web Tension Sensor", state: "warning", chart: "tension", rankHint: 1, projectionRole: "cause", root_cause_probability: 0.62, metadata: { description: "Sensor T-44", confidence: "0.94", detail: "Signal drift persists across last 19 minutes" }, metrics: { Drift: "+7.8%", Confidence: "0.94" }, insight: "Drift detected 19 min ago" }),
+          new GraphEntity({ id: "control_heater", type: "ControlParameter", label: "Heater Zone 3", state: "warning", chart: "heater", rankHint: 1, projectionRole: "cause", root_cause_probability: 0.18, metadata: { description: "Loop HZ-3", confidence: "0.86", detail: "Control loop offset detected above expected band" }, metrics: { Setpoint: "183C", Offset: "+2.2C" }, insight: "Likely heater offset" }),
+          new GraphEntity({ id: "asset_sealer", type: "Asset", label: "Blister Sealer", state: "critical", rankHint: 2, projectionRole: "live", metadata: { description: "Line B4", detail: "Packaging speed currently constrained by drift response" }, metrics: { Speed: "320 ppm", TempDrift: "+2.2C" } }),
+          new GraphEntity({ id: "deviation", type: "Deviation", label: "Seal Drift Deviation", state: "critical", rankHint: 3, projectionRole: "live", metadata: { description: "DV-2026-031", confidence: "0.89", detail: "Deviation window open for 25 minutes" }, metrics: { Severity: "Major", Window: "25 min" }, insight: "Projected scrap €132K/day" }),
+          new GraphEntity({ id: "quality_seal", type: "QualityState", label: "Seal Strength", state: "critical", chart: "quality", rankHint: 4, projectionRole: "live", metadata: { description: "Release quality", confidence: "0.84", detail: "Release threshold breach trend accelerating" }, metrics: { Index: "86.1/100", Forecast: "34% in 90m", "Lower Limit": "16.2", "Current Risk": "High" }, insight: "Seal degradation in progress" }),
+          new GraphEntity({ id: "batch_current", type: "Batch", label: "Current Batch SB-2024-04", state: "warning", chart: "current", rankHint: 4, projectionRole: "live", metadata: { description: "Live batch", confidence: "0.86", detail: "Process diverges from golden reference since t-26" }, metrics: { Speed: "320 ppm", Yield: "97.1%", "Drift Start": "t-26 min", "Delta vs Golden": "+7.1%" }, insight: "Diverging from golden batch" }),
+          new GraphEntity({ id: "sim_unchanged", type: "SimulationScenario", label: "If unchanged", state: "simulation", rankHint: 5, projectionRole: "simulation", metadata: { description: "Continuation path", pathType: "risk" }, metrics: { ScrapRisk: "34%", Loss: "€132K/day", Trend: "Accelerating" }, insight: "High-risk path — €42.8K/day unmitigated exposure at current rate" }),
+          new GraphEntity({ id: "sim_corrected", type: "SimulationScenario", label: "If corrected", state: "simulation", rankHint: 5, projectionRole: "simulation", metadata: { description: "Reduce speed to 260 ppm", pathType: "recovery" }, metrics: { ScrapRisk: "4%", Savings: "€117K/day", Confidence: "0.86" }, insight: "Recommended — 86% confidence · Reduces exposure to €15K/day" }),
+          new GraphEntity({ id: "impact_loss", type: "FinancialImpact", label: "Loss Projection", state: "warning", chart: "finance", rankHint: 6, projectionRole: "consequence", metadata: { description: "Cost trajectory" }, metrics: { Unchanged: "€132K/day", Corrected: "€15K/day", "90m Exposure": "€16.5K", "Daily Exposure": "€132K" } }),
+          new GraphEntity({ id: "sys_mes", type: "ExternalSystem", label: "MES", state: "external", rankHint: 7, projectionRole: "endpoint", metadata: { description: "Execution layer", detail: "Deviation log DV-2026-031 queued — awaiting operator confirmation to execute" }, metrics: { Workflow: "Pending", Action: "Log DV-2026-031", Trigger: "Both paths" } }),
+          new GraphEntity({ id: "sys_qa", type: "ExternalSystem", label: "QA", state: "external", rankHint: 7, projectionRole: "endpoint", metadata: { description: "Approval layer", detail: "QA escalation opened — approval required before batch release" }, metrics: { Workflow: "Notified", Approval: "Required", Trigger: "Unchanged path" } }),
+          new GraphEntity({ id: "sys_erp", type: "ExternalSystem", label: "ERP", state: "external", rankHint: 7, projectionRole: "endpoint", metadata: { description: "Cost sync layer", detail: "Cost exposure model pending sync — €42.8K/day to be updated on correction" }, metrics: { Workflow: "Sync pending", Exposure: "€42.8K/day", Trigger: "Corrected path" } }),
+
+          new GraphEntity({ id: "aux_sensor_2", type: "Sensor", label: "Web Camera WC-02", state: "normal", rankHint: 1, projectionRole: "cause", root_cause_probability: 0.04, metadata: { description: "Visual inspection sensor", confidence: "0.91", detail: "Monitoring foil surface defects and web alignment in real-time" }, metrics: { Status: "Nominal", "Defect Rate": "0.3%" }, insight: "No surface anomalies detected" }),
+          new GraphEntity({ id: "aux_asset_2", type: "Asset", label: "Cutter Unit C-04", state: "normal", rankHint: 2, projectionRole: "live", metadata: { description: "Line B4 cutter", detail: "Operating within normal speed and alignment parameters" }, metrics: { Speed: "285 ppm", Alignment: "OK" } })
+        ].forEach((e) => g.addEntity(e));
+
+        [
+          new GraphRelation({ id: "r1", from: "material_foil", to: "asset_sealer", type: "feeds" }),
+          new GraphRelation({ id: "r2", from: "sensor_tension", to: "asset_sealer", type: "measured_by" }),
+          new GraphRelation({ id: "r3", from: "control_heater", to: "asset_sealer", type: "controls" }),
+          new GraphRelation({ id: "r4", from: "asset_sealer", to: "deviation", type: "causes" }),
+          new GraphRelation({ id: "r5", from: "deviation", to: "quality_seal", type: "affects" }),
+          new GraphRelation({ id: "r6", from: "quality_seal", to: "batch_current", type: "affects" }),
+          new GraphRelation({ id: "r7", from: "batch_current", to: "impact_loss", type: "impacts_cost" }),
+          new GraphRelation({ id: "r8", from: "batch_golden", to: "batch_current", type: "references" }),
+          new GraphRelation({ id: "r9", from: "batch_current", to: "sim_unchanged", type: "simulated_as" }),
+          new GraphRelation({ id: "r10", from: "batch_current", to: "sim_corrected", type: "simulated_as" }),
+          new GraphRelation({ id: "r11", from: "sim_unchanged", to: "impact_loss", type: "impacts_cost" }),
+          new GraphRelation({ id: "r12", from: "sim_corrected", to: "impact_loss", type: "mitigates" }),
+          new GraphRelation({ id: "r13", from: "sim_unchanged", to: "sys_mes", type: "logged_in" }),
+          new GraphRelation({ id: "r14", from: "sim_unchanged", to: "sys_qa", type: "approved_by" }),
+          new GraphRelation({ id: "r15", from: "sim_corrected", to: "sys_mes", type: "logged_in" }),
+          new GraphRelation({ id: "r16", from: "sim_corrected", to: "sys_erp", type: "logged_in" }),
+
+          new GraphRelation({ id: "r17", from: "aux_sensor_2", to: "aux_asset_2", type: "measured_by" })
+        ].forEach((r) => g.addRelation(r));
+
+        return g;
+      }
+
+      function startClock() {
+        const clock = document.getElementById("clock");
+        const tick = () => {
+          clock.textContent = new Date().toLocaleTimeString([], { hour12: false });
+        };
+        tick();
+        setInterval(tick, 1000);
+      }
+
+      function initThemeToggle() {
+        const btn = document.getElementById("themeToggle");
+        if (!btn) return;
+        const saved = localStorage.getItem(THEME_KEY);
+        const isDark = saved === "dark";
+        document.body.classList.toggle("dark", isDark);
+        btn.dataset.mode = isDark ? "Night" : "Day";
+        btn.addEventListener("click", () => {
+          const nextDark = !document.body.classList.contains("dark");
+          document.body.classList.toggle("dark", nextDark);
+          localStorage.setItem(THEME_KEY, nextDark ? "dark" : "light");
+          btn.dataset.mode = nextDark ? "Night" : "Day";
+          window.dispatchEvent(new Event("mei-theme-change"));
+        });
+      }
+
+      function initSimToggle(state, renderer) {
+        const btn = document.getElementById("simToggle");
+        if (!btn) return;
+        const update = () => {
+          btn.dataset.mode = state.simulation.corrected ? "Corrected" : "Unchanged";
+        };
+        update();
+        btn.addEventListener("click", () => {
+          state.simulation.corrected = !state.simulation.corrected;
+          update();
+          renderer.scheduleRender();
+        });
+      }
+
+      function initDensityToggle(renderer) {
+        const btn = document.getElementById("densityToggle");
+        if (!btn) return;
+        const key = "mei_density_mode";
+        const saved = localStorage.getItem(key);
+        const compact = saved === "compact";
+        document.body.classList.toggle("compact", compact);
+        btn.dataset.mode = compact ? "Compact" : "Expanded";
+        btn.addEventListener("click", () => {
+          const nextCompact = !document.body.classList.contains("compact");
+          document.body.classList.toggle("compact", nextCompact);
+          localStorage.setItem(key, nextCompact ? "compact" : "expanded");
+          btn.dataset.mode = nextCompact ? "Compact" : "Expanded";
+          renderer?.scheduleRender();
+          requestAnimationFrame(() => renderer?.fitToScene(false));
+        });
+      }
+
+      function boot() {
+        startClock();
+        initThemeToggle();
+        if (!window.Chart) {
+          console.error("Chart.js failed to load. Verify chart.umd.min.js is reachable.");
+        }
+        const graph = createPlantKnowledgeGraph();
+        const subgraph = IncidentSubgraphExtractor.extract(graph, "deviation");
+        const projectionRelations = buildProjectionRelations(subgraph);
+
+        let persisted = GraphStateStore.load();
+        if (persisted && persisted.positions && !LayoutEngine.persistedPositionsAreValid(persisted.positions)) {
+          try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+          persisted = null;
+        }
+        const positions = LayoutEngine.run(subgraph, projectionRelations, persisted?.positions || {});
+
+        const state = {
+          graph,
+          subgraph,
+          projection: { relations: projectionRelations },
+          positions,
+          focus: persisted?.focus || null,
+          actionMode: false,
+          simulation: { corrected: true },
+          signalUpdatedAt: Object.fromEntries(subgraph.entities.map((e) => [e.id, Date.now()])),
+          transform: d3.zoomIdentity
+        };
+
+        const renderer = new Renderer(state);
+        initDensityToggle(renderer);
+        initSimToggle(state, renderer);
+        renderer.scheduleRender();
+        window.addEventListener("mei-theme-change", () => {
+          renderer.scheduleRender();
+        });
+        requestAnimationFrame(() => {
+          renderer.fitToScene(false);
+          if (state.focus) renderer.enterFocusMode(state.focus, { center: false });
+        });
+
+        document.getElementById("board").addEventListener("click", (e) => {
+          if (renderer.state.actionMode && !renderer.dragging && !e.target.closest(".node")) {
+            renderer.exitFocusMode();
+          }
+        });
+
+        window.addEventListener("resize", () => {
+          renderer.scheduleRender();
+          requestAnimationFrame(() => renderer.fitToScene(false));
+        });
+
+        setInterval(() => {
+          const batchChart = renderer.chartInstances.batch_current;
+          if (batchChart && batchChart.canvas && batchChart.canvas.isConnected && batchChart.data?.datasets?.[1]?.data) {
+            const ds = batchChart.data.datasets[1].data;
+            const next = Math.max(18, Math.min(31, ds[ds.length - 1] + (Math.random() - 0.30) * 0.55));
+            ds.push(Number(next.toFixed(2)));
+            ds.shift();
+            try { batchChart.update("none"); } catch (_) {}
+          }
+          const qualityChart = renderer.chartInstances.quality_seal;
+          if (qualityChart && qualityChart.canvas && qualityChart.canvas.isConnected && qualityChart.data?.datasets?.[0]?.data) {
+            const q = qualityChart.data.datasets[0].data;
+            const nextQ = Math.max(4, Math.min(24, q[q.length - 1] + (Math.random() - 0.68) * 0.52));
+            q.push(Number(nextQ.toFixed(2)));
+            q.shift();
+            const breach = q.map((v) => (v !== null && (v < 16.2 || v > 22.5) ? v : null));
+            if (qualityChart.data.datasets[3]) qualityChart.data.datasets[3].data = breach;
+            try { qualityChart.update("none"); } catch (_) {}
+          }
+          ["sensor_tension", "control_heater", "asset_sealer", "quality_seal", "batch_current", "aux_sensor_2", "aux_asset_2"].forEach((id) => {
+            state.signalUpdatedAt[id] = Date.now();
+          });
+          renderer.updateSignalAges();
+        }, 2400);
+
+        setInterval(() => {
+          renderer.updateSignalAges();
+        }, 1000);
+
+        window.addEventListener("beforeunload", () => {
+          GraphStateStore.save({ positions: state.positions, focus: state.focus });
+        });
+      }
+
+      boot();
+    })();
+  </script>
+</body>
+</html>

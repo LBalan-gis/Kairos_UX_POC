@@ -1,0 +1,676 @@
+/* ─── CSS custom properties (mirror the original :root) ─────────────── */
+.graph-board {
+  --bg:              #E4DFD8;
+  --card:            #F9FAF8;
+  --text-primary:    #141920;
+  --text-secondary:  #42505F;
+  --focus:           #2C5899;
+  --focus-ring:      rgba(44,88,153,0.16);
+  --material:        #3D6494;
+  --sensor:          #256870;
+  --control:         #4E7235;
+  --asset:           #2C5899;
+  --quality:         #9A6E1A;
+  --golden:          #927020;
+  --deviation:       #A83530;
+  --simulation:      #6E52A4;
+  --financial:       #5E7238;
+  --system:          #68727E;
+}
+
+/* ─── Graph board ────────────────────────────────────────────────── */
+.graph-board {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: default;
+  user-select: none;
+  background-color: var(--bg, #E4E0D8);
+  background-image: radial-gradient(circle, rgba(60,72,88,0.16) 1px, transparent 1px);
+  background-size: 28px 28px;
+  font-family: 'Space Grotesk', system-ui, -apple-system, Segoe UI, sans-serif;
+}
+
+.graph-canvas {
+  position: relative;
+  width: 3600px;
+  height: 2400px;
+  transform-origin: 0 0;
+}
+
+/* ─── Zone swimlanes ─────────────────────────────────────────────── */
+.swimlane {
+  position: absolute;
+  border-radius: 6px;
+  pointer-events: none;
+  background: rgba(255,255,255,0.07);
+  border-left:  1px solid rgba(60,72,88,0.12);
+  border-right: 1px solid rgba(60,72,88,0.12);
+  overflow: hidden;
+}
+.zone-A { background: rgba(155,122,46,0.07);  border-color: rgba(155,122,46,0.20);  color: #7A5C20; }
+.zone-B { background: rgba(177,74,66,0.07);   border-color: rgba(177,74,66,0.20);   color: #8C3B35; }
+.zone-C { background: rgba(44,88,153,0.07);   border-color: rgba(44,88,153,0.20);   color: #2F4F7C; }
+.zone-D { background: rgba(164,122,42,0.07);  border-color: rgba(164,122,42,0.20);  color: #7A5820; }
+.zone-E { background: rgba(88,122,62,0.07);   border-color: rgba(88,122,62,0.20);   color: #445E2E; }
+.zone-F { background: rgba(114,124,138,0.07); border-color: rgba(114,124,138,0.20); color: #4A5568; }
+
+.swimlane-label {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1;
+  color: inherit;
+}
+
+/* ─── Edge SVG layer ─────────────────────────────────────────────── */
+.edge-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+@keyframes edgeFlow {
+  from { stroke-dashoffset: 20; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes simPulseW {
+  0%, 100% { border-left-color: #C97B3A; border-left-width: 3px; }
+  50%       { border-left-color: #FFA030; border-left-width: 5px; }
+}
+@keyframes simPulseC {
+  0%, 100% { border-left-color: #A83530; border-left-width: 4px; }
+  50%       { border-left-color: #FF3030; border-left-width: 6px; }
+}
+
+/* ── Edge base styles — Junghans/Nomos thick, strict geometry ── */
+.edge            { fill: none; stroke: #1e293b; stroke-width: 3px; opacity: 1; stroke-linecap: square; }
+.edge.material   { stroke: var(--material);   stroke-width: 4.5px; opacity: 1; stroke-linecap: square; }
+.edge.causal     { stroke: #0f172a;           stroke-width: 4px;   opacity: 1; stroke-linecap: square; }
+.edge.deviation  { stroke: var(--deviation);  stroke-width: 5px;   opacity: 1; stroke-linecap: square; }
+.edge.control    { stroke: var(--control);    stroke-width: 4px;   opacity: 1; stroke-linecap: square; }
+.edge.simulation { stroke: var(--simulation); stroke-width: 4px;   stroke-dasharray: 8 8; opacity: 1; stroke-linecap: square; }
+.edge.system     { stroke: var(--system);     stroke-width: 3px;   stroke-dasharray: 4 6; opacity: 0.9; stroke-linecap: square; }
+.edge.golden-ref { stroke: var(--golden);     stroke-width: 3px;   stroke-dasharray: 10 8; opacity: 0.9; stroke-linecap: square; }
+.edge.reference  { stroke: #64748b;           stroke-width: 2.5px; stroke-dasharray: 6 6; opacity: 0.6; stroke-linecap: square; }
+
+.edge.primary-spine { opacity: 1; stroke-width: 6px !important; }
+.edge.spine         { opacity: 1; }
+.edge.branch        { opacity: 0.9; }
+.edge.exec          { opacity: 0.8; }
+
+.edge.focused {
+  stroke: var(--focus) !important;
+  opacity: 1 !important;
+  stroke-width: 3px !important;
+  filter: drop-shadow(0 0 4px var(--focus-ring));
+  stroke-dasharray: 10 5;
+  animation: edgeFlow 0.7s linear infinite;
+}
+.edge.dimmed { opacity: 0.05 !important; }
+
+/* Simulation scrub — edge highlights by source entity state */
+.edge.sim-warning {
+  stroke: #C97B3A !important;
+  stroke-width: 3.5px !important;
+  stroke-dasharray: 10 5 !important;
+  opacity: 1 !important;
+  animation: edgeFlow 0.9s linear infinite;
+}
+.edge.sim-critical {
+  stroke: #A83530 !important;
+  stroke-width: 4px !important;
+  stroke-dasharray: 8 4 !important;
+  opacity: 1 !important;
+  animation: edgeFlow 0.55s linear infinite;
+}
+
+/* Simulation scrub — card pulse by predicted state */
+.node-card.simulating.state-warning  { animation: simPulseW 1.4s ease-in-out infinite; }
+.node-card.simulating.state-critical { animation: simPulseC 1.0s ease-in-out infinite; }
+
+/* ── Edge labels — copied from HTML exactly ── */
+.edge-label {
+  font-size: 12px;
+  font-weight: 700;
+  fill: #4b5a6e;
+  opacity: 0.80;
+  pointer-events: none;
+  letter-spacing: 0.01em;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+.edge-label.focused        { opacity: 1; }
+text.edge-label.causal     { fill: #334155; }
+text.edge-label.deviation  { fill: #A83530; }
+text.edge-label.control    { fill: #4E7235; }
+text.edge-label.simulation { fill: #6E52A4; }
+text.edge-label.system     { fill: #68727E; }
+text.edge-label.material   { fill: #3D6494; }
+
+/* ── Consequence badges — inline fork magnitude on sim edges ── */
+.consequence-badge        { fill: #ffffff; stroke: rgba(60,72,88,0.18); stroke-width: 0.5; }
+.consequence-neg          { fill: #FEF2F2; stroke: rgba(168,53,48,0.30); }
+.consequence-pos          { fill: #F0FDF4; stroke: rgba(78,114,53,0.30); }
+[data-theme="dark"] .consequence-badge { fill: #1E293B; stroke: rgba(255,255,255,0.10); }
+[data-theme="dark"] .consequence-neg   { fill: #291515; stroke: rgba(248,113,113,0.35); }
+[data-theme="dark"] .consequence-pos   { fill: #0A2018; stroke: rgba(74,222,128,0.35);  }
+
+/* ─── Node card ──────────────────────────────────────────────────── */
+.node-card {
+  box-sizing: border-box;
+  position: absolute;
+  border-radius: 12px;
+  border: 1px solid rgba(10, 14, 26, 0.06);
+  background: #FFFFFF;
+  padding: 24px 28px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #0F172A;
+  cursor: grab;
+  user-select: none;
+  min-width: 280px;
+  box-shadow: 0 8px 32px rgba(10, 14, 26, 0.04);
+  transition: opacity 280ms ease, filter 280ms ease, box-shadow 0.2s background 0.2s;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, sans-serif;
+}
+.node-card:hover {
+  box-shadow: 0 12px 48px rgba(10, 14, 26, 0.08);
+  border-color: rgba(10, 14, 26, 0.15);
+  transform: translateY(-2px);
+}
+
+/* State = cinematic radial depth mapping OVER solid backgrounds to prevent transparency */
+.node-card.state-warning {
+  background-color: #FFFFFF;
+  background-image: radial-gradient(circle at 0% 0%, rgba(245, 158, 11, 0.12) 0%, transparent 80%);
+  border-color: rgba(245, 158, 11, 0.20);
+  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.05);
+}
+.node-card.state-warning:hover { 
+  background-color: #F8FAFC;
+  background-image: radial-gradient(circle at 0% 0%, rgba(245, 158, 11, 0.18) 0%, transparent 80%); 
+}
+
+.node-card.state-critical {
+  background-color: #FFFFFF;
+  background-image: radial-gradient(circle at 0% 0%, rgba(239, 68, 68, 0.12) 0%, transparent 80%);
+  border-color: rgba(239, 68, 68, 0.20);
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.06);
+}
+.node-card.state-critical:hover { 
+  background-color: #F8FAFC;
+  background-image: radial-gradient(circle at 0% 0%, rgba(239, 68, 68, 0.18) 0%, transparent 80%); 
+}
+
+.node-card.state-simulation {
+  background-color: #FFFFFF;
+  background-image: radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 80%);
+  border-color: rgba(99, 102, 241, 0.15);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.05);
+}
+.node-card.state-simulation:hover { 
+  background-color: #F8FAFC;
+  background-image: radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.18) 0%, transparent 80%); 
+}
+
+.node-card.state-external {
+  background-color: #F8FAFC;
+  background-image: radial-gradient(circle at 0% 0%, rgba(100, 116, 139, 0.06) 0%, transparent 80%);
+  border-color: rgba(100, 116, 139, 0.15);
+}
+.node-card.state-external:hover { background-color: #F1F5F9; }
+
+/* State Badges */
+.state-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.state-badge.warning {
+  background: rgba(217, 119, 6, 0.1);
+  color: #D97706;
+}
+.state-badge.critical {
+  background: rgba(220, 38, 38, 0.1);
+  color: #DC2626;
+}
+.state-badge.simulation {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366F1;
+}
+
+/* Layout type classes */
+.node-card.anchor-card     { min-width: 380px; }
+.node-card.process-card    { min-width: 340px; }
+.node-card.simulation-card {
+  min-width: 320px !important;
+  padding: 18px 22px !important;
+}
+.node-card.system-card { min-width: 280px; padding: 18px 20px; }
+
+/* Reference node — mature golden */
+.node-card.reference-node {
+  background: #FFFCF8 !important;
+  border-color: rgba(155, 122, 46, 0.25) !important;
+  box-shadow: 0 8px 32px rgba(155, 122, 46, 0.04) !important;
+}
+
+/* Focus/dim states — crisp bounds */
+.node-card.focal {
+  opacity: 1 !important;
+  filter: none !important;
+  outline: 2px solid #0a0e1a;
+  outline-offset: 4px;
+  z-index: 20;
+}
+.node-card.focus-root {
+  filter: none !important;
+  outline: 2px solid #DC2626;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 1px #DC2626, 0 0 40px rgba(220, 38, 38, 0.25) !important;
+  z-index: 30;
+}
+.node-card.dimmed { pointer-events: none; }
+
+
+/* ─── Node header ────────────────────────────────────────────────── */
+.node-header {
+  margin-bottom: 20px;
+}
+
+.section-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.20em;
+  font-weight: 700;
+  color: #8A9AB0;
+  margin-bottom: 6px;
+}
+
+.node-title {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #0a0e1a;
+}
+.node-card.simulation-card .node-title {
+  font-size: 20px;
+  font-weight: 500;
+}
+.node-card.system-card .node-title {
+  font-size: 18px;
+}
+
+/* ─── Node body ──────────────────────────────────────────────────── */
+.node-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-top: none;
+  padding-top: 0;
+}
+
+.sub {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #555866;
+  margin-bottom: 0;
+}
+.node-card.system-card .sub { font-size: 13px; }
+
+.signal-age {
+  font-size: 10px;
+  color: #A0A5B5;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.signal-age.stale { color: #D97706; font-weight: 800; }
+
+/* ─── Metrics ────────────────────────────────────────────────────── */
+.metrics {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 16px 24px;
+  border-top: none;
+  padding-top: 0;
+  margin-bottom: 8px;
+}
+.metric {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.metric > span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8A9AB0;
+}
+.metric b {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1.0;
+  color: #0a0e1a;
+  letter-spacing: -0.02em;
+}
+.node-card.system-card .metric b    { font-size: 16px; }
+.node-card.system-card .metrics     { gap: 8px; }
+
+/* Root cause probability */
+.metric-probability {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #8A9AB0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  border-top: none;
+  padding-top: 0;
+  margin-top: 2px;
+}
+.metric-probability > span {
+  color: inherit;
+}
+.metric-probability b {
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 400;
+  color: #0a0e1a;
+  flex-shrink: 0;
+}
+
+/* ─── Nomos Insight chip ── Diffused Ambient Border ─────────── */
+@keyframes diffusedLedLight {
+  0%, 100% { border-color: rgba(44, 88, 153, 0.4); box-shadow: 0 0 16px rgba(44, 88, 153, 0.05); }
+  50%      { border-color: rgba(44, 88, 153, 1.0); box-shadow: 0 0 24px rgba(44, 88, 153, 0.20); }
+}
+
+.insight-chip {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-top: 12px;
+  cursor: pointer;
+  border: 1px solid rgba(44,88,153,0.4);
+  border-radius: 12px;
+  padding: 14px 18px;
+  overflow: hidden;
+  background: #FFFFFF;
+  animation: diffusedLedLight 6s ease-in-out infinite;
+  transition: transform 0.2s, background 0.2s;
+}
+.insight-chip:hover {
+  background: #F8FAFD;
+  transform: translateY(-1px);
+}
+
+.ic-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ic-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: #2C5899;
+}
+.ic-conf {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #2C5899;
+}
+.ic-cause {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #0a0e1a;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.ic-action {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #555866;
+  letter-spacing: 0.02em;
+}
+
+/* ─── DARK MODE OVERRIDES ─────────────────────────────────────────── */
+[data-theme="dark"] .graph-board {
+  --bg:              #0D1117;
+  --card:            #161B22;
+  --text-primary:    #F0F6FC;
+  --text-secondary:  #8B949E;
+  --material:        #58A6FF;
+  --sensor:          #3FB950;
+  --control:         #2EA043;
+  --asset:           #58A6FF;
+  --quality:         #D29922;
+  --golden:          #E3B341;
+  --deviation:       #F85149;
+  --simulation:      #BC8CFF;
+  --financial:       #56D364;
+  --system:          #8B949E;
+}
+
+/* Board dot grid — dark */
+[data-theme="dark"] .graph-board {
+  background-image: radial-gradient(circle, rgba(240, 246, 252, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Zone swimlanes — Solid matte rails to prevent background grid bleeding (not glass) */
+[data-theme="dark"] .swimlane { 
+  background: #131720; 
+  border-left: 1px solid #131720;
+  border-right: 1px solid #131720;
+}
+[data-theme="dark"] .zone-A { color: #8B949E; }
+[data-theme="dark"] .zone-B { color: #8B949E; }
+[data-theme="dark"] .zone-C { color: #8B949E; }
+[data-theme="dark"] .zone-D { color: #8B949E; }
+[data-theme="dark"] .zone-E { color: #8B949E; }
+[data-theme="dark"] .zone-F { color: #8B949E; }
+
+/* Cards — Ultra-premium slate, no RGB "gamey" colored borders, no shadows */
+[data-theme="dark"] .node-card {
+  background: #111721;
+  border: 1px solid #21262D;
+  box-shadow: none;
+}
+[data-theme="dark"] .node-card:hover {
+  background: #161D2A;
+  border-color: #30363D;
+  transform: translateY(-2px);
+  box-shadow: none;
+}
+[data-theme="dark"] .node-card.focal {
+  opacity: 1 !important;
+  filter: none !important;
+  outline: 2px solid #58A6FF;
+  outline-offset: 4px;
+}
+[data-theme="dark"] .node-card.focus-root {
+  filter: none !important;
+  outline: 2px solid #F85149;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 1px #F85149, 0 0 40px rgba(248, 81, 73, 0.35) !important;
+  z-index: 30;
+}
+[data-theme="dark"] .node-card.dimmed { opacity: 0.14 !important; filter: blur(0.5px) grayscale(0.7); pointer-events: none; }
+
+/* Cinematic Radial Tints for States (Ambient interior glow from source over OPAQUE card body) */
+[data-theme="dark"] .node-card.state-warning { 
+  border-color: #21262D; 
+  background-color: #111721;
+  background-image: radial-gradient(circle at 0% 0%, rgba(210, 153, 34, 0.15) 0%, transparent 80%); 
+  box-shadow: none; 
+}
+[data-theme="dark"] .node-card.state-warning:hover { 
+  border-color: #30363D; 
+  background-color: #161D29;
+  background-image: radial-gradient(circle at 0% 0%, rgba(210, 153, 34, 0.22) 0%, transparent 80%); 
+  box-shadow: none; 
+}
+
+[data-theme="dark"] .node-card.state-critical { 
+  border-color: #21262D; 
+  background-color: #111721;
+  background-image: radial-gradient(circle at 0% 0%, rgba(248, 81, 73, 0.15) 0%, transparent 80%); 
+  box-shadow: none; 
+}
+[data-theme="dark"] .node-card.state-critical:hover { 
+  border-color: #30363D; 
+  background-color: #161D29;
+  background-image: radial-gradient(circle at 0% 0%, rgba(248, 81, 73, 0.22) 0%, transparent 80%); 
+  box-shadow: none; 
+}
+
+[data-theme="dark"] .node-card.state-simulation { 
+  border-color: #21262D; 
+  background-color: #111721;
+  background-image: radial-gradient(circle at 0% 0%, rgba(188, 140, 255, 0.12) 0%, transparent 80%); 
+  box-shadow: none; 
+}
+[data-theme="dark"] .node-card.state-simulation:hover { 
+  border-color: #30363D; 
+  background-color: #161D29;
+  background-image: radial-gradient(circle at 0% 0%, rgba(188, 140, 255, 0.18) 0%, transparent 80%); 
+  box-shadow: none; 
+}
+
+[data-theme="dark"] .node-card.state-external   { border-color: #21262D; background-color: #0D1117; box-shadow: none; }
+[data-theme="dark"] .node-card.state-external:hover { border-color: #30363D; background-color: #131922; box-shadow: none; }
+
+[data-theme="dark"] .node-card.reference-node   { border-color: #3D3627 !important; background-color: #1F1B14 !important; box-shadow: none !important; }
+
+/* Dark mode State Badges (Subdued dark background, vibrant text) */
+[data-theme="dark"] .state-badge { padding: 4px 8px; border-radius: 4px; font-weight: 700; }
+[data-theme="dark"] .state-badge.warning { background: rgba(210, 153, 34, 0.15); color: #D29922; }
+[data-theme="dark"] .state-badge.critical { background: rgba(248, 81, 73, 0.15); color: #F85149; }
+[data-theme="dark"] .state-badge.simulation { background: rgba(188, 140, 255, 0.15); color: #BC8CFF; }
+
+/* Subdued hover-style pulse animation (strictly premium grey border shifting) */
+@keyframes simPulseWDark {
+  0%, 100% { border-color: #21262D; }
+  50%      { border-color: #3D444D; }
+}
+@keyframes simPulseCDark {
+  0%, 100% { border-color: #21262D; }
+  50%      { border-color: #3D444D; }
+}
+[data-theme="dark"] .node-card.simulating.state-warning  { animation: simPulseWDark 1.4s ease-in-out infinite; }
+[data-theme="dark"] .node-card.simulating.state-critical { animation: simPulseCDark 1.0s ease-in-out infinite; }
+
+/* Typography — high contrast, precision typography language */
+[data-theme="dark"] .node-title        { color: #F8FAFC; font-weight: 700; }
+[data-theme="dark"] .section-label     { color: #64748B; font-weight: 800; letter-spacing: 0.15em; }
+[data-theme="dark"] .sub               { color: #CBD5E1; }
+[data-theme="dark"] .signal-age        { color: #64748B; }
+[data-theme="dark"] .signal-age.stale  { color: #F59E0B; font-weight: 700; }
+
+/* Metrics — readable labels, crisp numbers */
+[data-theme="dark"] .metrics           { border-top-color: rgba(255,255,255,0.07); }
+[data-theme="dark"] .node-body         { border-top-color: rgba(255,255,255,0.07); }
+[data-theme="dark"] .metric span       { color: #5A7898; }
+[data-theme="dark"] .metric b          { color: #E8F0FF; }
+[data-theme="dark"] .metric-probability { border-top-color: rgba(148,163,184,0.15); }
+[data-theme="dark"] .metric-probability span { color: #8FA0BE; }
+[data-theme="dark"] .metric-probability b    { color: #F0F4FF; }
+
+/* Edges — Junghans/Nomos dark mode high-contrast */
+[data-theme="dark"] .edge                   { stroke: #2D3F55; stroke-width: 3px; opacity: 1; stroke-linecap: square; }
+[data-theme="dark"] .edge.causal            { stroke: #B2C3D9; stroke-width: 4px; opacity: 1; stroke-linecap: square; }
+[data-theme="dark"] .edge.primary-spine     { stroke: #E2E8F0; opacity: 1; stroke-width: 6px; }
+[data-theme="dark"] .edge.spine             { stroke: #E2E8F0; opacity: 0.95; }
+[data-theme="dark"] .edge.material          { stroke: #7AA2FF; stroke-width: 4.5px; opacity: 1; stroke-linecap: square; }
+[data-theme="dark"] .edge.deviation         { stroke: #F87171; stroke-width: 5px; opacity: 1; stroke-linecap: square; }
+[data-theme="dark"] .edge.control           { stroke: #4ADE80; stroke-width: 4px; opacity: 1; stroke-linecap: square; }
+[data-theme="dark"] .edge.simulation        { stroke: #A78BFA; stroke-width: 4px; opacity: 1; stroke-dasharray: 8 8; stroke-linecap: square; }
+[data-theme="dark"] .edge.system            { stroke: #94A3B8; stroke-width: 3px; opacity: 0.9; stroke-dasharray: 4 6; stroke-linecap: square; }
+[data-theme="dark"] .edge.exec              { stroke: #94A3B8; opacity: 0.8; }
+[data-theme="dark"] .edge.golden-ref        { stroke: #FBBF24; stroke-width: 3px; opacity: 0.9; stroke-dasharray: 10 8; stroke-linecap: square; }
+[data-theme="dark"] .edge.reference         { stroke: #FBBF24; stroke-width: 2.5px; opacity: 0.6; stroke-dasharray: 6 6; stroke-linecap: square; }
+[data-theme="dark"] .edge.branch            { opacity: 0.9; }
+[data-theme="dark"] .edge.focused           { stroke: #60A5FA !important; opacity: 0.96 !important; stroke-width: 3px !important; filter: none !important; stroke-dasharray: 10 5; animation: edgeFlow 0.7s linear infinite; }
+[data-theme="dark"] text.edge-label         { fill: #8FA0BE; }
+[data-theme="dark"] text.edge-label.causal     { fill: #6B7FA8; }
+[data-theme="dark"] text.edge-label.deviation  { fill: #F87171; }
+[data-theme="dark"] text.edge-label.control    { fill: #34D399; }
+[data-theme="dark"] text.edge-label.simulation { fill: #C084FC; }
+[data-theme="dark"] text.edge-label.material   { fill: #60A5FA; }
+
+/* Insight chip — dark mode */
+@keyframes diffusedLedDark {
+  0%, 100% { border-color: rgba(56, 189, 248, 0.30); box-shadow: none; }
+  50%      { border-color: rgba(56, 189, 248, 0.90); box-shadow: none; }
+}
+
+[data-theme="dark"] .insight-chip {
+  background: #0B0F19;
+  border-color: rgba(56, 189, 248, 0.30);
+  box-shadow: none;
+  animation: diffusedLedDark 6s ease-in-out infinite;
+}
+[data-theme="dark"] .insight-chip:hover { 
+  background: #121826;
+  border-color: rgba(56, 189, 248, 0.60);
+}
+[data-theme="dark"] .ic-label   { color: #38BDF8; }
+[data-theme="dark"] .ic-conf    { color: #94A3B8; }
+[data-theme="dark"] .ic-cause   { color: #F8FAFC; }
+[data-theme="dark"] .ic-action  { color: #7DD3FC; }
+
+/* ── MiniMap ──────────────────────────────────────────────────────────────── */
+.minimap {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 176px;
+  background: rgba(12, 16, 22, 0.84);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 3px;
+  overflow: hidden;
+  z-index: 50;
+  cursor: crosshair;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.minimap-label {
+  padding: 4px 8px 3px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(255,255,255,0.20);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  user-select: none;
+}

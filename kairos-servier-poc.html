@@ -1,0 +1,2308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Kairos - Servier Arklow PoC</title>
+<style>
+:root{--bg-primary:#cdd0e3;--bg-card:rgba(255,255,255,0.45);--bg-grid:rgba(102,126,234,0.13);--header-bg:rgba(230,232,248,0.78);--text-primary:#1a1a2e;--text-secondary:#5a5a72;--text-tertiary:#9898b0;--border-light:rgba(255,255,255,0.55);--border-medium:rgba(180,182,210,0.7);--border-heavy:rgba(160,162,198,0.5);--shadow-md:0 2px 16px rgba(80,90,180,0.1),0 4px 24px rgba(0,0,0,0.08);--shadow-lg:0 6px 24px rgba(80,90,180,0.15),0 12px 40px rgba(0,0,0,0.1);--accent-primary:#007aff;--accent-success:#28a745;--accent-warning:#e08800;--accent-danger:#d93025;--alert-bg:rgba(224,136,0,0.12);--alert-border:rgba(224,136,0,0.32);--alert-text:#7a4400;--input-bg:rgba(220,222,240,0.6);--hover-bg:rgba(210,213,238,0.7);--gauge-track:rgba(180,182,210,0.5);}
+body.dark-theme{--bg-primary:#1a1b2e;--bg-card:rgba(45,46,66,0.6);--bg-grid:rgba(139,92,246,0.12);--header-bg:rgba(36,37,56,0.7);--text-primary:#fff;--text-secondary:#a0a0b0;--text-tertiary:#6e6e80;--border-light:rgba(255,255,255,0.08);--border-medium:rgba(255,255,255,0.12);--border-heavy:rgba(255,255,255,0.15);--shadow-md:0 4px 12px rgba(0,0,0,0.4),0 8px 24px rgba(0,0,0,0.3);--shadow-lg:0 8px 20px rgba(0,0,0,0.5),0 12px 32px rgba(0,0,0,0.4);--accent-primary:#0a84ff;--accent-success:#32d74b;--accent-warning:#ff9f0a;--accent-danger:#ff453a;--alert-bg:rgba(255,149,10,0.15);--alert-border:rgba(255,149,10,0.3);--alert-text:#ff9f0a;--input-bg:#1f2033;--hover-bg:#35364a;--gauge-track:rgba(255,255,255,0.1);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);background-image:linear-gradient(var(--bg-grid) 1px,transparent 1px),linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px);background-size:24px 24px;color:var(--text-primary);transition:background-color .3s,color .3s;overflow-x:hidden;}
+.header{background:var(--header-bg);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--border-heavy);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;gap:16px;}
+.header-left{display:flex;align-items:center;gap:20px;flex:1;}
+.logo{display:flex;align-items:center;font-size:20px;font-weight:500;color:var(--text-primary);white-space:nowrap;}
+.logo-icon{font-size:24px;margin-right:2px;}
+.breadcrumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);padding-left:20px;border-left:1px solid var(--border-heavy);white-space:nowrap;}
+.breadcrumb .current{color:var(--text-primary);font-weight:500;}
+.header-center{flex:1;max-width:480px;display:flex;justify-content:center;}
+.header-search{width:100%;position:relative;}
+.header-search input{width:100%;padding:8px 40px 8px 36px;border:1px solid var(--border-medium);border-radius:8px;font-size:13px;background:var(--input-bg);color:var(--text-primary);}
+.header-search input::placeholder{color:var(--text-secondary);}
+.header-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-secondary);pointer-events:none;}
+.header-search-shortcut{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text-tertiary);padding:2px 6px;background:var(--hover-bg);border-radius:4px;border:1px solid var(--border-medium);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.activity-indicator{width:8px;height:8px;background:#28a745;border-radius:50%;position:relative;flex-shrink:0;}
+.time{font-size:13px;font-weight:500;color:var(--text-primary);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.icon-btn{padding:8px;background:none;border:none;cursor:pointer;border-radius:8px;transition:all .2s;color:var(--text-secondary);}
+.icon-btn:hover{background:var(--hover-bg);color:var(--text-primary);}
+.theme-toggle{padding:7px 12px;background:var(--hover-bg);border:1px solid var(--border-medium);border-radius:8px;cursor:pointer;transition:all .2s;color:var(--text-primary);font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.add-card-btn{padding:7px 12px;background:var(--text-primary);border:none;border-radius:8px;cursor:pointer;color:var(--bg-primary);font-size:13px;font-weight:600;white-space:nowrap;opacity:.85;}
+.add-card-btn:hover{opacity:1;}
+.voice-indicator{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--input-bg);border:1px solid var(--border-medium);border-radius:8px;cursor:pointer;transition:all .2s;}
+.voice-indicator:hover{border-color:var(--accent-primary);}
+.voice-indicator.active{background:linear-gradient(135deg,rgba(0,212,255,.15),rgba(0,122,255,.15));border-color:var(--accent-primary);}
+.voice-pulse{width:8px;height:8px;background:var(--text-tertiary);border-radius:50%;transition:all .3s;}
+.voice-indicator.active .voice-pulse{background:var(--accent-primary);}
+.voice-indicator-text{font-size:12px;font-weight:500;color:var(--text-secondary);}
+.voice-indicator.active .voice-indicator-text{color:var(--accent-primary);}
+.whiteboard{position:relative;min-height:2000px;padding:32px;}
+.conn-svg{position:absolute;top:0;left:0;pointer-events:none;z-index:1;}
+.draggable-card{position:absolute;background:var(--bg-card);backdrop-filter:blur(20px) saturate(180%);border-radius:16px;box-shadow:var(--shadow-md);padding:20px;transition:box-shadow .3s,transform .55s cubic-bezier(0.34,1.4,0.64,1),opacity .55s ease,left .12s ease,top .12s ease;cursor:grab;border:1px solid var(--border-light);user-select:none;z-index:10;}
+.draggable-card:active{cursor:grabbing;}
+.draggable-card.dragging{box-shadow:var(--shadow-lg);opacity:.95;z-index:1000;transform:rotate(.5deg)!important;transition:box-shadow .3s,transform .3s,opacity .3s!important;}
+.draggable-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);border-radius:16px 16px 0 0;z-index:3;pointer-events:none;}
+.draggable-card{overflow:hidden;}
+.draggable-card:hover{box-shadow:var(--shadow-lg);}
+.draggable-card.connected{border-color:var(--accent-primary);box-shadow:0 4px 16px rgba(0,122,255,.15);}
+.conn-line{fill:none;stroke-width:2;stroke-dasharray:8,5;opacity:.3;transition:opacity .3s,stroke-width .3s;}
+.conn-line.active{stroke-width:3;opacity:.85;stroke-dasharray:none;}
+.conn-dot{opacity:.25;transition:opacity .3s;}
+.conn-dot.active{opacity:.9;}
+.card-medium{width:380px;}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+.card-title{display:flex;align-items:center;gap:12px;}
+.card-title-text h3{font-size:17px;font-weight:600;margin-bottom:3px;color:var(--text-primary);letter-spacing:-.01em;}
+.card-title-text p{font-size:12px;color:var(--text-secondary);font-weight:500;}
+.more-btn{color:var(--text-tertiary);font-size:18px;background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .2s;}
+.more-btn:hover{color:var(--text-primary);background:var(--hover-bg);}
+.asset-icon{width:32px;height:32px;border-radius:50%;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.asset-icon.running{background:rgba(52,199,89,.15);border:2px solid var(--accent-success);}
+.asset-icon.warning{background:rgba(255,149,0,.15);border:2px solid var(--accent-warning);}
+.asset-icon.running::after{content:'';position:absolute;bottom:-2px;right:-2px;width:8px;height:8px;background:var(--accent-success);border-radius:50%;border:2px solid var(--bg-card);}
+.asset-icon.warning::after{content:'';position:absolute;bottom:-2px;right:-2px;width:8px;height:8px;background:var(--accent-warning);border-radius:50%;border:2px solid var(--bg-card);}
+@keyframes pw{0%,100%{opacity:1}50%{opacity:.55}}
+.status-grid{display:grid;gap:8px;margin-bottom:14px;font-size:13px;}
+.status-row{display:flex;gap:10px;}
+.status-label{color:var(--text-secondary);min-width:100px;font-weight:500;}
+.status-value{font-weight:600;color:var(--text-primary);}
+.status-running{color:var(--accent-success);}
+.status-warning{color:var(--accent-warning);}
+.alert{background:var(--alert-bg);border:1px solid var(--alert-border);border-radius:10px;overflow:hidden;}
+.alert-header{display:flex;align-items:center;gap:10px;font-weight:600;font-size:13px;color:var(--alert-text);padding:10px 14px;}
+.alert-details{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;padding:10px 14px;background:var(--bg-card);}
+.alert-item{display:flex;gap:8px;align-items:center;}
+.alert-item-label{color:var(--alert-text);font-weight:500;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;}
+.badge-success{background:rgba(52,199,89,.15);color:var(--accent-success);}
+.badge-info{background:var(--hover-bg);color:var(--text-secondary);}
+.badge-gmp{background:#374151;color:#e5e7eb;}
+.badge-erp{background:var(--accent-primary);color:#fff;}
+.gauge-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0;}
+.gauge-container{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.gauge-svg{width:76px;height:76px;}
+.gauge-track-arc{fill:none;stroke:var(--gauge-track);stroke-width:7;stroke-linecap:round;}
+.gauge-fill-arc{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .45s ease,stroke .3s ease;}
+.gauge-center-val{font-size:14px;font-weight:700;fill:var(--text-primary);text-anchor:middle;dominant-baseline:central;}
+.gauge-unit{font-size:9px;fill:var(--text-secondary);text-anchor:middle;}
+.gauge-label{font-size:10px;color:var(--text-secondary);font-weight:500;text-align:center;max-width:76px;line-height:1.2;}
+.kairos-insight{border:none;border-left:2px solid var(--text-tertiary);border-radius:0;padding:6px 10px;margin-top:10px;display:flex;align-items:flex-start;gap:0;font-size:12px;background:none;animation:none;}
+.kairos-insight.warning{border-left-color:var(--accent-warning);}
+.kairos-insight.info{border-left-color:var(--accent-primary);}
+.kairos-insight.neutral{border-left-color:var(--text-tertiary);}
+@keyframes slideInUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.kairos-avatar{display:none;}
+.kairos-insight-text{color:var(--text-secondary);line-height:1.5;}
+.command-header{padding-bottom:16px;border-bottom:1px solid var(--border-heavy);margin-bottom:16px;}
+.command-title{font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:14px;}
+.command-tabs{display:flex;gap:6px;margin-bottom:14px;padding:3px;background:var(--input-bg);border-radius:10px;}
+.command-tab{flex:1;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;}
+.command-tab.active{background:var(--accent-primary);color:#fff;}
+.command-tab:not(.active){background:transparent;color:var(--text-secondary);}
+.command-tab:not(.active):hover{background:var(--hover-bg);color:var(--text-primary);}
+.command-input{position:relative;}
+.command-input input{width:100%;padding:10px 44px 10px 14px;border:1px solid var(--border-medium);border-radius:8px;font-size:13px;background:var(--input-bg);color:var(--text-primary);}
+.command-input input::placeholder{color:var(--text-secondary);}
+.mic-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);padding:6px;background:none;border:none;cursor:pointer;color:var(--text-secondary);border-radius:6px;}
+.command-section{margin-top:20px;}
+.command-section-title{font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;}
+.quick-action{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:all .2s;margin-bottom:6px;}
+.quick-action:hover{background:var(--hover-bg);}
+.quick-action-text{font-size:13px;color:var(--text-primary);flex:1;}
+.open-action{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:all .2s;margin-bottom:6px;}
+.open-action:hover{background:var(--hover-bg);}
+.action-checkbox{width:16px;height:16px;min-width:16px;border:2px solid var(--text-tertiary);border-radius:50%;cursor:pointer;transition:all .2s;position:relative;}
+.action-checkbox.checked{background:var(--accent-primary);border-color:var(--accent-primary);}
+.action-checkbox.checked::after{content:'✔';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:10px;font-weight:bold;}
+.action-text{flex:1;font-size:13px;color:var(--text-primary);}
+svg.icon{width:20px;height:20px;}svg.icon-sm{width:16px;height:16px;}
+.act-content{display:none;}.act-content.active{display:block;}
+.observe-content{display:none;}.observe-content.active{display:block;}
+.action-card{background:var(--input-bg);border:1px solid var(--border-medium);border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer;transition:all .2s;}
+.action-card:hover{background:var(--hover-bg);border-color:var(--accent-primary);}
+.action-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.action-card-title{font-weight:600;font-size:13px;color:var(--text-primary);}
+.action-card-impact{font-size:11px;padding:2px 6px;border-radius:4px;font-weight:500;}
+.impact-high{background:rgba(255,59,48,.15);color:var(--accent-danger);}
+.impact-medium{background:rgba(255,149,0,.15);color:var(--accent-warning);}
+.impact-low{background:rgba(52,199,89,.15);color:var(--accent-success);}
+.action-card-description{font-size:12px;color:var(--text-secondary);line-height:1.4;margin-bottom:8px;}
+.action-card-meta{display:flex;gap:10px;font-size:11px;color:var(--text-secondary);flex-wrap:wrap;}
+.xp-bar{margin-top:12px;padding:8px 12px;background:var(--input-bg);border-radius:8px;border:1px solid var(--border-medium);}
+.xp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;color:var(--text-secondary);}
+.xp-value{font-weight:600;color:var(--text-primary);}
+.xp-progress{height:6px;background:var(--border-heavy);border-radius:3px;overflow:hidden;}
+.xp-fill{height:100%;background:var(--accent-primary);border-radius:3px;width:69%;transition:width .5s;}
+.leaderboard-hint{font-size:11px;color:var(--text-secondary);margin-top:8px;text-align:center;}
+.leaderboard-rank{color:var(--accent-primary);font-weight:600;}
+.performance-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;background:#d4a017;color:#fff;}
+.efficiency-score{display:flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,rgba(52,199,89,.2),rgba(52,199,89,.1));border:3px solid var(--accent-success);font-weight:700;font-size:20px;color:var(--accent-success);}
+.finance-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-light);font-size:13px;}
+.finance-row:last-child{border-bottom:none;}
+.finance-label{color:var(--text-secondary);}
+.finance-value{font-weight:600;color:var(--text-primary);}
+.finance-value.positive{color:var(--accent-success);}
+.finance-value.negative{color:var(--accent-danger);}
+.finance-total{margin-top:12px;padding-top:12px;border-top:2px solid var(--border-medium);}
+.finance-total .finance-label{font-weight:600;color:var(--text-primary);}
+.finance-total .finance-value{font-size:18px;}
+.projection-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;}
+.projection-title{font-weight:600;font-size:13px;color:var(--text-primary);}
+.projection-list{list-style:none;font-size:12px;padding:12px 16px;color:var(--text-primary);}
+.projection-list li{padding:4px 0 4px 20px;position:relative;}
+.projection-negative li::before{content:"◗";position:absolute;left:6px;color:var(--accent-danger);font-size:10px;}
+.projection-positive li::before{content:"◗";position:absolute;left:6px;color:var(--accent-success);font-size:10px;}
+.projection-negative .projection-header{background:rgba(255,59,48,.1);border-bottom:1px solid rgba(255,59,48,.2);}
+.projection-positive .projection-header{background:rgba(52,199,89,.1);border-bottom:1px solid rgba(52,199,89,.2);}
+.simulation-badge{font-size:11px;color:var(--text-secondary);margin-top:8px;padding:0 16px 12px;display:flex;align-items:center;gap:4px;}
+.comp-bar{height:14px;border-radius:7px;overflow:hidden;display:flex;background:var(--gauge-track);margin:6px 0;}
+.comp-segment{height:100%;}
+.comp-segment:first-child{border-radius:7px 0 0 7px;}.comp-segment:last-child{border-radius:0 7px 7px 0;}
+.comp-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;}
+.comp-legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-secondary);}
+.comp-legend-dot{width:8px;height:8px;border-radius:2px;}
+.integration-grid{display:grid;gap:10px;margin-top:12px;}
+.integration-item{background:var(--input-bg);border:1px solid var(--border-medium);border-radius:10px;padding:12px;transition:all .2s;}
+.integration-item:hover{background:var(--hover-bg);border-color:var(--accent-primary);}
+.integration-header{display:flex;justify-content:space-between;align-items:center;}
+.integration-name{display:flex;align-items:center;gap:10px;}
+.integration-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:white;}
+.integration-icon.erp{background:#374151;}
+.integration-icon.mes{background:#0d6efd;}
+.integration-icon.dcs{background:#0891b2;}
+.integration-icon.lims{background:#059669;}
+.integration-system{font-weight:600;font-size:13px;color:var(--text-primary);}
+.integration-vendor{font-size:10px;color:var(--text-secondary);}
+.integration-status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;}
+.integration-status-badge.connected{background:rgba(52,199,89,.15);color:var(--accent-success);}
+.integration-status-badge.syncing{background:rgba(0,122,255,.15);color:var(--accent-primary);}
+.integration-status-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+.sync-indicator{display:inline-block;width:10px;height:10px;border:2px solid var(--accent-primary);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.process-flow{display:flex;align-items:center;gap:4px;margin:12px 0;font-size:10px;font-weight:600;color:var(--text-secondary);flex-wrap:wrap;}
+.process-flow-step{padding:4px 8px;border-radius:6px;background:var(--input-bg);border:1px solid var(--border-medium);}
+.process-flow-step.active{background:rgba(0,122,255,.1);border-color:var(--accent-primary);color:var(--accent-primary);}
+.process-flow-step.completed{background:rgba(52,199,89,.1);border-color:var(--accent-success);color:var(--accent-success);}
+.process-flow-arrow{color:var(--text-tertiary);font-size:12px;}
+.voice-overlay{position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);backdrop-filter:blur(30px) saturate(180%);border-top:1px solid var(--border-light);box-shadow:0 -8px 32px rgba(0,0,0,.12);padding:20px 32px;transform:translateY(100%);transition:all .4s cubic-bezier(.4,0,.2,1);z-index:150;max-height:300px;overflow-y:auto;}
+.voice-overlay.active{transform:translateY(0);}
+.voice-overlay-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.voice-overlay-title{font-size:14px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:10px;}
+.voice-waveform-mini{display:flex;align-items:center;gap:2px;height:20px;}
+.voice-bar-mini{width:3px;background:var(--accent-primary);border-radius:2px;animation:vp 1.2s ease-in-out infinite;}
+.voice-bar-mini:nth-child(1){height:8px;}.voice-bar-mini:nth-child(2){height:14px;animation-delay:.1s}.voice-bar-mini:nth-child(3){height:18px;animation-delay:.2s}.voice-bar-mini:nth-child(4){height:12px;animation-delay:.3s}.voice-bar-mini:nth-child(5){height:16px;animation-delay:.4s}
+@keyframes vp{0%,100%{transform:scaleY(.5);opacity:.5}50%{transform:scaleY(1);opacity:1}}
+.voice-close{padding:6px;background:none;border:none;cursor:pointer;color:var(--text-secondary);border-radius:6px;}
+.voice-transcript-flow{display:flex;flex-direction:column;gap:12px;}
+.voice-message{display:flex;gap:12px;align-items:flex-start;animation:slideInUp .3s ease-out;}
+.voice-message-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;}
+.voice-message.user .voice-message-avatar{background:var(--accent-primary);color:white;}
+.voice-message.kairos .voice-message-avatar{background:#374151;color:white;}
+.voice-message-content{flex:1;background:var(--input-bg);padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;color:var(--text-primary);}
+.voice-message.kairos .voice-message-content{background:var(--hover-bg);border:1px solid var(--border-medium);}
+.achievement-toast{position:fixed;top:80px;right:24px;background:var(--bg-card);backdrop-filter:blur(20px);border:1px solid var(--accent-success);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:12px;animation:slideInRight .5s ease-out;z-index:1000;}
+@keyframes slideInRight{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+.achievement-icon{width:32px;height:32px;background:#d4a017;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.achievement-title{font-weight:600;font-size:13px;color:var(--text-primary);margin-bottom:2px;}
+.achievement-desc{font-size:11px;color:var(--text-secondary);}
+.live-canvas{width:100%;height:80px;display:block;}
+/* Card creator modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;backdrop-filter:blur(6px);}
+.modal-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-card);backdrop-filter:blur(20px);border-radius:16px;padding:24px;width:560px;max-width:96vw;border:1px solid var(--border-medium);box-shadow:var(--shadow-lg);}
+.modal-title{font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:6px;}
+.modal-sub{font-size:12px;color:var(--text-secondary);margin-bottom:16px;}
+.dataset-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.dataset-item{background:var(--input-bg);border:1px solid var(--border-medium);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;}
+.dataset-item:hover{border-color:var(--accent-primary);transform:translateY(-2px);}
+.dataset-item-icon{font-size:22px;margin-bottom:6px;}
+.dataset-item-name{font-weight:600;font-size:13px;color:var(--text-primary);margin-bottom:4px;}
+.dataset-item-status{font-size:11px;}
+.ds-running{color:var(--accent-success);}
+.ds-warning{color:var(--accent-warning);}
+
+/* ── CAUSAL CONNECTORS ────────────────────────────────────────────── */
+/* Critical connections (blister alert chain) pulse faster and glow */
+.conn-line.conn-critical{stroke-dasharray:6,3;opacity:.45;}
+.conn-line.conn-critical.active{opacity:1;stroke-width:2.5;}
+.conn-pulse{pointer-events:none;}
+/* Connector label tooltip */
+#connLabel{position:absolute;z-index:50;pointer-events:none;display:none;transition:opacity .15s ease;}
+.cll-inner{background:rgba(9,10,24,.92);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:8px 12px;max-width:230px;}
+.cll-route{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:rgba(255,255,255,.4);margin-bottom:4px;}
+.cll-text{font-size:12px;color:rgba(255,255,255,.88);line-height:1.45;}
+
+/* ── KAIROS OPENING SEQUENCE ──────────────────────────────────────── */
+#kairosWake{position:fixed;inset:0;z-index:500;background:#0c0d1a;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .9s ease;}
+#kairosWake.fade-out{opacity:0;pointer-events:none;}
+.wake-glyph{font-size:58px;background:linear-gradient(135deg,#667eea,#764ba2,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:wake-breathe 2.4s ease-in-out infinite;}
+.wake-wordmark{font-size:26px;font-weight:300;color:#fff;letter-spacing:8px;margin:16px 0 6px;text-transform:uppercase;}
+.wake-sub{font-size:11px;color:rgba(255,255,255,.28);letter-spacing:3px;text-transform:uppercase;}
+.wake-dots{display:flex;gap:8px;margin-top:36px;}
+.wake-dot{width:6px;height:6px;border-radius:50%;background:rgba(102,126,234,.5);animation:wake-dot-anim 1.5s ease-in-out infinite;}
+.wake-dot:nth-child(2){animation-delay:.22s;}.wake-dot:nth-child(3){animation-delay:.44s;}
+.wake-skip{position:absolute;bottom:28px;right:28px;padding:8px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.38);font-size:12px;cursor:pointer;transition:all .2s;}
+.wake-skip:hover{background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);}
+@keyframes wake-breathe{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.09)}}
+@keyframes wake-dot-anim{0%,100%{opacity:.18;transform:translateY(0)}50%{opacity:1;transform:translateY(-6px)}}
+
+/* Card hidden state for opening sequence */
+.card-pre-reveal{opacity:0!important;transform:translateY(22px) scale(0.98)!important;pointer-events:none!important;}
+
+/* Kairos board brief — fixed banner, feels like it's speaking to the board */
+#kairosBrief{position:fixed;top:76px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:90;max-width:580px;width:calc(100% - 48px);background:rgba(9,10,24,.92);backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(102,126,234,.2);border-radius:14px;padding:14px 18px;display:flex;align-items:flex-start;gap:14px;opacity:0;transition:opacity .5s ease,transform .45s cubic-bezier(0.34,1.3,0.64,1);pointer-events:none;}
+#kairosBrief.visible{opacity:1;transform:translateX(-50%) translateY(0);}
+.brief-glyph{width:36px;height:36px;min-width:36px;background:#374151;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;}
+.brief-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px;}
+.brief-text{font-size:13px;color:rgba(255,255,255,.88);line-height:1.65;}
+
+/* Spotlight — Kairos drawing attention to a card */
+.kairos-spotlight{box-shadow:0 0 0 2px var(--accent-primary),var(--shadow-lg)!important;transform:translateY(-2px)!important;}
+
+/* ── BOARD MOOD / AMBIENT PRESENCE ─────────────────────────────────── */
+/* Subtle radial glow emanates from where the problem lives */
+#boardMood{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:0;transition:opacity 3s ease;}
+body.mood-alert #boardMood{opacity:1;
+  background:radial-gradient(ellipse 520px 420px at 220px 260px,rgba(255,149,0,.055) 0%,transparent 70%),
+             radial-gradient(ellipse 420px 300px at 220px 1200px,rgba(255,59,48,.04) 0%,transparent 65%);
+  animation:mood-breathe 7s ease-in-out infinite;}
+@keyframes mood-breathe{0%,100%{opacity:.65}50%{opacity:1}}
+/* The background grid itself warms when something is wrong */
+body.mood-alert{--bg-grid:rgba(200,120,30,0.14);}
+body.mood-alert.dark-theme{--bg-grid:rgba(255,149,0,0.11);}
+/* Light mode mood: stronger amber board glow */
+body.mood-alert:not(.dark-theme) #boardMood{
+  background:radial-gradient(ellipse 520px 420px at 220px 260px,rgba(224,136,0,.09) 0%,transparent 70%),
+             radial-gradient(ellipse 420px 300px at 220px 1200px,rgba(217,48,37,.06) 0%,transparent 65%);
+}
+/* Activity indicator states */
+.activity-indicator.ai-alert{background:#e08800!important;}
+.activity-indicator.ai-thinking{background:var(--accent-primary)!important;}
+/* Voice overlay — demoted to history panel, less dominant */
+.voice-overlay{border-radius:16px 16px 0 0;max-height:240px;}
+.voice-overlay-header{padding-bottom:12px;border-bottom:1px solid var(--border-light);margin-bottom:12px;}
+/* Card minimise */
+.minimise-btn{padding:4px 7px;background:none;border:none;cursor:pointer;border-radius:6px;color:var(--text-tertiary);font-size:13px;font-weight:700;line-height:1;transition:all .2s;margin-right:2px;}
+.minimise-btn:hover{color:var(--text-primary);background:var(--hover-bg);}
+/* Keep ribbon + ALL header types + peek row visible; hide everything else */
+.draggable-card.card-minimised>.card-header{margin-bottom:0;}
+.draggable-card.card-minimised>*:not(.card-ribbon):not(.card-header):not(.cmd-top):not(.projection-header):not(.card-peek){display:none!important;}
+.draggable-card.card-minimised{transition:box-shadow .3s,transform .3s;}
+/* Card peek — compact status row visible in collapsed state */
+.card-peek{display:flex;align-items:center;gap:7px;padding:7px 0 2px;font-size:11px;line-height:1.3;overflow:hidden;}
+.peek-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.peek-dot.ok{background:var(--accent-success);box-shadow:0 0 5px rgba(40,167,69,.5);}
+.peek-dot.warn{background:var(--accent-warning);animation:pw 2s ease-in-out infinite;box-shadow:0 0 7px rgba(224,136,0,.55);}
+.peek-status{font-size:10px;font-weight:800;letter-spacing:.3px;flex-shrink:0;}
+.peek-status.ok{color:var(--accent-success);}
+.peek-status.warn{color:var(--accent-warning);}
+body.dark-theme .peek-status.warn{color:#ff9f0a;}
+body.dark-theme .peek-status.ok{color:#32d74b;}
+.peek-detail{color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Close button on every card */
+.close-btn{padding:4px 7px;background:none;border:none;cursor:pointer;border-radius:6px;color:var(--text-tertiary);font-size:13px;line-height:1;transition:all .2s;}
+.close-btn:hover{color:var(--accent-danger);background:rgba(217,48,37,.09);}
+/* Restore badge on dataset items in modal */
+.dataset-item.restore{border-color:rgba(102,126,234,.3);background:rgba(102,126,234,.05);}
+.dataset-item.restore:hover{border-color:#667eea;}
+.dataset-item-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(102,126,234,.15);color:#667eea;display:inline-block;margin-top:4px;letter-spacing:.3px;}
+
+/* ── DOT GRID (replaces line grid) ───────────────────────────────── */
+body{background-image:radial-gradient(circle,var(--bg-grid) 1.2px,transparent 1.2px)!important;background-size:24px 24px!important;}
+
+/* ── WHITEBOARD PAN/ZOOM ─────────────────────────────────────────── */
+.whiteboard{transform-origin:0 0;will-change:transform;}
+
+/* ── CARD RIBBON (colored top stripe per process) ────────────────── */
+.card-ribbon{position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0;pointer-events:none;z-index:2;}
+
+/* ── CARD TIMESTAMP ──────────────────────────────────────────────── */
+.card-ts{font-size:9px;color:var(--text-tertiary);font-weight:500;letter-spacing:.3px;display:flex;align-items:center;gap:4px;margin-top:3px;flex-shrink:0;}
+.card-ts::before{content:'';width:5px;height:5px;background:var(--accent-success);border-radius:50%;flex-shrink:0;animation:pulse-glow 2.5s ease-in-out infinite;}
+
+/* ── CAUSAL CHAIN HIGHLIGHT ──────────────────────────────────────── */
+.draggable-card.chain-dim{opacity:0.07!important;filter:saturate(0.1);transition:opacity .35s ease,filter .35s ease;}
+
+/* ── FLOATING BOTTOM TOOLBAR ─────────────────────────────────────── */
+#kairosToolbar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:300;display:flex;align-items:center;gap:2px;padding:6px 10px;background:rgba(9,10,24,.95);backdrop-filter:blur(28px) saturate(200%);border:1px solid rgba(255,255,255,.1);border-radius:40px;box-shadow:0 8px 32px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);}
+.tb-btn{display:flex;align-items:center;gap:5px;padding:7px 12px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;border-radius:28px;transition:all .2s;white-space:nowrap;letter-spacing:.01em;}
+.tb-btn:hover{background:rgba(255,255,255,.09);color:rgba(255,255,255,.95);}
+.tb-btn.tb-active{background:rgba(102,126,234,.2);color:#a5b4fc;}
+.tb-icon{font-size:14px;line-height:1;}
+.tb-sep{width:1px;height:20px;background:rgba(255,255,255,.1);margin:0 4px;}
+.tb-zoom{font-size:11px;min-width:42px;text-align:center;font-variant-numeric:tabular-nums;}
+
+/* ── KAIROS OBSERVATION LOG ──────────────────────────────────────── */
+#kairosLog{position:fixed;left:0;top:73px;bottom:76px;width:272px;background:rgba(9,10,24,.97);backdrop-filter:blur(32px);border-right:1px solid rgba(255,255,255,.07);transform:translateX(-100%);transition:transform .38s cubic-bezier(0.4,0,.2,1);z-index:150;display:flex;flex-direction:column;overflow:hidden;}
+#kairosLog.open{transform:translateX(0);}
+/* Log header */
+.klog-header{padding:14px 14px 11px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:flex-start;flex-shrink:0;gap:10px;}
+.klog-header-left{display:flex;flex-direction:column;gap:6px;}
+.klog-title{font-size:12px;font-weight:700;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.9px;}
+.klog-glyph{width:20px;height:20px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;animation:brief-ring 3s ease-in-out infinite;flex-shrink:0;}
+.klog-live-row{display:flex;align-items:center;gap:6px;}
+.klog-live-dot{width:6px;height:6px;background:#32d74b;border-radius:50%;animation:pulse-glow 2.2s ease-in-out infinite;flex-shrink:0;}
+.klog-live-text{font-size:10px;color:rgba(50,215,75,.7);font-weight:600;letter-spacing:.3px;}
+.klog-close{padding:4px 8px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.22);font-size:13px;border-radius:6px;transition:all .2s;flex-shrink:0;}
+.klog-close:hover{color:rgba(255,255,255,.65);background:rgba(255,255,255,.07);}
+/* Entry list */
+.klog-entries{flex:1;overflow-y:auto;padding:10px 10px 4px;display:flex;flex-direction:column;gap:7px;}
+.klog-entries::-webkit-scrollbar{width:2px;}.klog-entries::-webkit-scrollbar-track{background:transparent;}.klog-entries::-webkit-scrollbar-thumb{background:rgba(255,255,255,.07);border-radius:2px;}
+/* Individual entry */
+.klog-entry{border-radius:9px;padding:10px 12px;animation:slideInUp .28s ease-out;border-left:2px solid transparent;}
+.klog-entry-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.klog-badge{display:inline-flex;align-items:center;gap:4px;font-size:8px;font-weight:800;letter-spacing:.8px;padding:2px 7px;border-radius:5px;text-transform:uppercase;}
+.klog-time{font-size:8.5px;color:rgba(255,255,255,.18);font-variant-numeric:tabular-nums;letter-spacing:.2px;}
+.klog-card-tag{display:inline-flex;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.7px;border:1px solid;margin-bottom:7px;}
+.klog-text{font-size:12px;color:rgba(255,255,255,.72);line-height:1.58;margin-bottom:0;}
+.klog-inference{font-size:11px;color:rgba(255,255,255,.35);line-height:1.5;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.04);display:flex;flex-direction:column;gap:2px;}
+.klog-inf-line{display:flex;align-items:baseline;gap:5px;}
+.klog-inf-arrow{color:rgba(255,255,255,.2);flex-shrink:0;font-size:10px;}
+/* Ambient footer */
+.klog-ambient{padding:10px 14px;border-top:1px solid rgba(255,255,255,.04);font-size:10px;color:rgba(255,255,255,.2);display:flex;align-items:center;gap:7px;flex-shrink:0;letter-spacing:.2px;}
+
+/* ── OPERATOR PERFORMANCE CARD ───────────────────────────────────── */
+.perf-profile{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-light);}
+.perf-avatar{width:40px;height:40px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;flex-shrink:0;}
+.perf-name{font-size:14px;font-weight:700;color:var(--text-primary);line-height:1.2;}
+.perf-role{font-size:11px;color:var(--text-secondary);font-weight:500;margin-top:2px;}
+.perf-facility{font-size:10px;color:var(--text-tertiary);margin-top:1px;}
+/* Three pillars */
+.perf-pillars{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;}
+.perf-pillar{background:var(--input-bg);border:1px solid var(--border-light);border-radius:10px;padding:10px 10px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;overflow:hidden;}
+.perf-pillar::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--pillar-col,var(--accent-primary));opacity:.6;}
+.pillar-val{font-size:20px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;line-height:1.1;}
+.pillar-val sup{font-size:11px;font-weight:600;color:var(--text-secondary);}
+.pillar-bar{width:100%;height:3px;background:var(--border-heavy);border-radius:2px;overflow:hidden;}
+.pillar-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+.pillar-label{font-size:9px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.6px;text-align:center;line-height:1.2;}
+.pillar-trend{font-size:9px;font-weight:600;color:var(--accent-success);}
+.pillar-trend.down{color:var(--accent-danger);}
+/* Achievements */
+.ach-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.ach-badge{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;border:1px solid var(--border-light);background:var(--input-bg);transition:all .2s;cursor:default;max-width:100%;}
+.ach-badge.earned{background:var(--ach-bg,rgba(102,126,234,.08));border-color:var(--ach-border,rgba(102,126,234,.25));}
+.ach-badge.locked{opacity:.3;filter:saturate(0);}
+.ach-badge.newly-earned{animation:achievement-pop .6s cubic-bezier(0.34,1.6,0.64,1);}
+@keyframes achievement-pop{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.ach-icon{font-size:16px;line-height:1;flex-shrink:0;}
+.ach-info{flex:1;min-width:0;}
+.ach-name{font-size:11px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ach-desc{font-size:10px;color:var(--text-secondary);line-height:1.3;margin-top:1px;}
+.ach-count{font-size:9px;font-weight:700;color:var(--text-tertiary);flex-shrink:0;}
+/* Annual review */
+.review-section{background:var(--input-bg);border:1px solid var(--border-medium);border-radius:10px;overflow:hidden;margin-bottom:12px;}
+.review-header{padding:9px 12px;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center;}
+.review-title{font-size:10px;font-weight:800;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.review-year{font-size:10px;color:var(--accent-primary);font-weight:700;}
+.review-rows{padding:4px 0;}
+.review-row{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:1px solid var(--border-light);}
+.review-row:last-child{border-bottom:none;}
+.review-label{font-size:12px;color:var(--text-secondary);}
+.review-val{font-size:12px;font-weight:700;color:var(--text-primary);}
+.review-val.highlight{color:var(--accent-success);}
+.review-val.accent{color:var(--accent-primary);}
+.gen-summary-btn{width:100%;padding:11px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.01em;}
+.gen-summary-btn:hover{box-shadow:0 4px 16px rgba(102,126,234,.4);transform:translateY(-1px);}
+.appraisal-output{display:none;margin-top:10px;padding:12px;background:var(--input-bg);border:1px solid var(--border-medium);border-radius:10px;font-size:11px;color:var(--text-primary);line-height:1.7;white-space:pre-wrap;font-family:monospace;cursor:text;}
+.appraisal-output.visible{display:block;}
+
+/* ── BOARD MINIMAP ────────────────────────────────────────────────── */
+#kairosMap{position:fixed;bottom:80px;right:16px;width:160px;height:96px;border-radius:10px;background:rgba(9,10,24,.85);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.07);box-shadow:0 4px 16px rgba(0,0,0,.4);z-index:200;cursor:pointer;display:block;}
+#kairosMap:hover{border-color:rgba(255,255,255,.14);}
+
+/* ── COMMAND SURFACE REDESIGN ────────────────────────────────────── */
+.card-wide{width:440px;}
+/* Top identity */
+.cmd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-light);}
+.cmd-identity{display:flex;align-items:center;gap:12px;}
+.cmd-name{font-size:15px;font-weight:700;color:var(--text-primary);letter-spacing:-.01em;line-height:1.2;}
+.cmd-sub{font-size:10px;color:var(--text-secondary);font-weight:500;margin-top:1px;}
+.cmd-alive{display:flex;align-items:center;gap:5px;font-size:9px;color:rgba(50,215,75,.7);font-weight:700;letter-spacing:.4px;text-transform:uppercase;}
+/* Query interface */
+.cmd-query{background:var(--input-bg);border:1px solid var(--border-medium);border-radius:12px;padding:2px;margin-bottom:12px;transition:border-color .2s,box-shadow .2s;}
+.cmd-query:focus-within{border-color:rgba(0,122,255,.5);box-shadow:0 0 0 3px rgba(0,122,255,.08);}
+.cmd-query-inner{display:flex;align-items:flex-end;gap:8px;padding:8px 10px 6px;}
+.cmd-input{flex:1;background:none;border:none;outline:none;font-size:13px;color:var(--text-primary);resize:none;font-family:inherit;line-height:1.5;min-height:36px;max-height:84px;overflow-y:auto;}
+.cmd-input::placeholder{color:var(--text-secondary);}
+.cmd-chips{display:flex;gap:5px;flex-wrap:wrap;padding:0 8px 8px;}
+.cmd-chip{padding:4px 10px;background:var(--hover-bg);border:1px solid var(--border-light);border-radius:20px;font-size:11px;font-weight:600;color:var(--text-secondary);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.cmd-chip:hover{border-color:var(--accent-primary);color:var(--accent-primary);background:rgba(0,122,255,.06);}
+.cmd-chip-alert{background:rgba(255,69,58,.07);border-color:rgba(255,69,58,.2)!important;color:#ff6b61!important;}
+.cmd-chip-alert:hover{background:rgba(255,69,58,.14)!important;}
+/* Pipeline */
+.cmd-pipeline{display:flex;align-items:center;margin-bottom:14px;padding:10px 12px;background:var(--input-bg);border-radius:10px;border:1px solid var(--border-light);}
+.pipeline-step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0;}
+.ps-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.pipeline-step.done .ps-dot{background:var(--accent-success);}
+.pipeline-step.live .ps-dot{background:var(--accent-primary);animation:pulse-glow 2s ease-in-out infinite;}
+.pipeline-step.warn .ps-dot{background:var(--accent-warning);animation:pw 2s ease-in-out infinite;}
+.pipeline-step.ok .ps-dot{background:var(--accent-success);}
+.ps-name{font-size:8px;font-weight:700;color:var(--text-secondary);letter-spacing:.2px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.ps-pct{font-size:8px;color:var(--text-tertiary);font-variant-numeric:tabular-nums;}
+.pipeline-step.warn .ps-name{color:var(--accent-warning);}
+.pipeline-step.warn .ps-pct{color:var(--accent-warning);}
+.pipeline-conn{height:2px;flex:0.6;background:var(--border-heavy);border-radius:1px;}
+.pipeline-conn.done{background:var(--accent-success);}
+.pipeline-conn.live{background:var(--accent-primary);}
+.pipeline-conn.warn{background:var(--accent-warning);}
+/* Tabs */
+.cmd-tabs{display:flex;gap:4px;margin-bottom:12px;padding:3px;background:var(--input-bg);border-radius:10px;}
+.cmd-tab{flex:1;padding:7px 6px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:700;transition:all .2s;color:var(--text-secondary);background:transparent;letter-spacing:.01em;}
+.cmd-tab.active{background:var(--accent-primary);color:#fff;box-shadow:0 2px 8px rgba(0,122,255,.3);}
+.cmd-tab:not(.active):hover{background:var(--hover-bg);color:var(--text-primary);}
+.cmd-pane{display:none;}.cmd-pane.active{display:block;}
+/* Site health */
+.sh-title{font-size:9px;font-weight:800;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.9px;margin-bottom:7px;}
+.sh-lines{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.sh-line{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:var(--input-bg);border:1px solid var(--border-light);}
+.sh-line.warn{background:rgba(255,149,0,.06);border-color:rgba(255,149,0,.18);}
+.sh-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.sh-line.ok .sh-dot,.sh-line.run .sh-dot{background:var(--accent-success);animation:pulse-glow 3s ease-in-out infinite;}
+.sh-line.warn .sh-dot{background:var(--accent-warning);animation:pw 2s ease-in-out infinite;}
+.sh-name{font-size:12px;font-weight:600;color:var(--text-primary);min-width:72px;}
+.sh-state{font-size:10px;color:var(--text-secondary);flex:1;}
+.sh-line.warn .sh-state{color:var(--accent-warning);font-weight:700;}
+.sh-window{font-size:10px;font-weight:800;color:var(--accent-danger);font-variant-numeric:tabular-nums;background:rgba(255,59,48,.1);border-radius:4px;padding:2px 6px;}
+/* Shift score */
+.shift-score{background:var(--input-bg);border:1px solid var(--border-medium);border-radius:10px;padding:10px 12px;margin-bottom:12px;}
+.ss-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.ss-label{font-size:10px;font-weight:700;color:var(--text-secondary);letter-spacing:.5px;text-transform:uppercase;}
+.ss-val{font-size:12px;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;}
+.ss-bar{height:5px;background:var(--border-heavy);border-radius:3px;overflow:hidden;margin-bottom:5px;}
+.ss-fill{height:100%;background:var(--accent-primary);border-radius:3px;transition:width .6s ease;}
+.ss-sub{font-size:10px;color:var(--text-secondary);}
+/* Action card urgency panel */
+.action-card{display:flex;gap:10px;align-items:flex-start;background:var(--input-bg);border:1px solid var(--border-medium);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .2s;}
+.action-card:hover{border-color:var(--accent-primary);background:var(--hover-bg);}
+.action-card.urgent{background:rgba(255,149,0,.05);border-color:rgba(255,149,0,.2);}
+.action-card.urgent:hover{border-color:var(--accent-warning);background:rgba(255,149,0,.09);}
+.action-card.executed{opacity:.38;pointer-events:none;cursor:default;}
+.ac-urgency{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:44px;padding:6px 4px;background:rgba(255,59,48,.1);border-radius:7px;gap:2px;flex-shrink:0;}
+.ac-countdown{font-size:13px;font-weight:800;color:var(--accent-danger);font-variant-numeric:tabular-nums;line-height:1.1;}
+.ac-urg-lbl{font-size:7px;font-weight:800;color:var(--accent-danger);letter-spacing:.6px;text-transform:uppercase;opacity:.65;}
+.ac-body{flex:1;min-width:0;}
+.cmd-section-title{font-size:9px;font-weight:800;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px;}
+/* ── ⌘K COMMAND TRIGGER ──────────────────────────────────────────── */
+.cmd-trigger{display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--input-bg);border:1px solid var(--border-medium);border-radius:8px;cursor:text;transition:border-color .2s,box-shadow .2s;color:var(--text-secondary);font-size:13px;width:100%;font-family:inherit;}
+.cmd-trigger:hover,.cmd-trigger.active{border-color:var(--accent-primary);box-shadow:0 0 0 3px rgba(0,122,255,.08);}
+.cmd-trigger svg{flex-shrink:0;opacity:.5;}
+.cmd-trigger-text{flex:1;text-align:left;}
+.cmd-trigger-k{font-size:11px;padding:2px 6px;background:var(--hover-bg);border-radius:4px;border:1px solid var(--border-medium);color:var(--text-tertiary);flex-shrink:0;}
+/* ── COMMAND PANEL (slide-down from header) ───────────────────────── */
+#commandPanel{position:sticky;top:133px;z-index:85;background:var(--header-bg);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--border-heavy);overflow:hidden;max-height:0;transition:max-height .35s cubic-bezier(0.4,0,0.2,1);}
+#commandPanel.open{max-height:640px;overflow-y:auto;}
+.cp-inner{padding:14px 24px 18px;max-width:900px;margin:0 auto;}
+/* Golden batch reference chip */
+.golden-ref{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;border:1px solid var(--border-medium);color:var(--text-secondary);background:var(--input-bg);margin-bottom:10px;}
+.golden-ref.warn{border-color:var(--accent-warning);color:var(--accent-warning);background:var(--alert-bg);}
+.golden-ref.ok{border-color:var(--accent-success);color:var(--accent-success);}
+/* ── CMD SEND button — flat blue ──────────────────────────────────── */
+.cmd-send{width:30px;height:30px;background:var(--accent-primary);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s;margin-bottom:2px;}
+.cmd-send:hover{opacity:.85;}
+.cmd-send svg{width:13px;height:13px;stroke:white;fill:none;stroke-width:2;}
+/* ── CMD GLYPH — flat dark ────────────────────────────────────────── */
+.cmd-glyph{width:34px;height:34px;background:var(--text-primary);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--bg-primary);flex-shrink:0;}
+body.dark-theme .cmd-glyph{background:#374151;color:#fff;}
+/* ── CMD ALIVE — static indicator ────────────────────────────────── */
+.cmd-alive-dot{width:5px;height:5px;background:#28a745;border-radius:50%;}
+
+/* ── PAN MODE CURSOR ──────────────────────────────────────────────── */
+body.pan-mode .whiteboard{cursor:grab!important;}
+body.pan-mode .whiteboard *{cursor:grab!important;}
+body.pan-mode.panning .whiteboard{cursor:grabbing!important;}
+
+/* ── CONNECTOR LABEL override (becomes fixed) ─────────────────────── */
+#connLabel{position:fixed!important;z-index:400;}
+
+/* ── LINE STATUS RAIL ─────────────────────────────────────────────── */
+#lineStatusRail{position:sticky;top:57px;z-index:90;display:flex;align-items:center;background:var(--header-bg);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--border-heavy);padding:0 20px;height:38px;overflow-x:auto;scrollbar-width:none;}
+#lineStatusRail::-webkit-scrollbar{display:none;}
+.lsr-line{display:flex;align-items:center;gap:7px;padding:0 16px;height:100%;cursor:pointer;transition:background .2s;border-right:1px solid var(--border-light);white-space:nowrap;flex-shrink:0;}
+.lsr-line:first-child{padding-left:0;}
+.lsr-line:hover{background:var(--hover-bg);}
+.lsr-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.lsr-line.run .lsr-dot{background:var(--accent-success);}
+.lsr-line.warn .lsr-dot{background:var(--accent-warning);}
+.lsr-name{font-size:11px;font-weight:700;color:var(--text-primary);}
+.lsr-state{font-size:10px;color:var(--text-secondary);}
+.lsr-line.warn .lsr-state{color:var(--accent-warning);font-weight:600;}
+.lsr-kpi{margin-left:auto;display:flex;align-items:center;gap:20px;padding-left:18px;border-left:1px solid var(--border-heavy);flex-shrink:0;}
+.lsr-kpi-item{display:flex;flex-direction:column;align-items:flex-end;gap:0;}
+.lsr-kpi-val{font-size:12px;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;line-height:1.2;}
+.lsr-kpi-lbl{font-size:8px;font-weight:700;color:var(--text-secondary);letter-spacing:.4px;text-transform:uppercase;}
+
+/* ── ALERT BANNER ─────────────────────────────────────────────────── */
+#alertBanner{position:sticky;top:95px;z-index:88;display:flex;align-items:center;gap:10px;padding:8px 24px;font-size:12px;background:rgba(224,136,0,.1);border-bottom:1px solid rgba(224,136,0,.28);transition:opacity .3s;}
+body.dark-theme #alertBanner{background:rgba(255,159,10,.1);border-color:rgba(255,159,10,.25);}
+.ab-pulse{width:8px;height:8px;border-radius:50%;background:var(--accent-warning);flex-shrink:0;}
+.ab-badge{font-size:10px;font-weight:800;color:var(--accent-warning);background:rgba(224,136,0,.14);border:1px solid rgba(224,136,0,.25);padding:2px 8px;border-radius:4px;letter-spacing:.4px;flex-shrink:0;white-space:nowrap;}
+body.dark-theme .ab-badge{background:rgba(255,159,10,.14);border-color:rgba(255,159,10,.3);color:#ff9f0a;}
+.ab-text{flex:1;color:var(--text-primary);}
+body.dark-theme .ab-text{color:rgba(255,255,255,.82);}
+.ab-text strong{color:var(--accent-warning);}
+body.dark-theme .ab-text strong{color:#ffb340;}
+.ab-window{font-size:10px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent-danger);background:rgba(217,48,37,.1);border-radius:4px;padding:2px 6px;flex-shrink:0;}
+body.dark-theme .ab-window{color:#ff453a;background:rgba(255,69,58,.12);}
+.ab-action{padding:5px 14px;background:var(--accent-warning);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .2s;}
+.ab-action:hover{filter:brightness(1.12);transform:translateY(-1px);}
+.ab-dismiss{padding:4px 8px;background:none;border:none;cursor:pointer;color:var(--text-tertiary);border-radius:4px;flex-shrink:0;font-size:16px;line-height:1;transition:color .2s;}
+.ab-dismiss:hover{color:var(--text-primary);}
+</style>
+</head>
+<body class="dark-theme">
+
+<!-- Kairos Wake Screen -->
+<div id="kairosWake">
+  <div class="wake-glyph">∞</div>
+  <div class="wake-wordmark">Kairos</div>
+  <div class="wake-sub">Servier Arklow · Building 4</div>
+  <div class="wake-dots"><div class="wake-dot"></div><div class="wake-dot"></div><div class="wake-dot"></div></div>
+  <button class="wake-skip" id="wakeSkip">Skip →</button>
+</div>
+
+<!-- Kairos Board Brief -->
+<div id="kairosBrief">
+  <div class="brief-glyph">∞</div>
+  <div style="flex:1"><div class="brief-label">Kairos</div><div class="brief-text" id="kairosBriefText"></div></div>
+</div>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo"><span class="logo-icon">∞</span>Kairos</div>
+    <div class="breadcrumb"><span>SERVIER</span><span>/</span><span>ARKLOW</span><span>/</span><span class="current">PoC — ALL LINES</span></div>
+  </div>
+  <div class="header-center">
+    <button class="cmd-trigger" id="cmdTrigger" onclick="toggleCommandPanel()">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span class="cmd-trigger-text">Ask Kairos… query, simulate, compare</span>
+      <span class="cmd-trigger-k">⌘K</span>
+    </button>
+  </div>
+  <div class="header-right">
+    <div class="activity-indicator" title="Kairos analyzing"></div>
+    <div class="voice-indicator" id="voiceIndicator" onclick="toggleVoice()">
+      <div class="voice-pulse"></div>
+      <span class="voice-indicator-text" id="voiceText">Voice Mode</span>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
+    <button class="add-card-btn" onclick="openCardCreator()">+ Card</button>
+    <span class="time" id="clock">--:--</span>
+    <button class="icon-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+  </div>
+</div>
+
+<!-- Line Status Rail -->
+<div id="lineStatusRail">
+  <div class="lsr-line warn" onclick="_scrollToCard('blister')" title="Click to focus Blister line">
+    <div class="lsr-dot"></div>
+    <span class="lsr-name">Blister</span>
+    <span class="lsr-state">SEAL DRIFT +1.8°C</span>
+  </div>
+  <div class="lsr-line run" onclick="_scrollToCard('bottle')" title="Click to focus Bottle line">
+    <div class="lsr-dot"></div>
+    <span class="lsr-name">Bottle</span>
+    <span class="lsr-state">Nominal</span>
+  </div>
+  <div class="lsr-line run" onclick="_scrollToCard('granulator')" title="Click to focus Granulator">
+    <div class="lsr-dot"></div>
+    <span class="lsr-name">Granulator</span>
+    <span class="lsr-state">Endpoint ~4.2 min</span>
+  </div>
+  <div class="lsr-line run" onclick="_scrollToCard('tablet')" title="Click to focus Tablet Press">
+    <div class="lsr-dot"></div>
+    <span class="lsr-name">Tablet Press</span>
+    <span class="lsr-state">Nominal</span>
+  </div>
+  <div class="lsr-line run" onclick="_scrollToCard('coater')" title="Click to focus Coating">
+    <div class="lsr-dot"></div>
+    <span class="lsr-name">Coating</span>
+    <span class="lsr-state">Endpoint ~18 min</span>
+  </div>
+  <div class="lsr-kpi">
+    <div class="lsr-kpi-item"><span class="lsr-kpi-val" style="color:var(--accent-warning)">4/5</span><span class="lsr-kpi-lbl">Lines OK</span></div>
+    <div class="lsr-kpi-item"><span class="lsr-kpi-val" style="color:var(--accent-success)">+€411K</span><span class="lsr-kpi-lbl">Protected</span></div>
+    <div class="lsr-kpi-item"><span class="lsr-kpi-val" style="color:var(--accent-success)">97.3%</span><span class="lsr-kpi-lbl">GMP</span></div>
+    <div class="lsr-kpi-item"><span class="lsr-kpi-val" id="lsrShift">--:--</span><span class="lsr-kpi-lbl">Shift</span></div>
+  </div>
+</div>
+
+<!-- Active Alert Banner -->
+<div id="alertBanner">
+  <div class="ab-pulse"></div>
+  <span class="ab-badge">⚡ ACTIVE ALERT</span>
+  <span class="ab-text">Blister line · Seal temperature <strong>+1.8°C above golden corridor</strong> — intervention window closing</span>
+  <span class="ab-window" id="abWindow">24:58</span>
+  <button class="ab-action" onclick="switchCmdTab('act');_scrollToCard('command')">Respond in Kairos →</button>
+  <button class="ab-dismiss" onclick="document.getElementById('alertBanner').style.display='none'" title="Dismiss">✕</button>
+</div>
+
+<!-- Card Creator Modal -->
+<div class="modal-overlay" id="cardModal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div class="modal-title">Add Monitoring Card</div>
+      <button onclick="document.getElementById('cardModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-secondary);">✕</button>
+    </div>
+    <div class="modal-sub">Select a dataset to spawn a live card on the whiteboard</div>
+    <div class="dataset-grid" id="datasetGrid"></div>
+  </div>
+</div>
+
+<div id="connLabel"><div class="cll-inner"><div class="cll-route" id="connLabelRoute"></div><div class="cll-text" id="connLabelText"></div></div></div>
+<!-- ⌘K Command Panel -->
+<div id="commandPanel">
+  <div class="cp-inner">
+
+    <!-- Query interface -->
+    <div class="cmd-query">
+      <div class="cmd-query-inner">
+        <textarea class="cmd-input" id="cmdInput" placeholder="Ask Kairos anything about this shift…" rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendTextQuery();}"></textarea>
+        <button class="cmd-send" onclick="sendTextQuery()" title="Send (Enter)">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <div class="cmd-chips">
+        <button class="cmd-chip" onclick="fireVoiceCmd('Give me a full site status overview of all 5 lines right now.')">Site status</button>
+        <button class="cmd-chip cmd-chip-alert" onclick="fireVoiceCmd('Explain the blister line seal temperature drift and what I should do immediately.')">⚡ Blister alert</button>
+        <button class="cmd-chip" onclick="fireVoiceCmd('What is the financial impact and ROI summary for this shift?')">Financials</button>
+        <button class="cmd-chip" onclick="fireVoiceCmd('What is the out-of-spec risk across all active batches right now?')">OOS risk</button>
+      </div>
+    </div>
+
+    <!-- Live batch pipeline -->
+    <div class="cmd-pipeline">
+      <div class="pipeline-step done"><div class="ps-dot"></div><div class="ps-name">Granulation</div><div class="ps-pct">100%</div></div>
+      <div class="pipeline-conn done"></div>
+      <div class="pipeline-step live"><div class="ps-dot"></div><div class="ps-name">Tableting</div><div class="ps-pct">78%</div></div>
+      <div class="pipeline-conn live"></div>
+      <div class="pipeline-step live"><div class="ps-dot"></div><div class="ps-name">Coating</div><div class="ps-pct">62%</div></div>
+      <div class="pipeline-conn warn"></div>
+      <div class="pipeline-step warn"><div class="ps-dot"></div><div class="ps-name">Blister</div><div class="ps-pct">44%</div></div>
+      <div class="pipeline-conn done"></div>
+      <div class="pipeline-step ok"><div class="ps-dot"></div><div class="ps-name">Bottle</div><div class="ps-pct">71%</div></div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="cmd-tabs">
+      <button class="cmd-tab active" id="ctObserve" onclick="switchCmdTab('observe')">Observe</button>
+      <button class="cmd-tab" id="ctAct" onclick="switchCmdTab('act')">Act</button>
+      <button class="cmd-tab" id="ctIntegrate" onclick="switchCmdTab('integrate')">Integrate</button>
+      <button class="cmd-tab" id="ctPerf" onclick="switchCmdTab('perf')">Performance</button>
+    </div>
+
+    <!-- OBSERVE PANE -->
+    <div class="cmd-pane active" id="cpObserve">
+      <div class="sh-title">SITE HEALTH — ALL LINES</div>
+      <div class="sh-lines">
+        <div class="sh-line warn">
+          <div class="sh-dot"></div>
+          <span class="sh-name">Blister</span>
+          <span class="sh-state">SEAL TEMP DRIFT +1.8°C</span>
+          <span class="sh-window" id="shWindow">24:58</span>
+        </div>
+        <div class="sh-line run">
+          <div class="sh-dot"></div>
+          <span class="sh-name">Bottle</span>
+          <span class="sh-state">Nominal · Fill weight ±0.3%</span>
+        </div>
+        <div class="sh-line run">
+          <div class="sh-dot"></div>
+          <span class="sh-name">Granulator</span>
+          <span class="sh-state">Endpoint in ~4.2 min</span>
+        </div>
+        <div class="sh-line run">
+          <div class="sh-dot"></div>
+          <span class="sh-name">Tablet Press</span>
+          <span class="sh-state">Nominal · Dissolution: PASS</span>
+        </div>
+        <div class="sh-line run">
+          <div class="sh-dot"></div>
+          <span class="sh-name">Coating</span>
+          <span class="sh-state">Endpoint in ~18 min</span>
+        </div>
+      </div>
+      <div class="shift-score">
+        <div class="ss-row"><span class="ss-label">Shift Score</span><span class="ss-val" id="ssVal">2,780 pts</span></div>
+        <div class="ss-bar"><div class="ss-fill" id="ssFill" style="width:69%"></div></div>
+        <div class="ss-sub">Rank <span style="color:var(--accent-primary);font-weight:700">#2</span> Arklow · <span style="color:var(--accent-success);font-weight:600">GMP Expert</span> · 220 pts to next level</div>
+      </div>
+      <div class="cmd-section-title">OPEN GxP ACTIONS</div>
+      <div class="open-action" onclick="toggleCB(this)"><div class="action-checkbox"></div><span class="action-text">Deviation report DR-2026-0044</span><span class="badge badge-gmp">GxP</span></div>
+      <div class="open-action" onclick="toggleCB(this)"><div class="action-checkbox"></div><span class="action-text">Update eBR — seal temp correction</span><span class="badge badge-erp">MES</span></div>
+      <div class="open-action" onclick="toggleCB(this)"><div class="action-checkbox"></div><span class="action-text">Shift handover (14:00 → 22:00)</span></div>
+    </div>
+
+    <!-- ACT PANE -->
+    <div class="cmd-pane" id="cpAct">
+      <div class="cmd-section-title">KAIROS RECOMMENDED ACTIONS</div>
+      <div class="action-card urgent" id="acBlister" onclick="executeAction(this,150,'Corrected blister seal temp −1.8°C')">
+        <div class="ac-urgency">
+          <div class="ac-countdown" id="acCount">24:58</div>
+          <div class="ac-urg-lbl">window</div>
+        </div>
+        <div class="ac-body">
+          <div class="action-card-header"><span class="action-card-title">Correct Blister Seal Temp</span><span class="action-card-impact impact-high">HIGH</span></div>
+          <div class="action-card-description">Reduce sealing station temp by 1.8°C to realign with golden batch corridor — prevents batch quarantine</div>
+          <div class="action-card-meta"><span>⏱ 3 min</span><span>€24K protected</span><span class="badge badge-gmp">GxP auth</span></div>
+        </div>
+      </div>
+      <div class="action-card" onclick="executeAction(this,120,'Recalibrated granulator feeder −4.2 RPM')">
+        <div class="ac-body">
+          <div class="action-card-header"><span class="action-card-title">Recalibrate Granulator Feeder</span><span class="action-card-impact impact-medium">MEDIUM</span></div>
+          <div class="action-card-description">Adjust feeder screw −4.2 RPM to correct API concentration drift before next batch</div>
+          <div class="action-card-meta"><span>⏱ 12 min</span><span>QA sign-off needed</span></div>
+        </div>
+      </div>
+      <div class="action-card" onclick="executeAction(this,80,'Scheduled dissolution test — 6 tablet sample')">
+        <div class="ac-body">
+          <div class="action-card-header"><span class="action-card-title">Schedule Dissolution Test</span><span class="action-card-impact impact-low">LOW</span></div>
+          <div class="action-card-description">Pull 6-tablet sample from Tablet Press for accelerated dissolution verification</div>
+          <div class="action-card-meta"><span>⏱ 45 min</span><span>Compliance record</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTEGRATE PANE -->
+    <div class="cmd-pane" id="cpIntegrate">
+      <div class="cmd-section-title">ENTERPRISE INTEGRATIONS</div>
+      <div class="integration-grid">
+        <div class="integration-item"><div class="integration-header"><div class="integration-name"><div class="integration-icon erp">ERP</div><div><div class="integration-system">SAP S/4HANA</div><div class="integration-vendor">Batch Records</div></div></div><div class="integration-status-badge connected"><div class="integration-status-dot"></div>Live</div></div></div>
+        <div class="integration-item"><div class="integration-header"><div class="integration-name"><div class="integration-icon mes">MES</div><div><div class="integration-system">Siemens Opcenter</div><div class="integration-vendor">eBR / Production</div></div></div><div class="integration-status-badge syncing"><div class="sync-indicator"></div>Sync</div></div></div>
+        <div class="integration-item"><div class="integration-header"><div class="integration-name"><div class="integration-icon dcs">DCS</div><div><div class="integration-system">DeltaV</div><div class="integration-vendor">Process Control</div></div></div><div class="integration-status-badge connected"><div class="integration-status-dot"></div>Live</div></div></div>
+        <div class="integration-item"><div class="integration-header"><div class="integration-name"><div class="integration-icon lims">LIMS</div><div><div class="integration-system">LabWare</div><div class="integration-vendor">Quality &amp; Testing</div></div></div><div class="integration-status-badge connected"><div class="integration-status-dot"></div>Live</div></div></div>
+      </div>
+      <div style="margin-top:12px;padding:10px 12px;background:var(--input-bg);border-radius:8px;border:1px solid var(--border-light);">
+        <div style="font-size:10px;font-weight:700;color:var(--text-secondary);letter-spacing:.5px;margin-bottom:6px;">DATA FRESHNESS</div>
+        <div style="font-size:12px;color:var(--text-primary);display:flex;justify-content:space-between;"><span>DeltaV</span><span style="color:var(--accent-success);font-weight:600">Real-time</span></div>
+        <div style="font-size:12px;color:var(--text-primary);display:flex;justify-content:space-between;margin-top:4px;"><span>SAP S/4HANA</span><span style="color:var(--accent-success);font-weight:600">Real-time</span></div>
+        <div style="font-size:12px;color:var(--text-primary);display:flex;justify-content:space-between;margin-top:4px;"><span>Opcenter eBR</span><span style="color:var(--accent-warning);font-weight:600">~30s lag</span></div>
+        <div style="font-size:12px;color:var(--text-primary);display:flex;justify-content:space-between;margin-top:4px;"><span>LabWare LIMS</span><span style="color:var(--accent-success);font-weight:600">Real-time</span></div>
+      </div>
+    </div>
+
+    <!-- PERFORMANCE PANE (abbreviated — full content stays in cpPerf below) -->
+    <div class="cmd-pane" id="cpPerf">
+      <div class="perf-profile">
+        <div class="perf-avatar">SM</div>
+        <div>
+          <div class="perf-name">Sarah M.</div>
+          <div class="perf-role">Line Supervisor · Building 4</div>
+          <div class="perf-facility">Servier Arklow · Days Shift</div>
+        </div>
+      </div>
+      <div class="perf-pillars">
+        <div class="perf-pillar" style="--pillar-col:#32d74b">
+          <div class="pillar-val"><span id="ppGmp">97.3</span><sup>%</sup></div>
+          <div class="pillar-bar"><div class="pillar-fill" id="ppGmpBar" style="width:97.3%;background:#32d74b"></div></div>
+          <div class="pillar-label">GMP<br>Compliance</div>
+          <div class="pillar-trend">↑ +0.8%</div>
+        </div>
+        <div class="perf-pillar" style="--pillar-col:#007aff">
+          <div class="pillar-val"><span id="ppMastery">94.1</span><sup>%</sup></div>
+          <div class="pillar-bar"><div class="pillar-fill" id="ppMasteryBar" style="width:94.1%;background:#007aff"></div></div>
+          <div class="pillar-label">Process<br>Mastery</div>
+          <div class="pillar-trend">↑ +1.2%</div>
+        </div>
+        <div class="perf-pillar" style="--pillar-col:#e08800">
+          <div class="pillar-val"><span id="ppResp">4.2</span><sup>m</sup></div>
+          <div class="pillar-bar"><div class="pillar-fill" id="ppRespBar" style="width:84%;background:#e08800"></div></div>
+          <div class="pillar-label">Avg Alert<br>Response</div>
+          <div class="pillar-trend">↓ −0.6m</div>
+        </div>
+      </div>
+      <div class="ach-grid" id="achGrid">
+        <div class="ach-badge earned" style="--ach-bg:rgba(212,160,23,.08);--ach-border:rgba(212,160,23,.25);width:100%" id="ach-streak">
+          <span class="ach-icon">🔥</span><div class="ach-info"><div class="ach-name">Compliance Streak</div><div class="ach-desc">8 consecutive shifts · 100% GMP actions completed</div></div><span class="ach-count">×8</span>
+        </div>
+        <div class="ach-badge locked" id="ach-responder" style="width:100%"><span class="ach-icon">⚡</span><div class="ach-info"><div class="ach-name">First Responder</div><div class="ach-desc">Act on a critical alert within the intervention window</div></div><span class="ach-count">×0</span></div>
+        <div class="ach-badge locked" id="ach-guardian" style="width:100%"><span class="ach-icon">💰</span><div class="ach-info"><div class="ach-name">Value Guardian</div><div class="ach-desc">Prevent a batch failure worth &gt;€100K through intervention</div></div><span class="ach-count">×0</span></div>
+        <div class="ach-badge locked" id="ach-docmaster" style="width:100%"><span class="ach-icon">📋</span><div class="ach-info"><div class="ach-name">Documentation Master</div><div class="ach-desc">Close all GxP open actions within the same shift</div></div><span class="ach-count">×0</span></div>
+        <div class="ach-badge locked" id="ach-analyst" style="width:100%"><span class="ach-icon">🔬</span><div class="ach-info"><div class="ach-name">Kairos Analyst</div><div class="ach-desc">Make 5+ intelligence queries and act on insights</div></div><span class="ach-count">×0</span></div>
+        <div class="ach-badge locked" id="ach-keeper" style="width:100%"><span class="ach-icon">🏆</span><div class="ach-info"><div class="ach-name">Golden Keeper</div><div class="ach-desc">All 5 lines within golden batch corridor for a full shift</div></div><span class="ach-count">×0</span></div>
+      </div>
+      <div class="review-section">
+        <div class="review-header"><span class="review-title">Annual Review — 2026</span><span class="review-year">YTD</span></div>
+        <div class="review-rows">
+          <div class="review-row"><span class="review-label">Batch failures prevented</span><span class="review-val highlight" id="rvBatch">2 · €372K protected</span></div>
+          <div class="review-row"><span class="review-label">Deviations actioned</span><span class="review-val accent" id="rvDev">14</span></div>
+          <div class="review-row"><span class="review-label">Avg alert response time</span><span class="review-val" id="rvResp">4.2 min</span></div>
+          <div class="review-row"><span class="review-label">GMP compliance rate</span><span class="review-val highlight" id="rvGmp">97.3%</span></div>
+          <div class="review-row"><span class="review-label">Shifts completed</span><span class="review-val" id="rvShifts">47</span></div>
+          <div class="review-row"><span class="review-label">Kairos-assisted decisions</span><span class="review-val accent" id="rvKairos">0 this session</span></div>
+        </div>
+      </div>
+      <button class="gen-summary-btn" onclick="generateAppraisalSummary()">Generate Appraisal Summary →</button>
+      <div class="appraisal-output" id="appraisalOutput"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="whiteboard" id="wb">
+  <svg class="conn-svg" id="connSvg"></svg>
+  <div id="boardMood"></div>
+
+  <!-- BLISTER LINE -->
+  <div class="draggable-card card-medium" style="left:30px;top:30px;" data-card="blister">
+    <div class="card-header">
+      <div class="card-title"><div class="asset-icon warning">💊</div><div class="card-title-text"><h3>Blister Line</h3><p>Packaging · Bldg 4</p></div></div>
+      <button class="more-btn">⋮</button>
+    </div>
+    <div class="status-grid">
+      <div class="status-row"><span class="status-label">Status:</span><span class="status-value status-warning">DRIFT ALERT</span></div>
+      <div class="status-row"><span class="status-label">Batch:</span><span class="status-value">BL-2026-0219-A</span></div>
+      <div class="status-row"><span class="status-label">Product:</span><span class="status-value">Omeprazole 20mg</span></div>
+      <div class="status-row"><span class="status-label">Speed:</span><span class="status-value">142 bpm</span></div>
+      <div class="status-row"><span class="status-label">Yield:</span><span class="status-value">97.3%</span></div>
+    </div>
+    <div class="alert">
+      <div class="alert-header"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>ACTIVE: Seal Temp Drift +1.8°C</span></div>
+      <div class="alert-details">
+        <div class="alert-item"><span class="alert-item-label">Physics:</span><span class="badge badge-success">VALIDATED ✔</span></div>
+        <div class="alert-item"><span class="alert-item-label">Detected:</span><span>14:16</span></div>
+        <div class="alert-item"><span class="alert-item-label">GMP:</span><span class="badge badge-gmp">21 CFR 11</span></div>
+        <div class="alert-item"><span class="alert-item-label">Confidence:</span><span>0.94</span></div>
+      </div>
+    </div>
+    <div class="golden-ref warn">↑ 1.8°C above GOLDEN BATCH · Target 170.2°C</div>
+    <div class="gauge-row" id="gBlister"></div>
+    <div style="font-size:12px;font-weight:600;margin:8px 0 4px;">Seal Temperature — Live</div>
+    <canvas class="live-canvas" id="cBlister"></canvas>
+    <div class="kairos-insight warning"><div class="kairos-avatar">∞</div><div class="kairos-insight-text">Seal temperature drifting above golden batch. Blister integrity risk in ~25 min.</div></div>
+  </div>
+
+  <!-- BOTTLE LINE -->
+  <div class="draggable-card card-medium" style="left:440px;top:30px;" data-card="bottle">
+    <div class="card-header">
+      <div class="card-title"><div class="asset-icon running">🧴</div><div class="card-title-text"><h3>Bottle Line</h3><p>Packaging · Bldg 4</p></div></div>
+      <button class="more-btn">⋮</button>
+    </div>
+    <div class="status-grid">
+      <div class="status-row"><span class="status-label">Status:</span><span class="status-value status-running">RUNNING</span></div>
+      <div class="status-row"><span class="status-label">Batch:</span><span class="status-value">BT-2026-0219-C</span></div>
+      <div class="status-row"><span class="status-label">Product:</span><span class="status-value">Perindopril 4mg</span></div>
+      <div class="status-row"><span class="status-label">Speed:</span><span class="status-value">86 bottles/min</span></div>
+      <div class="status-row"><span class="status-label">Fill Weight:</span><span class="status-value">120.2 ± 0.4g</span></div>
+    </div>
+    <div class="golden-ref ok">Within GOLDEN BATCH · Target 120.0 ± 0.5g</div>
+    <div class="gauge-row" id="gBottle"></div>
+    <div style="font-size:12px;font-weight:600;margin:8px 0 4px;">Fill Weight — Live</div>
+    <canvas class="live-canvas" id="cBottle"></canvas>
+    <div class="kairos-insight info"><div class="kairos-avatar">∞</div><div class="kairos-insight-text">Fill weight stable within ±0.3% of target. All parameters within golden batch corridor.</div></div>
+  </div>
+
+  <!-- GRANULATOR -->
+  <div class="draggable-card card-medium" style="left:30px;top:560px;" data-card="granulator">
+    <div class="card-header">
+      <div class="card-title"><div class="asset-icon running">⚙️</div><div class="card-title-text"><h3>Granulator</h3><p>Wet Granulation · Bldg 4</p></div></div>
+      <button class="more-btn">⋮</button>
+    </div>
+    <div class="status-grid">
+      <div class="status-row"><span class="status-label">Status:</span><span class="status-value status-running">RUNNING</span></div>
+      <div class="status-row"><span class="status-label">Batch:</span><span class="status-value">GR-2026-0219-B</span></div>
+      <div class="status-row"><span class="status-label">Impeller:</span><span class="status-value">280 RPM</span></div>
+      <div class="status-row"><span class="status-label">Torque:</span><span class="status-value">18.4 Nm</span></div>
+    </div>
+    <div style="font-size:12px;font-weight:600;margin:8px 0 4px;">Powder Composition</div>
+    <div class="comp-bar">
+      <div class="comp-segment" style="width:40%;background:linear-gradient(90deg,#007aff,#339dff);"></div>
+      <div class="comp-segment" style="width:28%;background:linear-gradient(90deg,#34c759,#5dd87a);"></div>
+      <div class="comp-segment" style="width:12%;background:linear-gradient(90deg,#ff9500,#ffb340);"></div>
+      <div class="comp-segment" style="width:8%;background:linear-gradient(90deg,#af52de,#c77deb);"></div>
+      <div class="comp-segment" style="width:7%;background:linear-gradient(90deg,#ff3b30,#ff6961);"></div>
+      <div class="comp-segment" style="width:5%;background:linear-gradient(90deg,#8e8e93,#aeaeb2);"></div>
+    </div>
+    <div class="comp-legend">
+      <div class="comp-legend-item"><div class="comp-legend-dot" style="background:#007aff;"></div>API 40%</div>
+      <div class="comp-legend-item"><div class="comp-legend-dot" style="background:#34c759;"></div>MCC 28%</div>
+      <div class="comp-legend-item"><div class="comp-legend-dot" style="background:#ff9500;"></div>Lactose 12%</div>
+      <div class="comp-legend-item"><div class="comp-legend-dot" style="background:#af52de;"></div>Starch 8%</div>
+      <div class="comp-legend-item"><div class="comp-legend-dot" style="background:#ff3b30;"></div>MgSt 7%</div>
+    </div>
+    <div class="golden-ref ok">Within GOLDEN BATCH · Target 18.0–19.5 Nm</div>
+    <div class="gauge-row" id="gGranulator"></div>
+    <div style="font-size:12px;font-weight:600;margin:8px 0 4px;">Torque Profile — Live</div>
+    <canvas class="live-canvas" id="cGranulator"></canvas>
+    <div class="kairos-insight info"><div class="kairos-avatar">∞</div><div class="kairos-insight-text">Granulation endpoint predicted in 4.2 min based on torque inflection.</div></div>
+  </div>
+
+  <!-- TABLET PRESS -->
+  <div class="draggable-card card-medium" style="left:440px;top:560px;" data-card="tablet">
+    <div class="card-header">
+      <div class="card-title"><div class="asset-icon running">💎</div><div class="card-title-text"><h3>Tablet Press</h3><p>Compression · Bldg 4</p></div></div>
+      <button class="more-btn">⋮</button>
+    </div>
+    <div class="status-grid">
+      <div class="status-row"><span class="status-label">Status:</span><span class="status-value status-running">RUNNING</span></div>
+      <div class="status-row"><span class="status-label">Batch:</span><span class="status-value">TB-2026-0219-A</span></div>
+      <div class="status-row"><span class="status-label">Compression:</span><span class="status-value">18 kN ± 0.6</span></div>
+      <div class="status-row"><span class="status-label">Weight:</span><span class="status-value">400.2 ± 1.8 mg</span></div>
+    </div>
+    <div class="golden-ref ok">Within GOLDEN BATCH · Target 18 kN · Hardness ≥80N</div>
+    <div class="gauge-row" id="gTablet"></div>
+    <div style="font-size:12px;font-weight:600;margin:8px 0 4px;">Compression Force — Live</div>
+    <canvas class="live-canvas" id="cTablet"></canvas>
+    <div class="kairos-insight neutral"><div class="kairos-avatar">∞</div><div class="kairos-insight-text">All CPPs within golden batch corridor. Hardness 82N. Dissolution prediction: PASS.</div></div>
+  </div>
+
+  <!-- COATING -->
+  <div class="draggable-card card-medium" style="left:850px;top:560px;" data-card="coater">
+    <div class="card-header">
+      <div class="card-title"><div class="asset-icon running">🎨</div><div class="card-title-text"><h3>Coating Machine</h3><p>Film Coating · Bldg 4</p></div></div>
+      <button class="more-btn">⋮</button>
+    </div>
+    <div class="status-grid">
+      <div class="status-row"><span class="status-label">Status:</span><span class="status-value status-running">RUNNING</span></div>
+      <div class="status-row"><span class="status-label">Batch:</span><span class="status-value">CT-2026-0219-A</span></div>
+      <div class="status-row"><span class="status-label">Inlet Temp:</span><span class="status-value">62°C</span></div>
+      <div class="status-row"><span class="status-label">Spray Rate:</span><span class="status-value">28 g/min</span></div>
+      <div class="status-row"><span class="status-label">Weight Gain:</span><span class="status-value">3.2%</span></div>
+    </div>
+    <div class="golden-ref ok">Within GOLDEN BATCH · Target 3.0–3.5% weight gain</div>
+    <div class="gauge-row" id="gCoater"></div>
+    <div style="font-size:12px;font-weight:600;margin:8px 0 4px;">Exhaust Temperature — Live</div>
+    <canvas class="live-canvas" id="cCoater"></canvas>
+    <div class="kairos-insight info"><div class="kairos-avatar">∞</div><div class="kairos-insight-text">Coating uniformity 97.8%. Weight gain on target — endpoint in ~18 min.</div></div>
+  </div>
+
+  <!-- FINANCIAL -->
+  <div class="draggable-card card-medium" style="left:30px;top:1080px;" data-card="finance">
+    <div class="card-header"><div class="card-title"><div class="card-title-text"><h3>Financial Impact</h3><p>All Lines · 24h Rolling</p></div></div><button class="more-btn">⋮</button></div>
+    <div style="margin-top:8px;">
+      <div class="finance-row"><span class="finance-label">Avoided batch rejections (2)</span><span class="finance-value positive">+€372,000</span></div>
+      <div class="finance-row"><span class="finance-label">Yield optimisation</span><span class="finance-value positive">+€18,400</span></div>
+      <div class="finance-row"><span class="finance-label">Rework prevention</span><span class="finance-value positive">+€42,500</span></div>
+      <div class="finance-row"><span class="finance-label">Accelerated QC testing</span><span class="finance-value negative">-€6,200</span></div>
+      <div class="finance-row"><span class="finance-label">Deviation investigation</span><span class="finance-value negative">-€14,800</span></div>
+      <div class="finance-row finance-total"><span class="finance-label">Net Impact</span><span class="finance-value positive">+€411,900</span></div>
+    </div>
+    <div class="kairos-insight neutral" style="margin-top:12px;"><div class="kairos-avatar">∞</div><div class="kairos-insight-text">Cross-line monitoring saved €372K in potential batch rejections. Annualised: €2.4M.</div></div>
+  </div>
+
+  <!-- PROJECTIONS -->
+  <div class="draggable-card card-medium projection-positive" style="left:440px;top:1080px;" data-card="proj-pos">
+    <div class="projection-header"><span class="projection-title">Positive Projection</span></div>
+    <ul class="projection-list"><li>All 5 lines achieve golden batch match ≥95%</li><li>Seal temp corrected, blister integrity restored</li><li>Granulation endpoint hit within prediction</li><li>Zero deviations — all batches</li><li>Batch release on schedule</li></ul>
+  </div>
+  <div class="draggable-card card-medium projection-negative" style="left:850px;top:1080px;" data-card="proj-neg">
+    <div class="projection-header"><span class="projection-title">Negative Projection</span></div>
+    <ul class="projection-list"><li>Blister seal failure → batch quarantine (€186K)</li><li>API exceedance → OOS on granulation batch</li><li>Coating weight gain overshoot → rework</li><li>QP investigation → 72-hr hold on 2 batches</li></ul>
+    <div class="simulation-badge"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Signed: <strong>SIMULATION</strong></div>
+  </div>
+</div>
+
+<!-- Kairos Observation Log -->
+<div id="kairosLog">
+  <div class="klog-header">
+    <div class="klog-header-left">
+      <div class="klog-title"><div class="klog-glyph">∞</div>Kairos · Live Reasoning</div>
+      <div class="klog-live-row"><div class="klog-live-dot"></div><span class="klog-live-text">Monitoring Building 4</span></div>
+    </div>
+    <button class="klog-close" onclick="toggleLog()">✕</button>
+  </div>
+  <div class="klog-entries" id="klogEntries"></div>
+  <div class="klog-ambient"><div class="klog-glyph" style="width:14px;height:14px;font-size:8px;animation:wake-breathe 3s ease-in-out infinite;">∞</div>Watching 5 lines · Updates as events occur</div>
+</div>
+
+<!-- Board Minimap -->
+<canvas id="kairosMap" title="Click to fit all cards · Double-click to reset 100%"></canvas>
+
+<!-- Floating Toolbar -->
+<div id="kairosToolbar">
+  <button class="tb-btn" id="tbObserve" onclick="toggleLog()" title="Kairos observations (O)"><span class="tb-icon">∞</span><span>Observe</span></button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="fitBoard()" title="Fit board to screen (F)"><span class="tb-icon" style="font-size:12px;">⊡</span><span>Fit</span></button>
+  <button class="tb-btn tb-zoom-btn" onclick="_zoomBy(-0.1)" title="Zoom out">−</button>
+  <button class="tb-btn tb-zoom tb-zoom-btn" id="zoomLabel" onclick="_boardScale=1;_boardTX=0;_boardTY=0;_applyBoardTransform();drawConns();" title="Reset zoom">100%</button>
+  <button class="tb-btn tb-zoom-btn" onclick="_zoomBy(0.1)" title="Zoom in">+</button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="openCardCreator()" title="Add card (A)"><span class="tb-icon" style="font-size:13px;font-weight:400;">⊞</span><span>Card</span></button>
+  <button class="tb-btn" id="tbVoice" onclick="toggleVoice()" title="Voice mode (V)"><span class="tb-icon">🎤</span><span>Voice</span></button>
+</div>
+
+<!-- Voice Overlay -->
+<div class="voice-overlay" id="voiceOverlay">
+  <div class="voice-overlay-header">
+    <div class="voice-overlay-title"><span>Kairos Voice</span><div class="voice-waveform-mini"><div class="voice-bar-mini"></div><div class="voice-bar-mini"></div><div class="voice-bar-mini"></div><div class="voice-bar-mini"></div><div class="voice-bar-mini"></div></div></div>
+    <button class="voice-close" onclick="toggleVoice()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div id="voiceCmds" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"></div>
+  <div class="voice-transcript-flow" id="vtFlow"></div>
+</div>
+
+<script>
+// ── STATIC CARD DATASETS ──────────────────────────────────────────────
+var DATASETS=[
+  {id:'wfi',label:'WFI Loop A',icon:'💧',sc:'running',rows:[['Status','RUNNING'],['Conductivity','0.8 µS/cm'],['TOC','42 ppb'],['Flow','12.4 L/min'],['Temp','80.2°C']],insight:{type:'info',text:'WFI within Ph.Eur limits. Next sampling T+2h.'},chart:{color:'#00c7be',base:80,noise:.3,drift:.05,goldVal:80}},
+  {id:'hvac',label:'HVAC Zone B4',icon:'🌡️',sc:'running',rows:[['Status','RUNNING'],['Room','ISO 7 Cleanroom'],['Temp','21.4°C'],['RH','45.2%'],['Pressure','+12 Pa']],insight:{type:'info',text:'Cleanroom within ISO 14644. Pressure differential nominal.'},chart:{color:'#5ac8fa',base:21.4,noise:.15,drift:.03,goldVal:21}},
+  {id:'autoclave',label:'Autoclave STE-01',icon:'🔬',sc:'warning',rows:[['Status','IDLE'],['Chamber','23°C'],['Pressure','0.0 bar'],['Last Run','08:30'],['Batch','—']],insight:{type:'neutral',text:'Idle. Next scheduled cycle: 16:00. PM due in 3 days.'},chart:{color:'#af52de',base:23,noise:.1,drift:0,goldVal:23}},
+  {id:'coldstore',label:'Cold Storage −20°C',icon:'❄️',sc:'running',rows:[['Status','RUNNING'],['Temp','−19.8°C'],['Setpoint','−20.0°C'],['Alarm Lo','−25°C'],['Alarm Hi','−15°C']],insight:{type:'info',text:'Stable ±0.5°C of setpoint. Door last opened 11:42.'},chart:{color:'#007aff',base:-19.8,noise:.12,drift:.04,goldVal:-20}},
+  {id:'mixing',label:'Mixing Vessel MV-02',icon:'🧪',sc:'running',rows:[['Status','RUNNING'],['Batch','MX-2026-0219-A'],['Volume','480 L'],['Agitator','120 RPM'],['pH','6.82']],insight:{type:'info',text:'pH trending to 6.8. Mixing endpoint ETA: 22 min.'},chart:{color:'#34c759',base:120,noise:1.5,drift:.4,goldVal:120}},
+  {id:'lyo',label:'Lyophiliser LYO-01',icon:'🧊',sc:'running',rows:[['Status','RUNNING'],['Phase','Primary Drying'],['Shelf Temp','−35°C'],['Chamber','0.12 mbar'],['Cycle ETA','4h 20m']],insight:{type:'info',text:'Primary drying on profile. Sublimation rate nominal.'},chart:{color:'#ff375f',base:-35,noise:.3,drift:.08,goldVal:-35}}
+];
+
+// ── LIVE GAUGES ───────────────────────────────────────────────────────
+function LiveGauge(containerId,gauges){
+  this.cid=containerId; this.gauges=gauges;
+  this.vals=gauges.map(function(g){return g.base;}); this.tick=0;
+  var r=28,cx=38,cy=38,sa=-225,ea=45,tot=ea-sa;
+  var circ=2*Math.PI*r; this._arc=(tot/360)*circ;
+  var tr=function(a){return a*Math.PI/180;};
+  var sx=cx+r*Math.cos(tr(sa)),sy=cy+r*Math.sin(tr(sa));
+  var ex=cx+r*Math.cos(tr(ea)),ey=cy+r*Math.sin(tr(ea));
+  var la=tot>180?1:0;
+  this._pd='M '+sx.toFixed(2)+' '+sy.toFixed(2)+' A '+r+' '+r+' 0 '+la+' 1 '+ex.toFixed(2)+' '+ey.toFixed(2);
+  this._cx=cx; this._cy=cy; this._init();
+}
+LiveGauge.prototype._init=function(){
+  var e=document.getElementById(this.cid); if(!e)return;
+  var html='',arc=this._arc,pd=this._pd,cx=this._cx,cy=this._cy,cid=this.cid;
+  for(var i=0;i<this.gauges.length;i++){
+    var g=this.gauges[i],v=this.vals[i];
+    var off=arc*(1-Math.min(v/g.max,1));
+    var fc=(g.warn&&v>g.warn)?'var(--accent-warning)':g.col;
+    var disp=g.dec!=null?v.toFixed(g.dec):Math.round(v);
+    html+='<div class="gauge-container"><svg class="gauge-svg" viewBox="0 0 76 76">'
+      +'<path d="'+pd+'" class="gauge-track-arc"/>'
+      +'<path id="'+cid+i+'f" d="'+pd+'" class="gauge-fill-arc" stroke="'+fc+'" stroke-dasharray="'+arc+'" stroke-dashoffset="'+off+'"/>'
+      +'<text x="'+cx+'" y="'+(cy-3)+'" class="gauge-center-val"><tspan id="'+cid+i+'v">'+disp+'</tspan></text>'
+      +'<text x="'+cx+'" y="'+(cy+9)+'" class="gauge-unit">'+g.unit+'</text>'
+      +'</svg><div class="gauge-label">'+g.label+'</div></div>';
+  }
+  e.innerHTML=html;
+};
+LiveGauge.prototype.step=function(){
+  this.tick++;
+  for(var i=0;i<this.gauges.length;i++){
+    var g=this.gauges[i];
+    var d=Math.sin(this.tick*.017)*(g.drift||0);
+    var v=g.base+d+(Math.random()-.5)*g.noise;
+    v=Math.max(0,Math.min(v,g.max)); this.vals[i]=v;
+    var off=this._arc*(1-v/g.max);
+    var fc=(g.warn&&v>g.warn)?'var(--accent-warning)':g.col;
+    var disp=g.dec!=null?v.toFixed(g.dec):Math.round(v);
+    var fe=document.getElementById(this.cid+i+'f');
+    var ve=document.getElementById(this.cid+i+'v');
+    if(fe){fe.setAttribute('stroke-dashoffset',off.toFixed(2));fe.setAttribute('stroke',fc);}
+    if(ve){ve.textContent=disp;}
+  }
+};
+var liveGauges=[
+  new LiveGauge('gBlister',[
+    {label:'Speed', unit:'bpm',base:142,  max:180, noise:2,    drift:4,   col:'var(--accent-primary)'},
+    {label:'Seal T',unit:'°C', base:172,  max:200, noise:1.5,  drift:2.5, col:'var(--accent-warning)',warn:170},
+    {label:'Yield', unit:'%',  base:97.3, max:100, noise:0.25, drift:0.4, col:'var(--accent-success)',dec:1},
+    {label:'Form T',unit:'°C', base:148,  max:170, noise:1.2,  drift:2,   col:'var(--accent-primary)'}
+  ]),
+  new LiveGauge('gBottle',[
+    {label:'Speed',  unit:'b/m',base:86,    max:120, noise:1.5,  drift:2,   col:'var(--accent-primary)'},
+    {label:'Fill Wt',unit:'g',  base:120.2, max:125, noise:0.25, drift:0.3, col:'var(--accent-success)',dec:1},
+    {label:'Cap Trq',unit:'%',  base:99.1,  max:100, noise:0.15, drift:0.1, col:'var(--accent-primary)',dec:1},
+    {label:'Label',  unit:'%',  base:98.8,  max:100, noise:0.15, drift:0.1, col:'var(--accent-success)',dec:1}
+  ]),
+  new LiveGauge('gGranulator',[
+    {label:'Impeller',unit:'RPM', base:280,  max:400, noise:5,    drift:10,  col:'var(--accent-primary)'},
+    {label:'Torque',  unit:'Nm',  base:18.4, max:30,  noise:0.7,  drift:1,   col:'var(--accent-primary)',dec:1},
+    {label:'Binder',  unit:'mL/m',base:42,   max:60,  noise:1,    drift:1.5, col:'var(--accent-success)'},
+    {label:'RSD',     unit:'%',   base:0.96, max:3,   noise:0.07, drift:0.1, col:'var(--accent-success)',dec:2}
+  ]),
+  new LiveGauge('gTablet',[
+    {label:'Force', unit:'kN',base:18,  max:25,  noise:0.4,  drift:0.8, col:'var(--accent-primary)',dec:1},
+    {label:'Weight',unit:'mg', base:400, max:420, noise:1.5,  drift:2,   col:'var(--accent-success)'},
+    {label:'Hard',  unit:'N',  base:82,  max:120, noise:2,    drift:3,   col:'var(--accent-primary)'},
+    {label:'Friab', unit:'%',  base:0.3, max:2,   noise:0.04, drift:0.08,col:'var(--accent-success)',dec:2}
+  ]),
+  new LiveGauge('gCoater',[
+    {label:'Inlet',  unit:'°C', base:62,  max:80, noise:0.7,  drift:1,   col:'var(--accent-primary)',dec:1},
+    {label:'Exhaust',unit:'°C', base:44,  max:60, noise:0.5,  drift:0.8, col:'var(--accent-primary)',dec:1},
+    {label:'Spray',  unit:'g/m',base:28,  max:40, noise:0.4,  drift:0.7, col:'var(--accent-success)',dec:1},
+    {label:'Wt Gain',unit:'%',  base:3.2, max:5,  noise:0.08, drift:0.15,col:'var(--accent-primary)',dec:2}
+  ])
+];
+
+// ── LIVE CHARTS (throttled to ~150ms) ────────────────────────────────
+var charts=[];
+function LiveChart(id,opts){
+  var canvas=document.getElementById(id);if(!canvas)return;
+  this.canvas=canvas;this.ctx=canvas.getContext('2d');
+  this.o=Object.assign({color:'#007aff',gold:'#ff9500',base:50,noise:3,drift:0,goldVal:50,usl:null,lsl:null,pts:60},opts);
+  this.data=[];this.gdata=[];
+  for(var i=0;i<this.o.pts;i++){
+    this.data.push(this.o.base+((Math.random()-.5)*this.o.noise));
+    this.gdata.push(this.o.goldVal+((Math.random()-.5)*this.o.noise*.3));
+  }
+  this.tick=0;charts.push(this);
+}
+LiveChart.prototype.step=function(){
+  this.tick++;
+  var d=Math.sin(this.tick*.02)*this.o.drift;
+  this.data.push(this.o.base+d+((Math.random()-.5)*this.o.noise));
+  this.gdata.push(this.o.goldVal+((Math.random()-.5)*this.o.noise*.2));
+  if(this.data.length>this.o.pts){this.data.shift();this.gdata.shift();}
+};
+LiveChart.prototype.draw=function(){
+  var c=this.canvas,ctx=this.ctx,dpr=window.devicePixelRatio||1;
+  var w=c.clientWidth,h=c.clientHeight;if(w===0||h===0)return;
+  c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+  var all=this.data.concat(this.gdata);
+  if(this.o.usl!==null)all.push(this.o.usl);if(this.o.lsl!==null)all.push(this.o.lsl);
+  var mn=Math.min.apply(null,all)-2,mx=Math.max.apply(null,all)+2;
+  var mapY=function(v){return h-((v-mn)/(mx-mn))*h;};
+  var mapX=function(i,len){return(i/(len-1))*w;};
+  ctx.setLineDash([4,4]);ctx.lineWidth=1;
+  if(this.o.usl!==null){ctx.strokeStyle='rgba(255,59,48,.35)';ctx.beginPath();ctx.moveTo(0,mapY(this.o.usl));ctx.lineTo(w,mapY(this.o.usl));ctx.stroke();}
+  if(this.o.lsl!==null){ctx.strokeStyle='rgba(255,59,48,.35)';ctx.beginPath();ctx.moveTo(0,mapY(this.o.lsl));ctx.lineTo(w,mapY(this.o.lsl));ctx.stroke();}
+  ctx.strokeStyle=this.o.gold;ctx.lineWidth=1.5;ctx.setLineDash([5,3]);ctx.globalAlpha=.6;ctx.beginPath();
+  for(var i=0;i<this.gdata.length;i++){var x=mapX(i,this.gdata.length),y=mapY(this.gdata[i]);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+  ctx.beginPath();
+  for(var i=0;i<this.data.length;i++){var x=mapX(i,this.data.length),y=mapY(this.data[i]);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();
+  var g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,this.o.color+'30');g.addColorStop(1,this.o.color+'05');
+  ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle=this.o.color;ctx.lineWidth=2;ctx.lineJoin='round';ctx.beginPath();
+  for(var i=0;i<this.data.length;i++){var x=mapX(i,this.data.length),y=mapY(this.data[i]);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.stroke();
+  var lx=mapX(this.data.length-1,this.data.length),ly=mapY(this.data[this.data.length-1]);
+  ctx.fillStyle=this.o.color;ctx.beginPath();ctx.arc(lx,ly,3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=this.o.color+'40';ctx.beginPath();ctx.arc(lx,ly,6,0,Math.PI*2);ctx.fill();
+};
+var _lastChart=0;
+function animCharts(ts){
+  if(ts-_lastChart>500){
+    _lastChart=ts;
+    for(var i=0;i<charts.length;i++){charts[i].step();charts[i].draw();}
+    for(var j=0;j<liveGauges.length;j++){liveGauges[j].step();}
+  }
+  requestAnimationFrame(animCharts);
+}
+new LiveChart('cBlister',{color:'#ff9500',gold:'#007aff',base:170,goldVal:170,noise:1.2,drift:2,usl:175,lsl:165});
+new LiveChart('cBottle',{color:'#007aff',gold:'#ff9500',base:120.2,goldVal:120,noise:.4,drift:.2,usl:121,lsl:119});
+new LiveChart('cGranulator',{color:'#34c759',gold:'#ff9500',base:18,goldVal:18.5,noise:1.5,drift:1.2});
+new LiveChart('cTablet',{color:'#af52de',gold:'#ff9500',base:18,goldVal:18,noise:.8,drift:.3,usl:20,lsl:16});
+new LiveChart('cCoater',{color:'#ff375f',gold:'#ff9500',base:44,goldVal:44,noise:.6,drift:.4,usl:48,lsl:40});
+requestAnimationFrame(animCharts);
+
+// ── CONNECTIONS ───────────────────────────────────────────────────────
+var COLORS={blister:'#ff9500',bottle:'#007aff',granulator:'#34c759',tablet:'#af52de',coater:'#ff375f',command:'#5ac8fa',finance:'#ffcc00','proj-pos':'#30d158','proj-neg':'#ff453a'};
+var CONNS=[['granulator','tablet'],['tablet','coater'],['coater','blister'],['coater','bottle'],['blister','command'],['bottle','command'],['granulator','command'],['tablet','command'],['coater','command'],['blister','finance'],['bottle','finance'],['granulator','finance'],['tablet','finance'],['coater','finance'],['blister','proj-neg'],['granulator','proj-neg'],['tablet','proj-pos'],['coater','proj-pos'],['bottle','proj-pos']];
+function cardCenter(id){var el=document.querySelector('[data-card="'+id+'"]');if(!el)return null;return{x:el.offsetLeft+el.offsetWidth/2,y:el.offsetTop+el.offsetHeight/2};}
+function edgePt(id,tx,ty){var el=document.querySelector('[data-card="'+id+'"]');if(!el)return null;var cx=el.offsetLeft+el.offsetWidth/2,cy=el.offsetTop+el.offsetHeight/2,hw=el.offsetWidth/2+6,hh=el.offsetHeight/2+6,dx=tx-cx,dy=ty-cy;if(dx===0&&dy===0)return{x:cx,y:cy-hh};var sx=Math.abs(dx)/hw,sy=Math.abs(dy)/hh,s=Math.max(sx,sy);return{x:cx+dx/s,y:cy+dy/s};}
+var CONN_GEOM=[]; // stores {from,to,p1,cp,p2,col} for label proximity detection
+function _bzPt(p1,cp,p2,t){var mt=1-t;return{x:mt*mt*p1.x+2*mt*t*cp.x+t*t*p2.x,y:mt*mt*p1.y+2*mt*t*cp.y+t*t*p2.y};}
+function drawConns(){
+  var svg=document.getElementById('connSvg'),wb=document.getElementById('wb');
+  var sw=wb.scrollWidth,sh=wb.scrollHeight;
+  svg.setAttribute('width',sw);svg.setAttribute('height',sh);svg.style.width=sw+'px';svg.style.height=sh+'px';
+  while(svg.firstChild)svg.removeChild(svg.firstChild);
+  CONN_GEOM=[];
+
+  // ── Defs: gradient per connection + arrowhead markers per target colour + glow ──
+  var NS='http://www.w3.org/2000/svg';
+  var defs=document.createElementNS(NS,'defs');
+  // Glow filter
+  var filt=document.createElementNS(NS,'filter');filt.setAttribute('id','crit-glow');filt.setAttribute('x','-60%');filt.setAttribute('y','-60%');filt.setAttribute('width','220%');filt.setAttribute('height','220%');
+  var blur=document.createElementNS(NS,'feGaussianBlur');blur.setAttribute('stdDeviation','2.5');blur.setAttribute('result','b');
+  var merge=document.createElementNS(NS,'feMerge');
+  var mn1=document.createElementNS(NS,'feMergeNode');mn1.setAttribute('in','b');
+  var mn2=document.createElementNS(NS,'feMergeNode');mn2.setAttribute('in','SourceGraphic');
+  merge.appendChild(mn1);merge.appendChild(mn2);filt.appendChild(blur);filt.appendChild(merge);defs.appendChild(filt);
+  // One arrowhead marker per unique TARGET colour (arrow is at destination)
+  var seen={};
+  CONNS.forEach(function(c){var col=COLORS[c[1]]||'#8e8e93';if(seen[col])return;seen[col]=1;
+    var m=document.createElementNS(NS,'marker'),mid='arr'+col.replace(/[^a-f0-9]/gi,'');
+    m.setAttribute('id',mid);m.setAttribute('viewBox','0 0 10 10');m.setAttribute('refX','9');m.setAttribute('refY','5');m.setAttribute('markerWidth','5');m.setAttribute('markerHeight','5');m.setAttribute('orient','auto');
+    var arr=document.createElementNS(NS,'path');arr.setAttribute('d','M0,1 L9,5 L0,9 Z');arr.setAttribute('fill',col);arr.setAttribute('opacity','0.85');
+    m.appendChild(arr);defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+
+  for(var i=0;i<CONNS.length;i++){
+    var from=CONNS[i][0],to=CONNS[i][1],fc=cardCenter(from),tc=cardCenter(to);
+    if(!fc||!tc)continue;
+    var p1=edgePt(from,tc.x,tc.y),p2=edgePt(to,fc.x,fc.y);if(!p1||!p2)continue;
+    var col=COLORS[from]||'#8e8e93';
+    var colTo=COLORS[to]||'#8e8e93';
+    var mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2,dx=p2.x-p1.x,dy=p2.y-p1.y,len=Math.sqrt(dx*dx+dy*dy)||1,off=Math.min(len*.12,30);
+    var cpx=mx+(-dy/len)*off,cpy=my+(dx/len)*off;
+    var d='M'+p1.x+','+p1.y+' Q'+cpx+','+cpy+' '+p2.x+','+p2.y;
+    var pid='cp'+i,gid='cg'+i;
+    var isCrit=(from==='blister'||to==='proj-neg');
+    CONN_GEOM.push({from:from,to:to,p1:p1,cp:{x:cpx,y:cpy},p2:p2,col:col});
+
+    // Per-connection gradient (source colour → target colour along path direction)
+    var grad=document.createElementNS(NS,'linearGradient');
+    grad.setAttribute('id',gid);grad.setAttribute('gradientUnits','userSpaceOnUse');
+    grad.setAttribute('x1',p1.x);grad.setAttribute('y1',p1.y);
+    grad.setAttribute('x2',p2.x);grad.setAttribute('y2',p2.y);
+    var s1=document.createElementNS(NS,'stop');s1.setAttribute('offset','0%');s1.setAttribute('stop-color',col);s1.setAttribute('stop-opacity','0.7');
+    var s2=document.createElementNS(NS,'stop');s2.setAttribute('offset','100%');s2.setAttribute('stop-color',colTo);s2.setAttribute('stop-opacity','0.7');
+    grad.appendChild(s1);grad.appendChild(s2);defs.appendChild(grad);
+
+    // Visible path using gradient stroke
+    var path=document.createElementNS(NS,'path');
+    path.setAttribute('id',pid);path.setAttribute('d',d);path.setAttribute('stroke','url(#'+gid+')');
+    path.setAttribute('class','conn-line'+(isCrit?' conn-critical':''));
+    path.setAttribute('data-f',from);path.setAttribute('data-t',to);
+    path.setAttribute('marker-end','url(#arr'+colTo.replace(/[^a-f0-9]/gi,'')+')');;
+    svg.appendChild(path);
+
+    // Animated pulse dot (uses source colour, travels toward target)
+    var pulse=document.createElementNS(NS,'circle');
+    pulse.setAttribute('r',isCrit?'4.5':'2.8');pulse.setAttribute('fill',isCrit?col:colTo);
+    pulse.setAttribute('opacity',isCrit?'0.95':'0.55');pulse.setAttribute('class','conn-pulse');pulse.setAttribute('pointer-events','none');
+    if(isCrit)pulse.setAttribute('filter','url(#crit-glow)');
+    var anim=document.createElementNS(NS,'animateMotion');
+    anim.setAttribute('dur',isCrit?'4s':'8s');anim.setAttribute('repeatCount','indefinite');anim.setAttribute('calcMode','paced');
+    var mpath=document.createElementNS(NS,'mpath');
+    mpath.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href','#'+pid);
+    mpath.setAttribute('href','#'+pid);
+    anim.appendChild(mpath);pulse.appendChild(anim);svg.appendChild(pulse);
+
+    // Endpoint dots
+    var c1=document.createElementNS(NS,'circle');c1.setAttribute('cx',p1.x);c1.setAttribute('cy',p1.y);c1.setAttribute('r','4');c1.setAttribute('fill',col);c1.setAttribute('class','conn-dot');c1.setAttribute('data-c',from);svg.appendChild(c1);
+    var c2=document.createElementNS(NS,'circle');c2.setAttribute('cx',p2.x);c2.setAttribute('cy',p2.y);c2.setAttribute('r','3');c2.setAttribute('fill',colTo);c2.setAttribute('class','conn-dot');c2.setAttribute('data-c',to);svg.appendChild(c2);
+  }
+  drawMinimap();
+}
+function bindCardHover(card){
+  card.addEventListener('mouseenter',function(){var id=this.dataset.card;this.classList.add('connected');document.querySelectorAll('.conn-line').forEach(function(l){if(l.getAttribute('data-f')===id||l.getAttribute('data-t')===id)l.classList.add('active');});document.querySelectorAll('.conn-dot').forEach(function(d){if(d.getAttribute('data-c')===id)d.classList.add('active');});});
+  card.addEventListener('mouseleave',function(){this.classList.remove('connected');document.querySelectorAll('.conn-line').forEach(function(l){l.classList.remove('active');});document.querySelectorAll('.conn-dot').forEach(function(d){d.classList.remove('active');});});
+}
+document.querySelectorAll('.draggable-card').forEach(bindCardHover);
+window.addEventListener('resize',function(){drawConns();drawMinimap();});
+
+// ── CARD RIBBONS — colored top stripe per process line ────────────
+function _initCardRibbons(){
+  document.querySelectorAll('.draggable-card').forEach(function(card){
+    if(card.querySelector('.card-ribbon'))return;
+    var id=card.dataset.card,col=COLORS[id];if(!col)return;
+    var r=document.createElement('div');r.className='card-ribbon';
+    r.style.background='linear-gradient(90deg,'+col+'cc 0%,'+col+'33 100%)';
+    card.insertBefore(r,card.firstChild);
+  });
+}
+_initCardRibbons();
+
+// ── CARD 3D TILT on hover ─────────────────────────────────────────
+function bindCardTilt(card){
+  card.addEventListener('mousemove',function(e){
+    if(dragEl||card.classList.contains('card-minimised'))return;
+    var r=card.getBoundingClientRect();
+    var cx=r.left+r.width/2,cy=r.top+r.height/2;
+    var dx=(e.clientX-cx)/(r.width/2),dy=(e.clientY-cy)/(r.height/2);
+    var tilt=2;
+    card.style.transform='perspective(1200px) rotateX('+(dy*-tilt)+'deg) rotateY('+(dx*tilt)+'deg) translateY(-2px)';
+  });
+  card.addEventListener('mouseleave',function(){
+    if(!card.classList.contains('kairos-spotlight'))card.style.transform='';
+  });
+}
+document.querySelectorAll('.draggable-card').forEach(bindCardTilt);
+
+// ── CARD MICRO-TIMESTAMPS ─────────────────────────────────────────
+function _initCardTimestamps(){
+  var now=Date.now();
+  document.querySelectorAll('.draggable-card').forEach(function(card){
+    if(card.querySelector('.card-ts'))return;
+    card.dataset.born=now;
+    var ts=document.createElement('div');ts.className='card-ts';ts.textContent='Live';
+    var header=card.querySelector('.card-header,.command-header,.projection-header');
+    if(header)header.appendChild(ts);
+  });
+}
+_initCardTimestamps();
+setInterval(function(){
+  var now=Date.now();
+  document.querySelectorAll('.card-ts').forEach(function(ts){
+    var card=ts.closest('.draggable-card');if(!card||!card.dataset.born)return;
+    var sec=Math.floor((now-parseInt(card.dataset.born))/1000);
+    ts.textContent=sec<5?'Live':sec<60?'Live · '+sec+'s':'Live · '+Math.floor(sec/60)+'m';
+  });
+},3000);
+
+// ── CAUSAL CHAIN HIGHLIGHT ────────────────────────────────────────
+var _chainActive=null;
+function highlightChain(id){
+  if(_chainActive===id){clearChainHighlight();return;}
+  _chainActive=id;
+  var related=new Set([id]);var queue=[id];
+  while(queue.length){
+    var cur=queue.shift();
+    CONNS.forEach(function(c){
+      if(c[0]===cur&&!related.has(c[1])){related.add(c[1]);queue.push(c[1]);}
+      if(c[1]===cur&&!related.has(c[0])){related.add(c[0]);queue.push(c[0]);}
+    });
+  }
+  document.querySelectorAll('.draggable-card').forEach(function(c){
+    if(related.has(c.dataset.card))c.classList.remove('chain-dim');else c.classList.add('chain-dim');
+  });
+  document.querySelectorAll('#connSvg .conn-line,#connSvg .conn-dot,#connSvg .conn-pulse').forEach(function(el){
+    var f=el.getAttribute('data-f')||el.getAttribute('data-c');
+    var t=el.getAttribute('data-t');
+    var inChain=(f&&related.has(f))||(t&&related.has(t));
+    el.style.opacity=inChain?'':'.04';
+  });
+}
+function clearChainHighlight(){
+  _chainActive=null;
+  document.querySelectorAll('.draggable-card').forEach(function(c){c.classList.remove('chain-dim');});
+  document.querySelectorAll('#connSvg .conn-line,#connSvg .conn-dot,#connSvg .conn-pulse').forEach(function(el){el.style.opacity='';});
+}
+document.getElementById('wb').addEventListener('click',function(e){
+  if(!e.target.closest('.draggable-card'))clearChainHighlight();
+});
+
+// ── CAUSAL CONNECTOR LABELS ───────────────────────────────────────────
+var CONN_LABELS={
+  'granulator:tablet':    'Granulation output feeds compression — particle size determines tablet hardness',
+  'tablet:coater':        'Compressed cores enter coating pan — hardness 82N clears minimum threshold',
+  'coater:blister':       'Coated tablets → Blister packaging — coating weight gain drives seal temp sensitivity',
+  'coater:bottle':        'Coated tablets → Bottle packaging — on-profile coating, no downstream risk',
+  'blister:command':      '⚠ Seal temp drift +1.8°C — corrective action required within 20 min',
+  'bottle:command':       'Fill weight nominal ±0.3% — no intervention needed',
+  'granulator:command':   'Torque inflection in 4.2 min — endpoint prediction confident',
+  'tablet:command':       'Compression force within spec — dissolution prediction: PASS',
+  'coater:command':       'Coating endpoint in ~18 min — weight gain on target',
+  'blister:finance':      '⚠ Seal failure → up to €186K batch quarantine exposure',
+  'bottle:finance':       'Stable fill weight → positive yield contribution',
+  'granulator:finance':   'Accurate endpoint → preserves batch yield',
+  'tablet:finance':       'CPP compliance → zero rework cost',
+  'coater:finance':       'On-profile coating → on-time QP release',
+  'blister:proj-neg':     '⚠ Seal drift is primary driver of the negative scenario',
+  'granulator:proj-neg':  'API concentration drift → OOS risk if unresolved',
+  'tablet:proj-pos':      'Hardness 82N + dissolution PASS → positive release scenario',
+  'coater:proj-pos':      'Weight gain on target → positive release scenario',
+  'bottle:proj-pos':      'Fill weight stable → zero rework, positive scenario'
+};
+var _connLbl=null;
+function _showConnLabel(geom,clientX,clientY){
+  if(!_connLbl){_connLbl=document.getElementById('connLabel');}
+  if(!_connLbl)return;
+  var key=geom.from+':'+geom.to;
+  var text=CONN_LABELS[key]||(geom.from+' → '+geom.to);
+  document.getElementById('connLabelRoute').textContent=geom.from.toUpperCase()+' ──▶ '+geom.to.toUpperCase();
+  document.getElementById('connLabelText').textContent=text;
+  _connLbl.querySelector('.cll-inner').style.borderColor=geom.col+'55';
+  _connLbl.style.left=(clientX+18)+'px';_connLbl.style.top=(clientY+10)+'px';
+  _connLbl.style.display='block';
+}
+function _hideConnLabel(){if(_connLbl)_connLbl.style.display='none';}
+
+// Proximity detection — sample points along each Bezier, compare in board-local coords
+document.getElementById('wb').addEventListener('mousemove',function(e){
+  if(dragEl)return;
+  var wbr=this.getBoundingClientRect();
+  // Convert viewport coords to board-local coords (accounting for scale+translate)
+  var mx=(e.clientX-wbr.left)/_boardScale,my=(e.clientY-wbr.top)/_boardScale;
+  var best=null,bestDist=36;
+  for(var i=0;i<CONN_GEOM.length;i++){
+    var g=CONN_GEOM[i];
+    for(var t=0.2;t<=0.8;t+=0.15){
+      var pt=_bzPt(g.p1,g.cp,g.p2,t);
+      var dist=Math.sqrt((mx-pt.x)*(mx-pt.x)+(my-pt.y)*(my-pt.y));
+      if(dist<bestDist){bestDist=dist;best=g;}
+    }
+  }
+  if(best)_showConnLabel(best,e.clientX,e.clientY);else _hideConnLabel();
+});
+document.getElementById('wb').addEventListener('mouseleave',_hideConnLabel);
+
+// ── DRAG ─────────────────────────────────────────────────────────────
+var dragEl=null,dragOX=0,dragOY=0,_dragMoved=false,_mouseDownCard=null,_mouseDownX=0,_mouseDownY=0;
+function bindDrag(card){
+  card.addEventListener('mousedown',function(e){
+    if(e.target.closest('button')||e.target.closest('input')||e.target.tagName==='BUTTON'||e.target.tagName==='INPUT')return;
+    dragEl=this;
+    var r=this.getBoundingClientRect();
+    // dragOX/OY in board-local coords (divide by scale)
+    dragOX=(e.clientX-r.left)/_boardScale;dragOY=(e.clientY-r.top)/_boardScale;
+    _dragMoved=false;_mouseDownCard=this;_mouseDownX=e.clientX;_mouseDownY=e.clientY;
+    this.classList.add('dragging');this.style.zIndex='1000';e.preventDefault();
+  });
+}
+document.querySelectorAll('.draggable-card').forEach(bindDrag);
+document.addEventListener('mousemove',function(e){
+  if(!dragEl)return;
+  var dx=e.clientX-_mouseDownX,dy=e.clientY-_mouseDownY;
+  if(Math.sqrt(dx*dx+dy*dy)>5)_dragMoved=true;
+  var wb=document.getElementById('wb'),wr=wb.getBoundingClientRect();
+  // Divide by scale to get board-local coords
+  dragEl.style.left=Math.max(0,(e.clientX-wr.left)/_boardScale-dragOX)+'px';
+  dragEl.style.top=Math.max(0,(e.clientY-wr.top)/_boardScale-dragOY)+'px';
+  drawConns();
+});
+document.addEventListener('mouseup',function(){
+  if(!dragEl)return;
+  if(!_dragMoved&&_mouseDownCard){
+    // Short click = chain highlight
+    var id=_mouseDownCard.dataset.card;if(id)highlightChain(id);
+  }
+  // Snap to grid on release
+  var G=24;
+  dragEl.style.left=(Math.round(parseFloat(dragEl.style.left)/G)*G)+'px';
+  dragEl.style.top=(Math.round(parseFloat(dragEl.style.top)/G)*G)+'px';
+  dragEl.classList.remove('dragging');
+  // clear tilt on release
+  dragEl.style.transform='';
+  var el=dragEl;setTimeout(function(){if(el)el.style.zIndex='';},300);
+  drawConns();dragEl=null;_mouseDownCard=null;
+});
+
+// ── BOARD PAN + ZOOM ─────────────────────────────────────────────────
+var _boardScale=1,_boardTX=0,_boardTY=0,_spaceDown=false,_panDown=false,_panSX=0,_panSY=0,_panSTX=0,_panSTY=0;
+function _applyBoardTransform(){
+  var wb=document.getElementById('wb');
+  wb.style.transform='translate('+_boardTX+'px,'+_boardTY+'px) scale('+_boardScale+')';
+  wb.style.transformOrigin='0 0';
+  var zl=document.getElementById('zoomLabel');if(zl)zl.textContent=Math.round(_boardScale*100)+'%';
+  drawMinimap();
+}
+function _zoomBy(delta){
+  _boardScale=Math.max(0.2,Math.min(3,_boardScale+delta));
+  _applyBoardTransform();drawConns();
+}
+function fitBoard(){
+  var cards=document.querySelectorAll('.draggable-card');if(!cards.length)return;
+  var minX=1e9,minY=1e9,maxX=0,maxY=0;
+  cards.forEach(function(c){
+    var l=parseFloat(c.style.left)||0,t=parseFloat(c.style.top)||0;
+    minX=Math.min(minX,l);minY=Math.min(minY,t);
+    maxX=Math.max(maxX,l+c.offsetWidth);maxY=Math.max(maxY,t+c.offsetHeight);
+  });
+  var pad=48,bw=maxX-minX+pad*2,bh=maxY-minY+pad*2;
+  var vw=window.innerWidth-32,vh=window.innerHeight-160;
+  _boardScale=Math.min(Math.min(vw/bw,vh/bh),1.2);
+  _boardTX=(vw-(maxX-minX)*_boardScale)/2-minX*_boardScale+16;
+  _boardTY=(vh-(maxY-minY)*_boardScale)/2-minY*_boardScale+90;
+  _applyBoardTransform();drawConns();
+}
+// Space + drag = pan
+document.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();toggleCommandPanel();return;}
+  if(e.code==='Space'&&!e.target.matches('input,textarea')){e.preventDefault();_spaceDown=true;document.body.classList.add('pan-mode');}
+  if(e.key==='Escape'){clearChainHighlight();toggleCommandPanel(false);if(_spaceDown){_spaceDown=false;document.body.classList.remove('pan-mode');}}
+  if((e.key==='m'||e.key==='M')&&!e.target.matches('input')){var hov=document.querySelector('.draggable-card:hover');if(hov)toggleMinimise(hov);}
+  if((e.key==='f'||e.key==='F')&&!e.target.matches('input'))fitBoard();
+  if((e.key==='v'||e.key==='V')&&!e.target.matches('input'))toggleVoice();
+  if((e.key==='a'||e.key==='A')&&!e.target.matches('input'))openCardCreator();
+  if((e.key==='o'||e.key==='O')&&!e.target.matches('input'))toggleLog();
+});
+document.addEventListener('keyup',function(e){if(e.code==='Space'){_spaceDown=false;document.body.classList.remove('pan-mode');}});
+document.addEventListener('wheel',function(e){
+  if(!e.ctrlKey&&!e.metaKey)return;
+  e.preventDefault();
+  var factor=e.deltaY>0?0.92:1.08;
+  _boardScale=Math.max(0.2,Math.min(3,_boardScale*factor));
+  _applyBoardTransform();drawConns();
+},{passive:false});
+// Pan mousedown (space held OR right-click on whiteboard)
+document.addEventListener('mousedown',function(e){
+  if(_spaceDown||e.button===1){
+    _panDown=true;_panSX=e.clientX;_panSY=e.clientY;_panSTX=_boardTX;_panSTY=_boardTY;
+    document.body.classList.add('pan-mode','panning');e.preventDefault();
+  }
+});
+document.addEventListener('mousemove',function(e){
+  if(!_panDown)return;
+  _boardTX=_panSTX+(e.clientX-_panSX);_boardTY=_panSTY+(e.clientY-_panSY);
+  _applyBoardTransform();
+});
+document.addEventListener('mouseup',function(e){
+  if(_panDown){_panDown=false;document.body.classList.remove('panning');}
+  if(!_spaceDown)document.body.classList.remove('pan-mode');
+});
+
+// ── BOARD MINIMAP ─────────────────────────────────────────────────────
+function drawMinimap(){
+  var canvas=document.getElementById('kairosMap');if(!canvas)return;
+  var dpr=window.devicePixelRatio||1;
+  var mw=160,mh=96;
+  canvas.width=mw*dpr;canvas.height=mh*dpr;
+  var ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,mw,mh);
+  // Draw grid dots on minimap
+  ctx.fillStyle='rgba(255,255,255,.04)';
+  for(var gx=8;gx<mw;gx+=12){for(var gy=6;gy<mh;gy+=8){ctx.fillRect(gx,gy,1,1);}}
+  var cards=document.querySelectorAll('.draggable-card');
+  var bw=1600,bh=2200,sx=(mw-16)/bw,sy=(mh-12)/bh,s=Math.min(sx,sy);
+  // Cards as mini rects
+  cards.forEach(function(c){
+    var id=c.dataset.card,col=COLORS[id]||'#8e8e93';
+    var l=parseFloat(c.style.left)||0,t=parseFloat(c.style.top)||0;
+    var cw=Math.max(c.offsetWidth*s,6),ch=Math.max(Math.min(c.offsetHeight*s,12),4);
+    ctx.fillStyle=col+'44';ctx.strokeStyle=col+'99';ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.rect(8+l*s,6+t*s,cw,ch);ctx.fill();ctx.stroke();
+  });
+  // Viewport rect
+  var vl=-_boardTX/_boardScale,vt=-_boardTY/_boardScale;
+  var vbw=window.innerWidth/_boardScale,vbh=(window.innerHeight-76)/_boardScale;
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;
+  ctx.strokeRect(8+vl*s,6+vt*s,vbw*s,vbh*s);
+}
+document.getElementById('kairosMap').addEventListener('click',fitBoard);
+document.getElementById('kairosMap').addEventListener('dblclick',function(e){
+  e.stopPropagation();
+  _boardScale=1;_boardTX=0;_boardTY=0;_applyBoardTransform();drawConns();
+});
+
+// ── UI HELPERS ────────────────────────────────────────────────────────
+// ── CARD META (for close → restore flow) ─────────────────────────────
+var CARD_META={
+  blister:   {label:'Blister Line',      icon:'🩹', sc:'warning'},
+  bottle:    {label:'Bottle Line',       icon:'🍶', sc:'running'},
+  granulator:{label:'Granulator',        icon:'⚙️',  sc:'running'},
+  tablet:    {label:'Tablet Press',      icon:'💎', sc:'running'},
+  coater:    {label:'Coating Machine',   icon:'🎨', sc:'running'},
+  command:   {label:'Kairos Intelligence',icon:'∞', sc:'running'},
+  finance:   {label:'Financial Impact',  icon:'💰', sc:'running'},
+  'proj-pos':{label:'Positive Projection',icon:'📈',sc:'running'},
+  'proj-neg':{label:'Negative Projection',icon:'📉',sc:'warning'},
+  insight:   {label:'Shift Insight',     icon:'🔬', sc:'running'},
+};
+var _closedCards={};
+function closeCard(card){
+  var id=card.dataset.card;
+  if(CARD_META[id]){
+    // built-in: hide and track for restore
+    card.style.display='none';
+    _closedCards[id]=CARD_META[id];
+  } else {
+    // spawned card: remove entirely
+    card.remove();
+  }
+  drawConns();
+}
+// ── CARD MINIMISE ─────────────────────────────────────────────────────
+function toggleMinimise(card){
+  var isMin=card.classList.toggle('card-minimised');
+  var btn=card.querySelector('.minimise-btn');
+  if(btn)btn.textContent=isMin?'+':'—';
+  if(btn)btn.title=isMin?'Expand card':'Minimise card';
+  drawConns();
+}
+function _initCardControls(){
+  document.querySelectorAll('.draggable-card').forEach(function(card){
+    var id=card.dataset.card;
+    // Command Surface: no collapse, no close
+    if(id==='command')return;
+    var header=card.querySelector('.card-header,.cmd-top,.projection-header');
+    if(!header)return;
+    // Minimise button
+    if(!header.querySelector('.minimise-btn')){
+      var mb=document.createElement('button');
+      mb.className='minimise-btn';mb.textContent='—';mb.title='Minimise card';
+      mb.onclick=function(e){e.stopPropagation();toggleMinimise(card);};
+      var moreBtn=header.querySelector('.more-btn');
+      if(moreBtn)header.insertBefore(mb,moreBtn);else header.appendChild(mb);
+    }
+    // Close button (not on projection cards — they don't have more-btn area)
+    if(!header.querySelector('.close-btn')){
+      var cb=document.createElement('button');
+      cb.className='close-btn';cb.textContent='✕';cb.title='Close card';
+      cb.onclick=function(e){e.stopPropagation();closeCard(card);};
+      header.appendChild(cb);
+    }
+  });
+}
+// ── CARD PEEK — compact status strip shown in collapsed state ─────────
+var _PEEK={
+  blister:    {warn:true,  status:'ALERT',   detail:'Seal +1.8°C above corridor · BL-2026-0219-A · window closing'},
+  bottle:     {warn:false, status:'NOMINAL', detail:'Fill weight ±0.3% · Batch BT-2026-0219-A · running'},
+  granulator: {warn:false, status:'RUNNING', detail:'Endpoint ~4.2 min · Torque on target · GR-2026-0219-A'},
+  tablet:     {warn:false, status:'NOMINAL', detail:'Hardness 82N · Dissolution PASS · TB-2026-0219-A'},
+  coater:     {warn:false, status:'RUNNING', detail:'Weight gain 3.2% · Endpoint ~18 min · CT-2026-0219-A'},
+  finance:    {warn:false, status:'+€411,900', detail:'Net impact · 2 rejections avoided · 24h rolling'},
+  'proj-pos': {warn:false, status:'POSITIVE', detail:'All 5 lines on target · Zero deviations · On-schedule'},
+  'proj-neg': {warn:true,  status:'RISK',    detail:'Blister failure €186K · API exceedance · SIMULATION'},
+  insight:    {warn:false, status:'ACTIVE',  detail:'Building 4 monitored · All nodes live'},
+};
+function _initCardPeeks(){
+  document.querySelectorAll('.draggable-card').forEach(function(card){
+    var id=card.dataset.card;
+    if(id==='command')return;
+    if(card.querySelector('.card-peek'))return;
+    var p=_PEEK[id];if(!p)return;
+    var pk=document.createElement('div');
+    pk.className='card-peek';
+    pk.innerHTML='<span class="peek-dot '+(p.warn?'warn':'ok')+'"></span>'
+      +'<span class="peek-status '+(p.warn?'warn':'ok')+'">'+p.status+'</span>'
+      +'<span class="peek-detail"> · '+p.detail+'</span>';
+    var header=card.querySelector('.card-header,.projection-header');
+    if(header){
+      if(header.nextSibling)card.insertBefore(pk,header.nextSibling);
+      else card.appendChild(pk);
+    }
+  });
+}
+
+// legacy alias
+function _initMinimiseButtons(){_initCardControls();}
+// ── COMMAND SURFACE ───────────────────────────────────────────────────
+function switchCmdTab(t){
+  ['observe','act','integrate','perf'].forEach(function(id){
+    var pane=document.getElementById('cp'+id.charAt(0).toUpperCase()+id.slice(1));
+    var btn=document.getElementById('ct'+id.charAt(0).toUpperCase()+id.slice(1));
+    var on=(id===t);
+    if(pane)pane.classList.toggle('active',on);
+    if(btn)btn.classList.toggle('active',on);
+  });
+}
+function executeAction(el,pts,desc){
+  if(el.classList.contains('executed'))return;
+  el.classList.add('executed');
+  var title=el.querySelector('.action-card-title');
+  if(title)title.innerHTML=title.textContent+' <span style="color:var(--accent-success)">✔</span>';
+  addXP(pts);
+  logObservation('Action executed: '+desc,null,'action',['Score +'+pts+' pts · GMP audit trail updated']);
+  showToast({title:'Action Executed',desc:desc,icon:'✔'});
+}
+// ── ALERT WINDOW COUNTDOWN ────────────────────────────────────────────
+var _alertSecs=1498; // ~25 min window from detection
+setInterval(function(){
+  if(_alertSecs>0)_alertSecs--;
+  var m=Math.floor(_alertSecs/60),s=_alertSecs%60;
+  var str=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  var ac=document.getElementById('acCount');if(ac)ac.textContent=str;
+  var sw=document.getElementById('shWindow');if(sw)sw.textContent=str;
+  var ab=document.getElementById('abWindow');if(ab)ab.textContent=str;
+  // Turn countdown deep red when under 5 min
+  if(_alertSecs<300){
+    if(ac)ac.style.color='var(--accent-danger)';
+    if(sw)sw.style.background='rgba(255,59,48,.22)';
+    if(ab)ab.style.background='rgba(217,48,37,.2)';
+  }
+  // Expired
+  if(_alertSecs===0){
+    if(ac)ac.textContent='EXPIRED';
+    if(sw){sw.textContent='EXPIRED';sw.style.background='rgba(255,59,48,.3)';}
+    if(ab)ab.textContent='EXPIRED';
+    setBoardMood('critical');
+  }
+},1000);
+function _scrollToCard(id){
+  if(id==='command'){toggleCommandPanel(true);return;}
+  var el=document.querySelector('[data-card="'+id+'"]');
+  if(!el)return;
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+  setTimeout(function(){highlightChain(id);},350);
+}
+function toggleCommandPanel(open){
+  var p=document.getElementById('commandPanel');
+  var btn=document.getElementById('cmdTrigger');
+  var isOpen=p.classList.contains('open');
+  var shouldOpen=(open===undefined)?!isOpen:open;
+  p.classList.toggle('open',shouldOpen);
+  if(btn)btn.classList.toggle('active',shouldOpen);
+  if(shouldOpen){
+    var inp=document.getElementById('cmdInput');
+    if(inp)setTimeout(function(){inp.focus();},120);
+  }
+}
+function toggleTheme(){document.body.classList.toggle('dark-theme');var d=document.body.classList.contains('dark-theme');document.getElementById('themeIcon').textContent=d?'🌙':'☀️';document.getElementById('themeLabel').textContent=d?'Dark':'Light';}
+function updateClock(){
+  var n=new Date(),el=document.getElementById('clock');
+  if(el)el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  // Shift clock in rail (Day shift 06:00–14:00)
+  var sl=document.getElementById('lsrShift');
+  if(sl){var shiftEnd=new Date(n);shiftEnd.setHours(14,0,0,0);var diff=Math.max(0,shiftEnd-n);var hh=Math.floor(diff/3600000),mm=Math.floor((diff%3600000)/60000);sl.textContent=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');}
+}
+setInterval(updateClock,1000);updateClock();
+function switchTab(t){var tabs=document.querySelectorAll('.command-tab'),obs=document.querySelector('.observe-content'),act=document.querySelector('.act-content');if(!obs||!act)return;tabs.forEach(function(b){b.classList.remove('active');});if(t==='observe'){tabs[0].classList.add('active');obs.classList.add('active');act.classList.remove('active');}else{tabs[1].classList.add('active');act.classList.add('active');obs.classList.remove('active');}}
+function toggleCB(el){var cb=el.querySelector('.action-checkbox');if(cb)cb.classList.toggle('checked');}
+var xp=2780,xpMax=4000;
+function addXP(n){
+  xp=Math.min(xp+n,xpMax);
+  var fill=document.getElementById('ssFill'),val=document.getElementById('ssVal');
+  if(fill)fill.style.width=(xp/xpMax*100)+'%';
+  if(val)val.textContent=xp.toLocaleString()+' pts';
+}
+function showToast(a){document.querySelectorAll('.achievement-toast').forEach(function(t){t.remove();});var t=document.createElement('div');t.className='achievement-toast';t.innerHTML='<div class="achievement-icon">'+a.icon+'</div><div><div class="achievement-title">'+a.title+'</div><div class="achievement-desc">'+a.desc+'</div></div>';document.body.appendChild(t);setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .5s';setTimeout(function(){if(t.parentNode)t.remove();},500);},3500);}
+setTimeout(function(){showToast({title:'GMP Champion',desc:'8-day perfect compliance streak',icon:'🔥'});},1500);
+
+// ── KAIROS OBSERVATION LOG ────────────────────────────────────────────
+var _logOpen=false;
+function toggleLog(){
+  _logOpen=!_logOpen;
+  var log=document.getElementById('kairosLog');if(log)log.classList.toggle('open',_logOpen);
+  var btn=document.getElementById('tbObserve');if(btn)btn.classList.toggle('tb-active',_logOpen);
+}
+// ── TYPE METADATA ─────────────────────────────────────────────────────
+var KLOG_TYPES={
+  alert:     {badge:'⚡ ALERT',     bg:'rgba(255,69,58,.09)',  accent:'#ff453a', text:'#ff6b61'},
+  watch:     {badge:'◉ WATCHING',  bg:'rgba(255,159,10,.07)', accent:'#ff9f0a', text:'#ffb340'},
+  nominal:   {badge:'● NOMINAL',   bg:'rgba(50,215,75,.05)',  accent:'#32d74b', text:'#32d74b'},
+  insight:   {badge:'∿ INSIGHT',   bg:'rgba(102,126,234,.07)',accent:'#667eea', text:'#a5b4fc'},
+  prediction:{badge:'◈ PREDICT',   bg:'rgba(191,90,242,.07)', accent:'#bf5af2', text:'#d8a5ff'},
+  action:    {badge:'▶ ACTION',    bg:'rgba(90,200,250,.07)', accent:'#5ac8fa', text:'#5ac8fa'},
+  briefing:  {badge:'∞ BRIEFING',  bg:'rgba(102,126,234,.05)',accent:'#667eea', text:'#a5b4fc'}
+};
+// logObservation(text, cardId, type, inferences)
+// inferences = array of strings like ['Risk window: 25 min','Confidence: 0.94'] OR a single string
+function logObservation(text,cardId,type,inferences){
+  type=type||'insight';
+  var m=KLOG_TYPES[type]||KLOG_TYPES.insight;
+  var entries=document.getElementById('klogEntries');if(!entries)return;
+  var now=new Date();
+  var time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  var col=(cardId&&COLORS[cardId])?COLORS[cardId]:m.accent;
+  var entry=document.createElement('div');
+  entry.className='klog-entry';
+  entry.style.cssText='background:'+m.bg+';border-left-color:'+m.accent+'55;';
+  var tagHtml=cardId?'<div class="klog-card-tag" style="color:'+col+';border-color:'+col+'30;background:'+col+'10">'+cardId.toUpperCase()+'</div>':'';
+  var infArr=inferences?(Array.isArray(inferences)?inferences:[inferences]):[];
+  var infHtml=infArr.length?'<div class="klog-inference">'+infArr.map(function(l){return '<div class="klog-inf-line"><span class="klog-inf-arrow">→</span><span>'+l+'</span></div>';}).join('')+'</div>':'';
+  entry.innerHTML=
+    '<div class="klog-entry-head">'
+    +'<span class="klog-badge" style="background:'+m.accent+'20;color:'+m.text+'">'+m.badge+'</span>'
+    +'<span class="klog-time">'+time+'</span>'
+    +'</div>'
+    +tagHtml
+    +'<div class="klog-text">'+text+'</div>'
+    +infHtml;
+  entries.insertBefore(entry,entries.firstChild);
+  if(!_logOpen){var btn=document.getElementById('tbObserve');if(btn)btn.style.color='#a5b4fc';}
+}
+
+// ── CARD CREATOR ──────────────────────────────────────────────────────
+function openCardCreator(){
+  var grid=document.getElementById('datasetGrid');grid.innerHTML='';
+  var sub=document.querySelector('#cardModal .modal-sub');
+  var closedIds=Object.keys(_closedCards);
+  // Section: restore closed built-in cards
+  if(closedIds.length){
+    if(sub)sub.textContent='Restore a closed card or add a new live dataset to the board.';
+    var sec=document.createElement('div');
+    sec.style.cssText='font-size:9px;font-weight:800;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;';
+    sec.textContent='Restore Closed Cards';
+    grid.appendChild(sec);
+    closedIds.forEach(function(id){
+      var meta=_closedCards[id];
+      var d=document.createElement('div');d.className='dataset-item restore';
+      d.innerHTML='<div class="dataset-item-icon">'+meta.icon+'</div><div class="dataset-item-name">'+meta.label+'</div><div class="dataset-item-badge">RESTORE</div>';
+      d.onclick=function(){
+        var el=document.querySelector('[data-card="'+id+'"]');
+        if(el){el.style.display='';drawConns();}
+        delete _closedCards[id];
+        document.getElementById('cardModal').style.display='none';
+      };
+      grid.appendChild(d);
+    });
+    var sec2=document.createElement('div');
+    sec2.style.cssText='font-size:9px;font-weight:800;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;margin:12px 0 8px;';
+    sec2.textContent='Add New Dataset';
+    grid.appendChild(sec2);
+  } else {
+    if(sub)sub.textContent='Select a dataset to spawn a live monitoring card on the board.';
+  }
+  // Section: spawnable datasets
+  DATASETS.forEach(function(ds){
+    var d=document.createElement('div');d.className='dataset-item';
+    d.innerHTML='<div class="dataset-item-icon">'+ds.icon+'</div><div class="dataset-item-name">'+ds.label+'</div><div class="dataset-item-status '+(ds.sc==='running'?'ds-running':'ds-warning')+'">● '+(ds.sc==='running'?'RUNNING':'IDLE/ALERT')+'</div>';
+    d.onclick=function(){spawnCard(ds);document.getElementById('cardModal').style.display='none';};
+    grid.appendChild(d);
+  });
+  document.getElementById('cardModal').style.display='block';
+}
+var _cIdx=0;
+function spawnCard(ds){
+  var wb=document.getElementById('wb'),cid='ds-'+(++_cIdx);
+  var x=40+Math.round(Math.random()*300),y=Math.round(wb.scrollTop+80);
+  var card=document.createElement('div');card.className='draggable-card card-medium';card.dataset.card=cid;card.style.left=x+'px';card.style.top=y+'px';
+  var rows=ds.rows.map(function(r,i){return '<div class="status-row"><span class="status-label">'+r[0]+':</span><span class="status-value'+(i===0?' status-'+ds.sc:'')+'">'+r[1]+'</span></div>';}).join('');
+  var cid2='cv-'+cid;
+  card.innerHTML='<div class="card-header"><div class="card-title"><div class="asset-icon '+ds.sc+'">'+ds.icon+'</div><div class="card-title-text"><h3>'+ds.label+'</h3><p>Live · Bldg 4</p></div></div><button class="more-btn" onclick="this.closest(\'.draggable-card\').remove();drawConns();">✕</button></div><div class="status-grid">'+rows+'</div><div style="font-size:12px;font-weight:600;margin:8px 0 4px;">Live Feed</div><canvas class="live-canvas" id="'+cid2+'"></canvas><div class="kairos-insight '+ds.insight.type+'"><div class="kairos-avatar">∞</div><div class="kairos-insight-text">'+ds.insight.text+'</div></div>';
+  wb.appendChild(card);
+  bindDrag(card);bindCardHover(card);bindCardTilt(card);
+  _initCardRibbons();_initCardTimestamps();_initCardControls();
+  // Wire into connections — new card connects to command + finance
+  CONNS.push([cid,'command']);
+  CONNS.push([cid,'finance']);
+  COLORS[cid]=ds.chart.color;
+  setTimeout(function(){new LiveChart(cid2,Object.assign({gold:'#ff9500'},ds.chart));drawConns();},60);
+  logObservation('Live monitoring card added to board: '+ds.label,cid,'action',['Connected to Command Surface and Financial Impact','Connectors drawn — causal chain updated']);
+  showToast({title:'Card Added',desc:ds.label,icon:ds.icon});
+}
+
+// ── VOICE COMMAND SHORTCUTS ───────────────────────────────────────────
+var VOICE_CMDS=[
+  {label:'Site Status',icon:'📊',prompt:'Give me a full site status overview of all 5 lines right now.'},
+  {label:'Finance',icon:'💰',prompt:'What is the current financial impact and ROI summary?'},
+  {label:'Projections',icon:'🔮',prompt:'What are the positive and negative projections for the current shift?'},
+  {label:'Blister Alert',icon:'⚠️',prompt:'Explain the blister line seal temperature drift alert and recommended action.'},
+  {label:'Golden Batch',icon:'🏆',prompt:'Which lines are within golden batch corridor and which are drifting?'},
+  {label:'OOS Risk',icon:'🧪',prompt:'What is the out-of-spec risk across all active batches?'}
+];
+function renderVoiceCmds(){
+  var c=document.getElementById('voiceCmds');if(!c)return;
+  c.innerHTML=VOICE_CMDS.map(function(cmd){
+    return '<button onclick="fireVoiceCmd(\''+cmd.prompt.replace(/'/g,"\\'")+'\')" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--input-bg);border:1px solid var(--border-medium);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;color:var(--text-primary);white-space:nowrap;transition:all .2s;" onmouseover="this.style.borderColor=\'var(--accent-primary)\'" onmouseout="this.style.borderColor=\'var(--border-medium)\'"><span>'+cmd.icon+'</span><span>'+cmd.label+'</span></button>';
+  }).join('');
+}
+async function fireVoiceCmd(prompt){
+  toggleCommandPanel(true);
+  var o=document.getElementById('voiceOverlay');o.classList.add('active');
+  await handleSpeech(prompt);
+}
+var voiceOn=false,recognition=null,synth=window.speechSynthesis;
+
+// ── NATURAL SPEECH ────────────────────────────────────────────────────
+var _bestVoice=null;
+function _pickBestVoice(){
+  var voices=synth.getVoices();if(!voices.length)return null;
+  // Ranked preference: Google Neural UK > Google Neural US > Microsoft Neural > Google standard > any English
+  var tests=[
+    function(v){return /google.*english.*uk|google.*uk.*english/i.test(v.name);},
+    function(v){return /google.*us.*english|google.*english.*us/i.test(v.name);},
+    function(v){return /^google/i.test(v.name)&&/en-GB/i.test(v.lang);},
+    function(v){return /^google/i.test(v.name)&&/en-US/i.test(v.lang);},
+    function(v){return /microsoft.*natural|microsoft.*neural/i.test(v.name)&&/en/i.test(v.lang);},
+    function(v){return /^google/i.test(v.name)&&/^en/i.test(v.lang);},
+    function(v){return /^en/i.test(v.lang);}
+  ];
+  for(var i=0;i<tests.length;i++){var m=voices.filter(tests[i]);if(m.length)return m[0];}
+  return voices[0];
+}
+// Voices load asynchronously in Chrome
+if(synth.onvoiceschanged!==undefined){synth.onvoiceschanged=function(){_bestVoice=_pickBestVoice();};}
+setTimeout(function(){_bestVoice=_pickBestVoice();},100);
+
+function speakNatural(text){
+  if(!synth)return;
+  synth.cancel();
+  if(!_bestVoice)_bestVoice=_pickBestVoice();
+  // Small delay after cancel — Chrome needs a tick to reset before accepting new utterance
+  setTimeout(function(){
+    var u=new SpeechSynthesisUtterance(text);
+    if(_bestVoice)u.voice=_bestVoice;
+    u.rate=0.95;  // Near-natural pace — don't slow it down, that adds to the robotic feel
+    u.pitch=1.0;  // Neutral pitch — lowering it made it sound more synthetic
+    u.volume=1.0;
+    // Chrome silently pauses long utterances mid-sentence — resume if it stalls
+    var resumeTimer=setInterval(function(){
+      if(!synth.speaking){clearInterval(resumeTimer);return;}
+      if(synth.paused)synth.resume();
+    },5000);
+    u.onend=function(){clearInterval(resumeTimer);};
+    u.onerror=function(){clearInterval(resumeTimer);};
+    synth.speak(u);
+  },150);
+}
+var KAIROS_API_KEY=''; // ← paste your Anthropic API key here
+var KAIROS_SYS='You are Kairos — a proactive AI process intelligence for Servier Arklow, Building 4. You speak directly and confidently, like a trusted colleague who has already done the analysis. You never wait to be asked; you surface what matters. Current plant state: Blister Line has an active seal temperature drift of +1.8°C above the golden batch corridor, detected at 14:16, integrity risk in approximately 25 minutes, confidence 0.94. Bottle Line nominal. Granulator running, endpoint in 4.2 minutes. Tablet Press nominal. Coating running, endpoint in 18 minutes. Net financial impact today: +€411,900. Respond in 2-3 natural spoken sentences — no bullet points, no headers. Speak as if talking to an experienced operator who needs the key point immediately.';
+function initSpeech(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;
+  var r=new SR();r.continuous=true;r.interimResults=true;r.lang='en-US';
+  r.onresult=function(e){
+    var interim='',final='';
+    for(var i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)final+=e.results[i][0].transcript;else interim+=e.results[i][0].transcript;}
+    var f=document.getElementById('vtFlow');
+    if(interim){var ex=f.querySelector('.interim-msg');if(ex)ex.querySelector('.voice-message-content').textContent=interim;else{var d=document.createElement('div');d.className='voice-message user interim-msg';d.style.opacity='.5';d.innerHTML='<div class="voice-message-avatar">You</div><div class="voice-message-content">'+interim+'</div>';f.appendChild(d);f.scrollTop=f.scrollHeight;}}
+    if(final.trim()){var im=f.querySelector('.interim-msg');if(im)im.remove();handleSpeech(final.trim());}
+  };
+  r.onerror=function(e){
+    var msgs={
+      'not-allowed':'Microphone access denied. Click the 🔒 icon in your browser address bar and allow microphone, then retry.',
+      'no-speech':'No speech detected. Please speak clearly and try again.',
+      'network':'Network error during speech recognition. Check your connection.',
+      'aborted':'Recognition aborted.',
+      'audio-capture':'No microphone found. Please connect a microphone.',
+      'service-not-allowed':'Speech service blocked. Ensure you are on HTTPS or localhost.'
+    };
+    var msg=msgs[e.error]||('Speech error: '+e.error);
+    console.warn('[Kairos Voice]',e.error,msg);
+    var f=document.getElementById('vtFlow');
+    var d=document.createElement('div');d.className='voice-message kairos';
+    d.innerHTML='<div class="voice-message-avatar">∞</div><div class="voice-message-content" style="border-color:rgba(255,59,48,.3);background:rgba(255,59,48,.08);">⚠️ '+msg+'</div>';
+    f.appendChild(d);f.scrollTop=f.scrollHeight;
+    voiceOn=false;
+    var ind=document.getElementById('voiceIndicator'),t=document.getElementById('voiceText');
+    if(ind)ind.classList.remove('active');if(t)t.textContent='Voice Mode';
+  };
+  return r;
+}
+async function handleSpeech(text){
+  // Kairos is thinking — the board feels it
+  var ai=document.querySelector('.activity-indicator');
+  var vt=document.getElementById('voiceText');
+  if(ai){ai.classList.remove('ai-nominal','ai-alert');ai.classList.add('ai-thinking');}
+  if(vt&&voiceOn)vt.textContent='Thinking...';
+
+  var f=document.getElementById('vtFlow');
+  var u=document.createElement('div');u.className='voice-message user';u.innerHTML='<div class="voice-message-avatar">You</div><div class="voice-message-content">'+text+'</div>';f.appendChild(u);f.scrollTop=f.scrollHeight;
+  var rid='kr-'+Date.now();
+  var k=document.createElement('div');k.className='voice-message kairos';k.innerHTML='<div class="voice-message-avatar">∞</div><div class="voice-message-content" id="'+rid+'" style="opacity:.5">…</div>';f.appendChild(k);f.scrollTop=f.scrollHeight;
+  if(!KAIROS_API_KEY){
+    var el=document.getElementById(rid);if(el){el.textContent='No API key set. Add your Anthropic key to KAIROS_API_KEY at the top of the script.';el.style.opacity='1';}
+    if(ai){ai.classList.remove('ai-thinking');setBoardMood(_currentMood);}
+    if(vt)vt.textContent=voiceOn?'Listening...':'Voice Mode';
+    return;
+  }
+  try{
+    var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':KAIROS_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:150,system:KAIROS_SYS,messages:[{role:'user',content:text}]})});
+    var data=await res.json();
+    var reply=data.content&&data.content[0]?data.content[0].text:'No response.';
+    var el=document.getElementById(rid);if(el){el.textContent=reply;el.style.opacity='1';}
+    f.scrollTop=f.scrollHeight;
+    // Response lands on the board — not just in the overlay panel
+    showBrief(reply,false,10000);
+    speakNatural(reply);
+    // Log and spotlight whichever card the response is about
+    var rel=_detectCard(reply)||_detectCard(text);
+    logObservation(reply,rel,'insight',['In response to: "'+text.slice(0,60)+(text.length>60?'…':'')+'"']);
+    if(rel){
+      spotlightCard(rel,true);
+      var _r=rel;setTimeout(function(){spotlightCard(_r,false);},9500);
+    }
+  }catch(err){
+    var el=document.getElementById(rid);if(el){el.textContent='Error: '+err.message;el.style.opacity='1';}
+  }finally{
+    // Restore mood indicator once Kairos is done thinking
+    if(ai){ai.classList.remove('ai-thinking');setBoardMood(_currentMood);}
+    if(vt)vt.textContent=voiceOn?'Listening...':'Voice Mode';
+  }
+}
+async function sendTextQuery(){
+  var inp=document.getElementById('cmdInput');var text=inp?inp.value.trim():'';if(!text)return;inp.value='';
+  var o=document.getElementById('voiceOverlay');o.classList.add('active');
+  await handleSpeech(text);
+}
+function toggleVoice(){
+  voiceOn=!voiceOn;
+  var o=document.getElementById('voiceOverlay'),ind=document.getElementById('voiceIndicator'),t=document.getElementById('voiceText');
+  if(!o||!ind||!t)return;
+  var tbv=document.getElementById('tbVoice');
+  if(voiceOn){
+    o.classList.add('active');ind.classList.add('active');t.textContent='Listening...';
+    if(tbv)tbv.classList.add('tb-active');
+    renderVoiceCmds();
+    if(!recognition)recognition=initSpeech();
+    if(recognition){try{recognition.start();}catch(e){}}
+    else{var f=document.getElementById('vtFlow');var d=document.createElement('div');d.className='voice-message kairos';d.innerHTML='<div class="voice-message-avatar">∞</div><div class="voice-message-content">Speech recognition requires Chrome/Edge with mic access. Use the text input above instead.</div>';f.appendChild(d);}
+  }else{
+    o.classList.remove('active');ind.classList.remove('active');t.textContent='Voice Mode';
+    if(tbv)tbv.classList.remove('tb-active');
+    if(recognition)try{recognition.stop();}catch(e){}
+    synth.cancel();
+  }
+}
+
+// ── OPERATOR PERFORMANCE + ACHIEVEMENT SYSTEM ─────────────────────────
+var _review={
+  deviationsPrevented:14, batchFailures:2, valueProtected:372000,
+  alertResponseAvg:4.2, gmpCompliance:97.3, shiftsCompleted:47,
+  kairosQueries:0, actionsExecuted:0, gxpClosed:0
+};
+var _achState={responder:false,guardian:false,docmaster:false,analyst:false,keeper:false};
+
+function _unlockAchievement(id,name,icon,impactLine){
+  if(_achState[id])return; _achState[id]=true;
+  var el=document.getElementById('ach-'+id);
+  if(el){
+    el.classList.remove('locked');el.classList.add('earned','newly-earned');
+    // Colorize by type
+    var cols={responder:'rgba(255,69,58,.08)|rgba(255,69,58,.25)',
+              guardian:'rgba(255,215,0,.08)|rgba(255,215,0,.25)',
+              docmaster:'rgba(90,200,250,.08)|rgba(90,200,250,.25)',
+              analyst:'rgba(102,126,234,.08)|rgba(102,126,234,.25)',
+              keeper:'rgba(52,199,89,.08)|rgba(52,199,89,.25)'};
+    var c=(cols[id]||'rgba(102,126,234,.08)|rgba(102,126,234,.25)').split('|');
+    el.style.setProperty('--ach-bg',c[0]);el.style.setProperty('--ach-border',c[1]);
+    var cnt=el.querySelector('.ach-count');if(cnt)cnt.textContent='×1';
+  }
+  // Rich unlock toast
+  var t=document.createElement('div');t.className='achievement-toast';
+  t.style.cssText='border-color:var(--accent-primary);top:'+(80+document.querySelectorAll('.achievement-toast').length*88)+'px';
+  t.innerHTML='<div class="achievement-icon" style="background:linear-gradient(135deg,#667eea,#764ba2)">'+icon+'</div>'
+    +'<div><div class="achievement-title">Achievement Unlocked · '+name+'</div>'
+    +'<div class="achievement-desc">'+impactLine+'</div></div>';
+  document.body.appendChild(t);
+  setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .5s';setTimeout(function(){if(t.parentNode)t.remove();},500);},5000);
+  logObservation('Achievement unlocked: '+name+'. '+impactLine,null,'action');
+  _updateReviewUI();
+}
+
+function _checkAchievements(){
+  // First Responder — executed blister action while countdown was still alive
+  if(!_achState.responder && _achState._blistActioned && _alertSecs>0){
+    var mins=Math.round((1498-_alertSecs)/60);
+    _unlockAchievement('responder','First Responder','⚡',
+      'Blister alert actioned within '+mins+' min of detection. BL-2026-0219-A integrity preserved. €186K protected.');
+    _review.deviationsPrevented++;_review.batchFailures++;_review.valueProtected+=186000;
+    _updateReviewUI();
+  }
+  // Value Guardian — prevented batch failure
+  if(!_achState.guardian && _review.valueProtected>=100000){
+    _unlockAchievement('guardian','Value Guardian','💰',
+      'Prevented batch failures protecting €'+(_review.valueProtected/1000).toFixed(0)+'K in batch value this year.');
+  }
+  // Documentation Master — closed all 3 GxP actions
+  if(!_achState.docmaster && _review.gxpClosed>=3){
+    _unlockAchievement('docmaster','Documentation Master','📋',
+      'All GxP open actions closed this shift. eBR fully compliant. DR-2026-0044 documented.');
+  }
+  // Kairos Analyst — 5+ queries
+  if(!_achState.analyst && _review.kairosQueries>=5){
+    _unlockAchievement('analyst','Kairos Analyst','🔬',
+      'Made '+_review.kairosQueries+' intelligence queries this session. AI-assisted decisions logged for audit trail.');
+  }
+}
+
+function _updateReviewUI(){
+  var e=function(id){return document.getElementById(id);};
+  if(e('rvBatch'))e('rvBatch').textContent=_review.batchFailures+' · €'+(_review.valueProtected/1000).toFixed(0)+'K protected';
+  if(e('rvDev'))e('rvDev').textContent=_review.deviationsPrevented;
+  if(e('rvGmp'))e('rvGmp').textContent=_review.gmpCompliance.toFixed(1)+'%';
+  if(e('rvKairos'))e('rvKairos').textContent=_review.kairosQueries+' this session';
+}
+
+function generateAppraisalSummary(){
+  var now=new Date();
+  var dateStr=now.toLocaleDateString('en-IE',{year:'numeric',month:'long',day:'numeric'});
+  var text=
+'PERFORMANCE APPRAISAL SUMMARY\n'+
+'Generated by Kairos Intelligence · '+dateStr+'\n'+
+'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'+
+'OPERATOR:  Sarah M. — Line Supervisor\n'+
+'FACILITY:  Servier Arklow · Building 4\n'+
+'PERIOD:    2026 Year-to-Date\n\n'+
+'━━ KEY PERFORMANCE METRICS ━━━━━━━━\n\n'+
+'GMP Compliance Rate:        '+_review.gmpCompliance.toFixed(1)+'%\n'+
+'Process Mastery Score:      94.1%\n'+
+'Avg Alert Response Time:    '+_review.alertResponseAvg.toFixed(1)+' min\n'+
+'Shifts Completed:           '+_review.shiftsCompleted+'\n\n'+
+'━━ IMPACT ━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'+
+'Batch Failures Prevented:   '+_review.batchFailures+'\n'+
+'Deviations Actioned:        '+_review.deviationsPrevented+'\n'+
+'Total Value Protected:      €'+(_review.valueProtected/1000).toFixed(0)+'K\n'+
+'AI-Assisted Decisions:      '+_review.kairosQueries+' (this session)\n\n'+
+'━━ ACHIEVEMENTS ━━━━━━━━━━━━━━━━━━━\n\n'+
+'🔥 Compliance Streak · 8 consecutive shifts\n'+
+(_achState.responder?'⚡ First Responder · Blister alert actioned within window\n':'')+
+(_achState.guardian?'💰 Value Guardian · >€100K batch value protected\n':'')+
+(_achState.docmaster?'📋 Documentation Master · All GxP actions closed same-shift\n':'')+
+(_achState.analyst?'🔬 Kairos Analyst · 5+ AI-assisted decisions logged\n':'')+
+'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
+'Verified by Kairos · Servier Arklow GMP System';
+
+  var out=document.getElementById('appraisalOutput');
+  if(out){out.textContent=text;out.classList.add('visible');}
+  // Select all for easy copy
+  setTimeout(function(){if(out){var r=document.createRange();r.selectNodeContents(out);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}},100);
+  showToast({title:'Summary Generated',desc:'Select all and copy to share',icon:'📋'});
+}
+
+// Hook into existing actions
+var _origExecuteAction=executeAction;
+function executeAction(el,pts,desc){
+  _origExecuteAction(el,pts,desc);
+  _review.actionsExecuted++;
+  if(desc&&/blister|seal/i.test(desc))_achState._blistActioned=true;
+  _checkAchievements();
+  _updateReviewUI();
+}
+var _origToggleCB=toggleCB;
+function toggleCB(el){
+  _origToggleCB(el);
+  var cb=el.querySelector('.action-checkbox');
+  if(cb&&cb.classList.contains('checked')){
+    _review.gxpClosed++;addXP(40);_checkAchievements();_updateReviewUI();
+  }
+}
+// Count Kairos queries toward analyst achievement
+var _origSendTextQuery=sendTextQuery;
+async function sendTextQuery(){
+  _review.kairosQueries++;
+  var el=document.getElementById('rvKairos');if(el)el.textContent=_review.kairosQueries+' this session';
+  _checkAchievements();
+  return _origSendTextQuery();
+}
+var _origFireVoiceCmd=fireVoiceCmd;
+async function fireVoiceCmd(prompt){
+  _review.kairosQueries++;
+  var el=document.getElementById('rvKairos');if(el)el.textContent=_review.kairosQueries+' this session';
+  _checkAchievements();
+  return _origFireVoiceCmd(prompt);
+}
+
+// ── BOARD MOOD ────────────────────────────────────────────────────────
+var _currentMood='nominal';
+function setBoardMood(state){
+  _currentMood=state;
+  document.body.classList.remove('mood-nominal','mood-alert','mood-critical');
+  document.body.classList.add('mood-'+state);
+  var ai=document.querySelector('.activity-indicator');
+  if(ai){ai.classList.remove('ai-nominal','ai-alert','ai-thinking');ai.classList.add(state==='nominal'?'ai-nominal':'ai-alert');}
+}
+setBoardMood('alert'); // blister line has an active drift
+
+// ── GLOBAL BRIEF / SPOTLIGHT / REVEAL ─────────────────────────────────
+// showBrief(text, speak, duration) — speak=true plays TTS, duration=false means manual dismiss
+var _briefTimer=null,_briefEl=null,_briefTextEl=null;
+function showBrief(text,speak,duration){
+  if(!_briefEl){_briefEl=document.getElementById('kairosBrief');}
+  if(!_briefTextEl){_briefTextEl=document.getElementById('kairosBriefText');}
+  if(_briefTextEl)_briefTextEl.textContent=text;
+  if(_briefEl)_briefEl.classList.add('visible');
+  if(speak&&synth)speakNatural(text);
+  clearTimeout(_briefTimer);
+  if(duration!==false)_briefTimer=setTimeout(hideBrief,duration===undefined?9000:duration);
+  logObservation(text,null,'briefing');
+}
+function hideBrief(){
+  clearTimeout(_briefTimer);
+  if(!_briefEl)_briefEl=document.getElementById('kairosBrief');
+  if(_briefEl)_briefEl.classList.remove('visible');
+}
+function spotlightCard(id,on){
+  var card=document.querySelector('[data-card="'+id+'"]');
+  if(!card)return;
+  if(on)card.classList.add('kairos-spotlight');else card.classList.remove('kairos-spotlight');
+}
+function revealCard(id){
+  var card=document.querySelector('[data-card="'+id+'"]');
+  if(card)card.classList.remove('card-pre-reveal');
+}
+
+// ── DETECT WHICH CARD A RESPONSE IS ABOUT ─────────────────────────────
+function _detectCard(text){
+  if(/blister|seal\s*temp|BL-20/i.test(text))return 'blister';
+  if(/bottle|fill\s*weight|BT-20/i.test(text))return 'bottle';
+  if(/granulat|torque|impeller|GR-20/i.test(text))return 'granulator';
+  if(/tablet|compress|hardness|TB-20/i.test(text))return 'tablet';
+  if(/coat|spray\s*rate|exhaust|CT-20/i.test(text))return 'coater';
+  if(/financ|€|euro|cost|saving/i.test(text))return 'finance';
+  if(/negative|quarantine|OOS|batch\s*fail/i.test(text))return 'proj-neg';
+  return null;
+}
+
+// ── KAIROS OPENING SEQUENCE ───────────────────────────────────────────
+(function(){
+  document.querySelectorAll('.draggable-card').forEach(function(c){c.classList.add('card-pre-reveal');});
+  var wake=document.getElementById('kairosWake');
+
+  function skipSequence(){
+    synth&&synth.cancel();
+    if(wake){wake.classList.add('fade-out');setTimeout(function(){wake.style.display='none';},900);}
+    document.querySelectorAll('.card-pre-reveal').forEach(function(c){c.classList.remove('card-pre-reveal');});
+    setTimeout(function(){
+      drawConns();
+      // Collapse all context cards — blister stays expanded (needs attention)
+      document.querySelectorAll('.draggable-card:not([data-card="command"]):not([data-card="blister"])').forEach(function(card){
+        card.classList.add('card-minimised');
+        var btn=card.querySelector('.minimise-btn');
+        if(btn){btn.textContent='+';btn.title='Expand card';}
+      });
+      drawConns();
+      showBrief("I've been monitoring since 06:00. The Blister Line has a seal temperature drift — 1.8°C above the golden batch corridor. I've prepared corrective actions.",true,false);
+      spotlightCard('blister',true);
+      setTimeout(function(){spotlightCard('blister',false);setTimeout(hideBrief,5000);},4000);
+    },200);
+  }
+
+  _initCardRibbons();_initCardTimestamps();_initCardControls();_initCardPeeks();
+  var skipBtn=document.getElementById('wakeSkip');
+  if(skipBtn) skipBtn.onclick=skipSequence;
+
+  // ── Timed sequence ──────────────────────────────────────────────────
+  // t=1900 — wake fades
+  setTimeout(function(){
+    if(wake) wake.classList.add('fade-out');
+    setTimeout(function(){if(wake) wake.style.display='none';},900);
+  },1900);
+
+  // t=2400 — Kairos speaks first. Blister card appears. It noticed something.
+  setTimeout(function(){
+    showBrief("Good morning. I've been monitoring Building 4 since 06:00. I need to draw your attention to something on the Blister Line.",true,false);
+    revealCard('blister');
+    setTimeout(function(){spotlightCard('blister',true);},300);
+  },2400);
+
+  // t=4800 — Kairos explains what it saw
+  setTimeout(function(){
+    spotlightCard('blister',false);
+    showBrief("At 14:16 I detected a seal temperature drift — currently 1.8°C above the golden batch corridor. This pattern preceded failures in 2 of the last 4 comparable runs.",true,false);
+  },4800);
+
+  // t=7000 — Negative scenario card assembles (causal consequence)
+  setTimeout(function(){
+    showBrief("I've already modeled what happens if this goes uncorrected. Here's the risk scenario.",true,false);
+    revealCard('proj-neg');
+    drawConns();
+  },7000);
+
+  // t=9000 — Financial impact card assembles
+  setTimeout(function(){
+    showBrief("And the financial exposure. Up to €186K in batch quarantine if blister integrity fails within the next 25 minutes.",true,false);
+    revealCard('finance');
+    drawConns();
+  },9000);
+
+  // t=11200 — Rest of the board fills in — context, not focus
+  setTimeout(function(){
+    showBrief("The rest of Building 4 is nominal. Here's the full picture.",true,false);
+    var ctx=['granulator','tablet','coater','bottle','proj-pos'];
+    ctx.forEach(function(id,i){setTimeout(function(){revealCard(id);},i*220);});
+    setTimeout(drawConns,ctx.length*220+300);
+    // Collapse context cards into compact peek view after they appear
+    setTimeout(function(){
+      ['granulator','tablet','coater','bottle','proj-pos','proj-neg','finance'].forEach(function(id){
+        var card=document.querySelector('[data-card="'+id+'"]');
+        if(card&&!card.classList.contains('card-minimised')){
+          card.classList.add('card-minimised');
+          var btn=card.querySelector('.minimise-btn');
+          if(btn){btn.textContent='+';btn.title='Expand card';}
+        }
+      });
+      drawConns();
+    },ctx.length*220+900);
+  },11200);
+
+  // t=13800 — Kairos closes the briefing and waits
+  setTimeout(function(){
+    showBrief("I've prepared a corrective action — reduce the sealing station temperature by 1.8°C. I need you to authorise it. You have approximately 20 minutes.",true,false);
+  },13800);
+
+  // t=19500 — Brief fades. Board is live. Kairos is watching.
+  setTimeout(hideBrief,19500);
+
+  // Seed the log with startup reasoning chain
+  setTimeout(function(){
+    logObservation(
+      'All 5 production lines online. Beginning continuous monitoring across Building 4 process chain.',
+      null,'nominal',
+      ['Granulator → Tablet Press → Coating → Blister/Bottle: all nodes active','GMP audit trail armed · DeltaV, SAP, Opcenter feeds live']
+    );
+  },2600);
+  setTimeout(function(){
+    logObservation(
+      'BL-2026-0219-A seal temperature at 172°C — 1.8°C above golden batch corridor of 170°C. Rate of drift: +0.6°C/10 min. This pattern preceded seal failure in 2 of 4 comparable historical runs.',
+      'blister','alert',
+      ['Integrity risk window: ~25 min at current drift rate','Corrective action queued: reduce sealing station temp by 1.8°C','Confidence: 0.94 · GMP deviation DR-2026-0044 auto-drafted']
+    );
+  },5200);
+  setTimeout(function(){
+    logObservation(
+      'Downstream consequence modeled. If seal temperature is not corrected within the risk window, blister integrity fails on BL-2026-0219-A. Triggers batch quarantine under 21 CFR 11.',
+      'proj-neg','prediction',
+      ['Quarantine probability: 68% if no intervention','Financial exposure: up to €186K','Secondary risk: QP investigation hold extends to 72 hr on 2 batches']
+    );
+  },7200);
+  setTimeout(function(){
+    logObservation(
+      'Cross-line financial position is strongly positive. Kairos interventions today have prevented 2 batch rejections and optimised yield across 3 lines.',
+      'finance','insight',
+      ['Net impact: +€411,900 · Avoided rejections: +€372K','Annualised at current performance: ~€2.4M saved','Blister deviation is the only active risk to this position']
+    );
+  },9200);
+  setTimeout(function(){
+    logObservation(
+      'Lines 2–5 nominal. Granulator torque inflection reached — endpoint confirmed in 4.2 min. Coating weight gain on profile, endpoint in ~18 min. Tablet Press dissolution outcome predicted: PASS.',
+      null,'nominal',
+      ['Bottle fill weight: 120.2g ±0.3% — within golden batch','All CPPs within corridor · No further action required on these lines']
+    );
+  },11500);
+  setTimeout(function(){drawMinimap();},13500);
+})();
+</script>
+</body>
+</html>

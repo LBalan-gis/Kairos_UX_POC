@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MEI Dynamic Plant Graph</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --panel: #f8fbff;
+      --text: #1f2937;
+      --muted: #6b7280;
+
+      --material: #4f46e5;
+      --sensor: #0891b2;
+      --control: #0f766e;
+      --asset: #3b82c4;
+      --deviation: #dc2626;
+      --quality: #d4a63a;
+      --batch: #4f67b9;
+      --financial: #657a46;
+      --simulation: #7c3aed;
+      --system: #94a3b8;
+
+      --gold-ref: #d4a63a;
+      --live-blue: #2f6bff;
+      --threshold: #94a3b8;
+      --loss: #dc2626;
+      --recovery: #16a34a;
+
+      --radius: 10px;
+      --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: 64px 1fr 88px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      border-bottom: 1px solid #dbe4f0;
+      background: #f8faff;
+      z-index: 20;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .mark {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid #6076c2;
+      background: #ebf0ff;
+    }
+    .brand b { font-size: 22px; font-weight: 650; letter-spacing: 0.01em; }
+    .context {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .command {
+      height: 40px;
+      width: min(640px, 58vw);
+      border: 1px solid #d6deeb;
+      border-radius: 999px;
+      background: #f7f9fd;
+      color: #596883;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .status { justify-self: end; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #44536e; }
+    .live {
+      border: 1px solid #cdd7ea;
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: #edf2ff;
+      color: #3f5ea5;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .live i { width: 7px; height: 7px; border-radius: 50%; background: #5c78de; display: inline-block; }
+
+    .board {
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(89, 103, 130, 0.12) 0.8px, transparent 1px) 0 0 / 22px 22px,
+        var(--bg);
+    }
+
+    #viewport {
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 0;
+    }
+
+    #edgeSvg, #nodeLayer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    #edgeSvg { pointer-events: none; }
+
+    .node {
+      position: absolute;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      background: #fbfdff;
+      padding: 16px;
+      line-height: 1.45;
+      cursor: grab;
+      transition: transform 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+      user-select: none;
+      touch-action: none;
+    }
+    .node.dragging { cursor: grabbing; }
+
+    .node::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      border-radius: 10px 0 0 10px;
+      background: var(--accent, #90a0b9);
+    }
+
+    .node::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      top: 0;
+      height: 2px;
+      border-radius: 0 0 4px 4px;
+      background: var(--accent, #90a0b9);
+      opacity: 0.35;
+    }
+
+    .anchor-card { min-width: 380px; max-width: 420px; }
+    .process-card { min-width: 280px; max-width: 320px; }
+    .simulation-card {
+      min-width: 240px;
+      max-width: 280px;
+      border-style: dashed;
+      background: #faf8ff;
+    }
+    .system-card { width: 180px; padding: 12px; }
+    .system-card .spark,
+    .system-card .metrics,
+    .system-card .sub { display: none; }
+
+    .node-header {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .icon-chip {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      background: var(--icon-bg, #edf2fb);
+    }
+
+    .title { font-size: 16px; font-weight: 600; letter-spacing: 0.01em; }
+
+    .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6b7280;
+    }
+
+    .state {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      border-radius: 999px;
+      border: 1px solid var(--state-border, #cbd5e1);
+      background: var(--state-bg, #f3f6fc);
+      color: var(--state-fg, #5f6f89);
+      padding: 3px 8px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .state i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+    .sub { font-size: 13px; color: #4e5f7a; margin-bottom: 6px; }
+
+    .metrics { display: grid; gap: 8px; margin-top: 8px; }
+    .metric { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: #495971; }
+    .metric b {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 18px;
+      font-weight: 600;
+      color: #223149;
+      line-height: 1.1;
+    }
+
+    .insight-chip {
+      margin-top: 10px;
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      border: 1px solid #d8dfef;
+      background: #f7faff;
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 12px;
+      color: #4e5e79;
+      cursor: pointer;
+    }
+
+    .insight-chip i { width: 7px; height: 7px; border-radius: 50%; background: #607ab8; display: inline-block; }
+
+    .spark {
+      margin-top: 10px;
+      border-top: 1px solid #e2e8f3;
+      padding-top: 8px;
+      min-width: 240px;
+      height: 112px;
+      position: relative;
+    }
+
+    .spark canvas { width: 100%; height: 100%; }
+    #node-finance .spark { height: 92px; }
+    #node-batch_golden .spark { height: 72px; }
+
+    .edge {
+      fill: none;
+      opacity: 0.42;
+      transition: opacity 120ms ease;
+    }
+    .edge.material { stroke: #2f6bff; stroke-width: 2.5px; }
+    .edge.causal { stroke: #6b7280; stroke-width: 1.5px; }
+    .edge.deviation { stroke: #d14343; stroke-width: 2px; stroke-dasharray: 6 4; }
+    .edge.control { stroke: #2fa36b; stroke-width: 2px; }
+    .edge.simulation { stroke: #7b61ff; stroke-width: 2px; stroke-dasharray: 2 4; }
+    .edge.system { stroke: #94a3b8; stroke-width: 1.6px; }
+    .edge.focused { opacity: 1; }
+    .edge.dimmed { opacity: 0.12; }
+
+    .node.focal { transform: scale(1.03); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14); z-index: 8; }
+    .node.dimmed { opacity: 0.2; }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 12px 14px;
+      border-top: 1px solid #d9dfeb;
+      background: #f7f9fd;
+    }
+
+    .action-btn {
+      border: 1px solid #cbd4e6;
+      border-radius: 12px;
+      background: #f8faff;
+      color: #2c3d58;
+      padding: 10px 13px;
+      font-size: 14px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .action-btn .tag {
+      margin-left: 8px;
+      border: 1px solid #cad5ea;
+      border-radius: 999px;
+      background: #eef3fc;
+      color: #56657f;
+      padding: 2px 6px;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .action-btn.primary { background: #e8f0ed; border-color: #c3d8cb; color: #2f6047; font-weight: 700; }
+    .action-btn.warn { background: #f8efe1; border-color: #e6cca3; color: #7f591d; font-weight: 700; }
+    .action-btn.system { background: #edf2fb; border-color: #c8d3e8; color: #314a77; }
+    .action-btn.dimmed { opacity: 0.3; filter: grayscale(0.25); }
+    .action-btn.active { box-shadow: 0 0 0 2px rgba(47, 107, 255, 0.18) inset; border-color: #7f9ddf; }
+
+    @media (max-width: 1120px) {
+      .topbar { grid-template-columns: 1fr; gap: 8px; padding: 8px 12px; }
+      .status { justify-self: start; }
+      .command { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark"></div>
+        <div>
+          <b>MEI</b>
+          <div class="context">PLANT / AREA A / BLISTER PACKAGING CELL</div>
+        </div>
+      </div>
+      <button class="command">Ask Mei anything… <span>⌘K</span></button>
+      <div class="status">
+        <span class="live"><i></i>LIVE</span>
+        <span id="clock">--:--:--</span>
+      </div>
+    </header>
+
+    <main class="board" id="board">
+      <div id="viewport">
+        <svg id="edgeSvg" aria-hidden="true">
+          <defs>
+            <marker id="arrow-material" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#2F6BFF"></path></marker>
+            <marker id="arrow-causal" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#6B7280"></path></marker>
+            <marker id="arrow-deviation" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto"><path d="M0,1 L4.8,1 L6,3 L4.8,5 L0,5 L0.8,3 z" fill="#D14343"></path></marker>
+            <marker id="arrow-control" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#2FA36B"></path></marker>
+            <marker id="arrow-simulation" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto"><path d="M0,3 L5.2,0 L5.2,6 z" fill="#7B61FF"></path></marker>
+            <marker id="arrow-system" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#94A3B8"></path></marker>
+          </defs>
+          <g id="edgeLayer"></g>
+        </svg>
+        <div id="nodeLayer"></div>
+      </div>
+    </main>
+
+    <footer class="actions" id="actionsBar">
+      <button class="action-btn primary" data-action="reduce_speed" data-focus="deviation,asset_sealer,batch_current,sim_corrected">Reduce speed to 260 ppm <span class="tag">Asset | Simulation</span></button>
+      <button class="action-btn warn" data-action="adjust_heater" data-focus="deviation,control_heater,asset_sealer,sim_corrected">Adjust heater to 183C <span class="tag">Control | Simulation</span></button>
+      <button class="action-btn system" data-action="log_mes" data-focus="deviation,sim_unchanged,sim_corrected,sys_mes">Log deviation in MES <span class="tag">MES | Execute</span></button>
+      <button class="action-btn system" data-action="notify_qa" data-focus="deviation,sim_unchanged,sys_qa">Notify QA <span class="tag">QA | Execute</span></button>
+      <button class="action-btn system" data-action="update_erp" data-focus="deviation,sim_corrected,sys_erp">Update ERP <span class="tag">ERP | Execute</span></button>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "mei_pkg_graph_state_v2";
+
+      const ICON = {
+        Material: "◍",
+        Sensor: "∿",
+        ControlParameter: "◌",
+        Asset: "⚙",
+        Deviation: "▲",
+        QualityState: "⛨",
+        Batch: "▤",
+        GoldenBatch: "✶",
+        FinancialImpact: "↗",
+        SimulationScenario: "⎇",
+        ExternalSystem: "⌗",
+        Action: "✓"
+      };
+
+      const ACCENT = {
+        Material: ["#4f46e5", "#ecebff"],
+        Sensor: ["#0891b2", "#e6f6fb"],
+        ControlParameter: ["#0f766e", "#e6f5f2"],
+        Asset: ["#3b82c4", "#e9f2fb"],
+        Deviation: ["#dc2626", "#fbe9e9"],
+        QualityState: ["#d4a63a", "#fbf4df"],
+        Batch: ["#4f67b9", "#eaf0ff"],
+        GoldenBatch: ["#d4a63a", "#fbf4df"],
+        FinancialImpact: ["#657a46", "#eef2e5"],
+        SimulationScenario: ["#7c3aed", "#f2edff"],
+        ExternalSystem: ["#94a3b8", "#f1f4f8"],
+        Action: ["#6b7280", "#eff2f7"]
+      };
+
+      const STATE_STYLE = {
+        normal: ["#cbd5e1", "#f3f6fc", "#5d6b83"],
+        warning: ["#EAB308", "#fdf8e6", "#8a6d1f"],
+        critical: ["#DC2626", "#fcebea", "#922626"],
+        simulation: ["#7C3AED", "#f2edff", "#5f3aa1"],
+        external: ["#94A3B8", "#f1f4f8", "#5f6f87"]
+      };
+
+      const EDGE_STYLE = {
+        feeds: { cls: "material", marker: "arrow-material" },
+        measured_by: { cls: "causal", marker: "arrow-causal" },
+        controls: { cls: "control", marker: "arrow-control" },
+        causes: { cls: "causal", marker: "arrow-causal" },
+        affects: { cls: "deviation", marker: "arrow-deviation" },
+        references: { cls: "causal", marker: "arrow-causal" },
+        impacts_cost: { cls: "deviation", marker: "arrow-deviation" },
+        logged_in: { cls: "system", marker: "arrow-system" },
+        approved_by: { cls: "system", marker: "arrow-system" },
+        simulated_as: { cls: "simulation", marker: "arrow-simulation" },
+        mitigates: { cls: "control", marker: "arrow-control" }
+      };
+
+      class GraphEntity {
+        constructor({ id, type, label, state = "normal", metrics = {}, metadata = {}, tags = [], chart = null, rankHint = 0, pinned = null, insight = "" }) {
+          this.id = id;
+          this.type = type;
+          this.label = label;
+          this.state = state;
+          this.metrics = metrics;
+          this.metadata = metadata;
+          this.tags = tags;
+          this.chart = chart;
+          this.rankHint = rankHint;
+          this.pinned = pinned;
+          this.insight = insight;
+        }
+      }
+
+      class GraphRelation {
+        constructor({ id, from, to, type }) {
+          this.id = id;
+          this.from = from;
+          this.to = to;
+          this.type = type;
+        }
+      }
+
+      class PlantKnowledgeGraph {
+        constructor() {
+          this.entities = new Map();
+          this.relations = [];
+        }
+        addEntity(e) { this.entities.set(e.id, e); }
+        addRelation(r) { this.relations.push(r); }
+        getEntity(id) { return this.entities.get(id); }
+        getRelationsFrom(id) { return this.relations.filter((r) => r.from === id); }
+        getRelationsTo(id) { return this.relations.filter((r) => r.to === id); }
+      }
+
+      class GraphStateStore {
+        static save(state) {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+        }
+        static load() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : null;
+          } catch (_) {
+            return null;
+          }
+        }
+      }
+
+      class IncidentSubgraphExtractor {
+        static extract(graph, incidentId) {
+          const keep = new Set([incidentId]);
+          const upQueue = [incidentId];
+          const downQueue = [incidentId];
+
+          for (let depth = 0; depth < 3; depth += 1) {
+            const next = [];
+            upQueue.splice(0).forEach((id) => {
+              graph.getRelationsTo(id).forEach((r) => {
+                if (!keep.has(r.from)) {
+                  keep.add(r.from);
+                  next.push(r.from);
+                }
+              });
+            });
+            upQueue.push(...next);
+          }
+
+          for (let depth = 0; depth < 4; depth += 1) {
+            const next = [];
+            downQueue.splice(0).forEach((id) => {
+              graph.getRelationsFrom(id).forEach((r) => {
+                if (!keep.has(r.to)) {
+                  keep.add(r.to);
+                  next.push(r.to);
+                }
+              });
+            });
+            downQueue.push(...next);
+          }
+
+          const forced = [
+            "material_foil", "sensor_tension", "control_heater", "asset_sealer", "deviation",
+            "quality_seal", "batch_current", "batch_golden", "impact_loss", "sim_unchanged", "sim_corrected",
+            "sys_mes", "sys_qa", "sys_erp"
+          ];
+          forced.forEach((id) => keep.add(id));
+
+          return {
+            entities: Array.from(keep).map((id) => graph.getEntity(id)).filter(Boolean),
+            relations: graph.relations.filter((r) => keep.has(r.from) && keep.has(r.to))
+          };
+        }
+      }
+
+      class LayoutEngine {
+        static sizeClass(entity) {
+          if (entity.type === "GoldenBatch" || entity.id === "batch_current") return "anchor-card";
+          if (entity.type === "SimulationScenario") return "simulation-card";
+          if (entity.type === "ExternalSystem") return "system-card";
+          return "process-card";
+        }
+
+        static estimate(entity) {
+          const cls = LayoutEngine.sizeClass(entity);
+          const metricsCount = Object.keys(entity.metrics || {}).length;
+          let width = 300;
+          let height = 130 + metricsCount * 28;
+          if (cls === "anchor-card") {
+            width = 392;
+            height = entity.chart ? 300 : 220;
+          } else if (cls === "simulation-card") {
+            width = 260;
+            height = 170;
+          } else if (cls === "system-card") {
+            width = 180;
+            height = 86;
+          } else {
+            width = entity.chart ? 305 : 290;
+            height = entity.chart ? 252 : 190;
+          }
+          return { width, height };
+        }
+
+        static run(subgraph, persistedPositions = {}) {
+          const g = new dagre.graphlib.Graph();
+          g.setGraph({
+            rankdir: "LR",
+            ranksep: 220,
+            nodesep: 140,
+            marginx: 90,
+            marginy: 80,
+            ranker: "network-simplex"
+          });
+          g.setDefaultEdgeLabel(() => ({}));
+
+          subgraph.entities.forEach((e) => {
+            const sz = LayoutEngine.estimate(e);
+            g.setNode(e.id, {
+              width: sz.width,
+              height: sz.height,
+              rank: e.rankHint
+            });
+          });
+
+          subgraph.relations.forEach((r) => {
+            g.setEdge(r.from, r.to, { weight: 2, minlen: 1 });
+          });
+
+          dagre.layout(g);
+
+          const positions = {};
+          subgraph.entities.forEach((e) => {
+            const n = g.node(e.id);
+            positions[e.id] = {
+              x: n.x - n.width / 2,
+              y: n.y - n.height / 2
+            };
+          });
+
+          positions.batch_golden = { x: 80, y: 70 };
+
+          if (positions.batch_current && positions.sim_unchanged && positions.sim_corrected) {
+            const by = positions.batch_current.y + 350;
+            positions.sim_unchanged.y = by;
+            positions.sim_corrected.y = by;
+          }
+
+          Object.keys(persistedPositions || {}).forEach((id) => {
+            if (positions[id]) positions[id] = persistedPositions[id];
+          });
+
+          return positions;
+        }
+      }
+
+      class Renderer {
+        constructor(state) {
+          this.state = state;
+          this.board = document.getElementById("board");
+          this.viewport = document.getElementById("viewport");
+          this.nodeLayer = document.getElementById("nodeLayer");
+          this.edgeSvg = document.getElementById("edgeSvg");
+          this.edgeLayer = d3.select("#edgeLayer");
+          this.actionsBar = document.getElementById("actionsBar");
+          this.chartInstances = {};
+          this.framePending = false;
+          this.dragging = null;
+          this.zoom = d3.zoom().scaleExtent([0.5, 2.2]).on("zoom", (event) => {
+            this.state.transform = event.transform;
+            this.viewport.style.transform = `translate(${event.transform.x}px, ${event.transform.y}px) scale(${event.transform.k})`;
+          });
+          d3.select(this.board).call(this.zoom).on("dblclick.zoom", null);
+          d3.select(this.board).on("dblclick", () => {
+            d3.select(this.board).transition().duration(240).call(this.zoom.transform, d3.zoomIdentity);
+          });
+        }
+
+        scheduleRender() {
+          if (this.framePending) return;
+          this.framePending = true;
+          requestAnimationFrame(() => {
+            this.framePending = false;
+            this.render();
+          });
+        }
+
+        destroyCharts() {
+          Object.values(this.chartInstances).forEach((c) => { try { c.destroy(); } catch (_) {} });
+          this.chartInstances = {};
+        }
+
+        chartPluginDeviationMarker(markerIndex) {
+          return {
+            id: `dev-marker-${markerIndex}`,
+            afterDatasetsDraw(chart) {
+              const { ctx, chartArea, scales } = chart || {};
+              if (!ctx || !chartArea || !scales || !scales.x || !scales.y) return;
+              const x = scales.x.getPixelForValue(markerIndex);
+              if (!Number.isFinite(x)) return;
+              ctx.save();
+              ctx.strokeStyle = "#DC2626";
+              ctx.setLineDash([4, 3]);
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(x, chartArea.top + 2);
+              ctx.lineTo(x, chartArea.bottom);
+              ctx.stroke();
+              ctx.restore();
+            }
+          };
+        }
+
+        chartPluginCurrentMarker(datasetIndex) {
+          return {
+            id: `current-dot-${datasetIndex}`,
+            afterDatasetsDraw(chart) {
+              if (!chart || !chart.scales || !chart.scales.x || !chart.scales.y) return;
+              const ds = chart.data.datasets[datasetIndex];
+              if (!ds || !ds.data || !ds.data.length) return;
+              const lastIdx = ds.data.length - 1;
+              const x = chart.scales.x.getPixelForValue(lastIdx);
+              const y = chart.scales.y.getPixelForValue(ds.data[lastIdx]);
+              if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+              const { ctx } = chart;
+              if (!ctx) return;
+              ctx.save();
+              ctx.fillStyle = "#2F6BFF";
+              ctx.beginPath();
+              ctx.arc(x, y, 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          };
+        }
+
+        baseChartOptions(yMin, yMax, tooltipEnabled = false) {
+          return {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            parsing: false,
+            interaction: { mode: "nearest", intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: tooltipEnabled }
+            },
+            scales: {
+              x: {
+                grid: { color: "rgba(148,163,184,0.12)", drawTicks: false },
+                ticks: { color: "#6B7280", maxTicksLimit: 4, font: { size: 10 } },
+                border: { color: "rgba(148,163,184,0.2)" }
+              },
+              y: {
+                min: yMin,
+                max: yMax,
+                grid: { color: "rgba(148,163,184,0.12)", drawTicks: false },
+                ticks: { color: "#6B7280", maxTicksLimit: 4, font: { size: 10 } },
+                border: { color: "rgba(148,163,184,0.2)" }
+              }
+            },
+            elements: { point: { radius: 0 }, line: { tension: 0.18, borderWidth: 2 } }
+          };
+        }
+
+        renderCharts() {
+          this.destroyCharts();
+          const ChartJS = window.Chart;
+          if (!ChartJS) {
+            this.renderFallbackCharts();
+            return;
+          }
+
+          const labels = ["t-35", "t-30", "t-25", "t-20", "t-15", "t-10", "t-5", "now"];
+
+          const goldenCanvas = document.getElementById("chart-batch_golden");
+          if (goldenCanvas) {
+            try {
+              this.chartInstances.batch_golden = new ChartJS(goldenCanvas.getContext("2d"), {
+                type: "line",
+                data: {
+                  labels,
+                  datasets: [{ data: [18, 18, 18, 18, 18, 18, 18, 18], borderColor: "#D4A63A", borderDash: [6, 4], pointRadius: 0 }]
+                },
+                options: this.baseChartOptions(14, 28)
+              });
+            } catch (_) {
+              this.drawFallbackSingle("batch_golden");
+            }
+          }
+
+          const currentCanvas = document.getElementById("chart-batch_current");
+          if (currentCanvas) {
+            try {
+              this.chartInstances.batch_current = new ChartJS(currentCanvas.getContext("2d"), {
+                type: "line",
+                data: {
+                  labels,
+                  datasets: [
+                    { data: [18, 18.2, 18.4, 18.6, 18.8, 19, 19.1, 19.2], borderColor: "#D4A63A", borderDash: [6, 4], pointRadius: 0 },
+                    { data: [17, 17.5, 18.1, 19.2, 21.4, 23.6, 25.1, 26.4], borderColor: "#2F6BFF", pointRadius: 0 }
+                  ]
+                },
+                plugins: [this.chartPluginDeviationMarker(4)],
+                options: this.baseChartOptions(14, 30)
+              });
+            } catch (_) {
+              this.drawFallbackSingle("batch_current");
+            }
+          }
+
+          const qualityCanvas = document.getElementById("chart-quality_seal");
+          if (qualityCanvas) {
+            try {
+              this.chartInstances.quality_seal = new ChartJS(qualityCanvas.getContext("2d"), {
+                type: "line",
+                data: {
+                  labels,
+                  datasets: [
+                    { data: [22.4, 22.3, 22.1, 21.7, 20.5, 18.9, 16.1, 14.1], borderColor: "#2F6BFF", pointRadius: 0 },
+                    { data: [22.5, 22.5, 22.5, 22.5, 22.5, 22.5, 22.5, 22.5], borderColor: "#94A3B8", borderWidth: 1.6, pointRadius: 0 },
+                    { data: [16.2, 16.2, 16.2, 16.2, 16.2, 16.2, 16.2, 16.2], borderColor: "#94A3B8", borderWidth: 1.6, pointRadius: 0 },
+                    { data: [null, null, null, null, null, null, 16.1, 14.1], borderColor: "#DC2626", pointRadius: 0 }
+                  ]
+                },
+                plugins: [this.chartPluginCurrentMarker(0)],
+                options: this.baseChartOptions(12, 24)
+              });
+            } catch (_) {
+              this.drawFallbackSingle("quality_seal");
+            }
+          }
+
+          const financeCanvas = document.getElementById("chart-impact_loss");
+          if (financeCanvas) {
+            const correctedActive = this.state.simulation.corrected;
+            try {
+              this.chartInstances.impact_loss = new ChartJS(financeCanvas.getContext("2d"), {
+                type: "line",
+                data: {
+                  labels,
+                  datasets: [
+                    { data: [10, 11.5, 13.2, 15.1, 17.3, 20.2, 22.9, 25.4], borderColor: "#DC2626", pointRadius: 0 },
+                    { data: correctedActive ? [10, 10.2, 10.5, 10.7, 11, 11.2, 11.4, 11.6] : [], borderColor: "#16A34A", pointRadius: 0 }
+                  ]
+                },
+                options: this.baseChartOptions(8, 28)
+              });
+            } catch (_) {
+              this.drawFallbackSingle("impact_loss");
+            }
+          }
+        }
+
+        renderFallbackCharts() {
+          this.drawFallbackSingle("batch_golden");
+          this.drawFallbackSingle("batch_current");
+          this.drawFallbackSingle("quality_seal");
+          this.drawFallbackSingle("impact_loss");
+        }
+
+        drawFallbackSingle(id) {
+          const canvas = document.getElementById(`chart-${id}`);
+          if (!canvas) return;
+          const rect = canvas.getBoundingClientRect();
+          const w = Math.max(240, Math.floor(rect.width || 280));
+          const h = Math.max(64, Math.floor(rect.height || 96));
+          canvas.width = w * (window.devicePixelRatio || 1);
+          canvas.height = h * (window.devicePixelRatio || 1);
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          const dpr = window.devicePixelRatio || 1;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, w, h);
+
+          const pad = { l: 8, r: 8, t: 6, b: 14 };
+          const cw = w - pad.l - pad.r;
+          const ch = h - pad.t - pad.b;
+          const px = (i, n) => pad.l + (i / (n - 1)) * cw;
+          const py = (v, min, max) => pad.t + (1 - ((v - min) / (max - min))) * ch;
+          const line = (arr, min, max, color, dashed = false, width = 2) => {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            if (dashed) ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            arr.forEach((v, i) => {
+              if (v == null) return;
+              const x = px(i, arr.length);
+              const y = py(v, min, max);
+              if (i === 0 || arr[i - 1] == null) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            ctx.restore();
+          };
+
+          ctx.strokeStyle = "rgba(148,163,184,0.25)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(pad.l, h - pad.b + 0.5);
+          ctx.lineTo(w - pad.r, h - pad.b + 0.5);
+          ctx.stroke();
+
+          if (id === "batch_golden") {
+            line([18, 18, 18, 18, 18, 18, 18, 18], 14, 28, "#D4A63A", true, 2);
+            return;
+          }
+          if (id === "batch_current") {
+            line([18, 18.2, 18.4, 18.6, 18.8, 19, 19.1, 19.2], 14, 30, "#D4A63A", true, 1.8);
+            line([17, 17.5, 18.1, 19.2, 21.4, 23.6, 25.1, 26.4], 14, 30, "#2F6BFF", false, 2.2);
+            const mx = px(4, 8);
+            ctx.save();
+            ctx.strokeStyle = "#DC2626";
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.moveTo(mx, pad.t);
+            ctx.lineTo(mx, h - pad.b);
+            ctx.stroke();
+            ctx.restore();
+            return;
+          }
+          if (id === "quality_seal") {
+            const q = [22.4, 22.3, 22.1, 21.7, 20.5, 18.9, 16.1, 14.1];
+            const out = q.map((v) => (v < 16.2 || v > 22.5 ? v : null));
+            line([22.5, 22.5, 22.5, 22.5, 22.5, 22.5, 22.5, 22.5], 12, 24, "#94A3B8", false, 1.2);
+            line([16.2, 16.2, 16.2, 16.2, 16.2, 16.2, 16.2, 16.2], 12, 24, "#94A3B8", false, 1.2);
+            line(q, 12, 24, "#2F6BFF", false, 2);
+            line(out, 12, 24, "#DC2626", false, 2.2);
+            const lx = px(q.length - 1, q.length);
+            const ly = py(q[q.length - 1], 12, 24);
+            ctx.fillStyle = "#2F6BFF";
+            ctx.beginPath();
+            ctx.arc(lx, ly, 2.6, 0, Math.PI * 2);
+            ctx.fill();
+            return;
+          }
+          if (id === "impact_loss") {
+            line([10, 11.5, 13.2, 15.1, 17.3, 20.2, 22.9, 25.4], 8, 28, "#DC2626", false, 2);
+            if (this.state.simulation.corrected) {
+              line([10, 10.2, 10.5, 10.7, 11, 11.2, 11.4, 11.6], 8, 28, "#16A34A", false, 2);
+            }
+          }
+        }
+
+        nodeClass(entity) {
+          if (entity.type === "GoldenBatch" || entity.id === "batch_current") return "anchor-card";
+          if (entity.type === "SimulationScenario") return "simulation-card";
+          if (entity.type === "ExternalSystem") return "system-card";
+          return "process-card";
+        }
+
+        dynamicWidth(entity) {
+          const cls = this.nodeClass(entity);
+          const degree = this.state.subgraph.relations.filter((r) => r.from === entity.id || r.to === entity.id).length;
+          const titleFactor = Math.min(60, Math.max(0, (entity.label || "").length * 2.2));
+          const metricFactor = Math.min(56, Object.keys(entity.metrics || {}).length * 14);
+          const graphFactor = entity.chart ? 42 : 0;
+          const degreeFactor = Math.min(40, degree * 8);
+          let base = 290;
+          let min = 280;
+          let max = 320;
+          if (cls === "anchor-card") { base = 384; min = 380; max = 420; }
+          if (cls === "simulation-card") { base = 248; min = 240; max = 280; }
+          if (cls === "system-card") { base = 180; min = 180; max = 180; }
+          const width = Math.round(Math.min(max, Math.max(min, base + titleFactor + metricFactor + graphFactor + degreeFactor - 48)));
+          return width;
+        }
+
+        bindNodeDrag(el, entityId) {
+          el.addEventListener("pointerdown", (e) => {
+            if (e.button !== 0) return;
+            e.stopPropagation();
+            const rect = el.getBoundingClientRect();
+            this.dragging = {
+              id: entityId,
+              ox: e.clientX - rect.left,
+              oy: e.clientY - rect.top,
+              moved: false
+            };
+            el.classList.add("dragging");
+            el.setPointerCapture(e.pointerId);
+          });
+
+          el.addEventListener("pointermove", (e) => {
+            if (!this.dragging || this.dragging.id !== entityId) return;
+            this.dragging.moved = true;
+            const boardRect = this.board.getBoundingClientRect();
+            const t = this.state.transform || d3.zoomIdentity;
+            const localX = (e.clientX - boardRect.left - t.x) / t.k - this.dragging.ox;
+            const localY = (e.clientY - boardRect.top - t.y) / t.k - this.dragging.oy;
+            this.state.positions[entityId] = { x: Math.max(20, localX), y: Math.max(20, localY) };
+            el.style.left = `${this.state.positions[entityId].x}px`;
+            el.style.top = `${this.state.positions[entityId].y}px`;
+            this.renderEdges();
+          });
+
+          const onUp = (e) => {
+            if (!this.dragging || this.dragging.id !== entityId) return;
+            try { el.releasePointerCapture(e.pointerId); } catch (_) {}
+            const moved = this.dragging.moved;
+            this.dragging = null;
+            el.classList.remove("dragging");
+            if (!moved) {
+              this.state.focus = entityId;
+              this.applyFocus();
+            } else {
+              GraphStateStore.save({ positions: this.state.positions, focus: this.state.focus });
+              this.applyFocus();
+            }
+          };
+
+          el.addEventListener("pointerup", onUp);
+          el.addEventListener("pointercancel", onUp);
+        }
+
+        stateToken(entity) {
+          if (entity.type === "ExternalSystem") return "external";
+          if (entity.type === "SimulationScenario") return "simulation";
+          return entity.state || "normal";
+        }
+
+        cardHtml(entity) {
+          const accent = ACCENT[entity.type] || ["#8d99af", "#edf2fb"];
+          const s = STATE_STYLE[this.stateToken(entity)] || STATE_STYLE.normal;
+          const metrics = Object.entries(entity.metrics || {}).map(([k, v]) => `<div class=\"metric\"><span>${k}</span><b>${v}</b></div>`).join("");
+          return `
+            <article class="node ${this.nodeClass(entity)}" id="node-${entity.id}" data-id="${entity.id}" style="--accent:${accent[0]};--icon-bg:${accent[1]};--state-border:${s[0]};--state-bg:${s[1]};--state-fg:${s[2]}">
+              <div class="node-header">
+                <div class="icon-chip">${ICON[entity.type] || "•"}</div>
+                <div><div class="title">${entity.label}</div><div class="section-label">${entity.type}</div></div>
+                <span class="state"><i></i>${(this.stateToken(entity)).toUpperCase()}</span>
+              </div>
+              <div class="sub">${entity.metadata.description || ""}</div>
+              <div class="metrics">${metrics}</div>
+              ${entity.insight ? `<button class=\"insight-chip\" data-focus=\"${entity.id}\"><i></i>${entity.insight}</button>` : ""}
+              ${entity.chart ? `<div class=\"spark\"><canvas id=\"chart-${entity.id}\"></canvas></div>` : ""}
+            </article>`;
+        }
+
+        renderNodes() {
+          this.nodeLayer.innerHTML = this.state.subgraph.entities.map((e) => this.cardHtml(e)).join("");
+          this.state.subgraph.entities.forEach((e) => {
+            const el = this.nodeLayer.querySelector(`[data-id="${e.id}"]`);
+            const p = this.state.positions[e.id] || { x: 0, y: 0 };
+            el.style.width = `${this.dynamicWidth(e)}px`;
+            el.style.left = `${p.x}px`;
+            el.style.top = `${p.y}px`;
+            el.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              this.state.focus = e.id;
+              this.applyFocus();
+            });
+            this.bindNodeDrag(el, e.id);
+          });
+        }
+
+        nodeRect(id) {
+          const el = this.nodeLayer.querySelector(`[data-id="${id}"]`);
+          const p = this.state.positions[id];
+          if (!el || !p) return null;
+          const w = el.offsetWidth;
+          const h = el.offsetHeight;
+          return { x: p.x, y: p.y, w, h, cx: p.x + w / 2, cy: p.y + h / 2 };
+        }
+
+        edgePath(a, b) {
+          const dx = b.cx - a.cx;
+          const sx = dx >= 0 ? a.x + a.w : a.x;
+          const ex = dx >= 0 ? b.x : b.x + b.w;
+          const c1 = sx + Math.max(30, Math.abs(dx) * 0.26) * Math.sign(dx || 1);
+          const c2 = ex - Math.max(30, Math.abs(dx) * 0.22) * Math.sign(dx || 1);
+          return `M ${sx} ${a.cy} C ${c1} ${a.cy}, ${c2} ${b.cy}, ${ex} ${b.cy}`;
+        }
+
+        renderEdges() {
+          const renderData = this.state.subgraph.relations.map((r) => {
+            const a = this.nodeRect(r.from);
+            const b = this.nodeRect(r.to);
+            if (!a || !b) return null;
+            return { r, d: this.edgePath(a, b) };
+          }).filter(Boolean);
+
+          const sel = this.edgeLayer.selectAll("path.edge").data(renderData, (d) => d.r.id);
+          sel.enter()
+            .append("path")
+            .attr("class", (d) => `edge ${EDGE_STYLE[d.r.type]?.cls || "causal"}`)
+            .attr("marker-end", (d) => `url(#${EDGE_STYLE[d.r.type]?.marker || "arrow-causal"})`)
+            .merge(sel)
+            .attr("d", (d) => d.d);
+          sel.exit().remove();
+        }
+
+        applyFocus() {
+          const focusId = this.state.focus;
+          const keepNodes = new Set([focusId]);
+          const keepEdges = new Set();
+
+          let frontierUp = [focusId];
+          for (let i = 0; i < 3; i += 1) {
+            const next = [];
+            frontierUp.forEach((id) => {
+              this.state.subgraph.relations.forEach((r) => {
+                if (r.to === id) {
+                  keepNodes.add(r.from);
+                  keepEdges.add(r.id);
+                  next.push(r.from);
+                }
+              });
+            });
+            frontierUp = next;
+          }
+
+          let frontierDown = [focusId];
+          for (let i = 0; i < 4; i += 1) {
+            const next = [];
+            frontierDown.forEach((id) => {
+              this.state.subgraph.relations.forEach((r) => {
+                if (r.from === id) {
+                  keepNodes.add(r.to);
+                  keepEdges.add(r.id);
+                  next.push(r.to);
+                }
+              });
+            });
+            frontierDown = next;
+          }
+
+          this.nodeLayer.querySelectorAll(".node").forEach((el) => {
+            const id = el.getAttribute("data-id");
+            el.classList.toggle("dimmed", !keepNodes.has(id));
+            el.classList.toggle("focal", id === focusId);
+          });
+
+          this.edgeLayer.selectAll("path.edge")
+            .classed("focused", (d) => keepEdges.has(d.r.id))
+            .classed("dimmed", (d) => !keepEdges.has(d.r.id));
+
+          this.updateActionsForFocus(focusId, keepNodes);
+        }
+
+        updateActionsForFocus(focusId, keepNodes) {
+          if (!this.actionsBar) return;
+          this.actionsBar.querySelectorAll(".action-btn").forEach((btn) => {
+            const scope = (btn.getAttribute("data-focus") || "").split(",").map((s) => s.trim()).filter(Boolean);
+            const active = scope.includes(focusId) || scope.some((id) => keepNodes.has(id));
+            btn.classList.toggle("active", active);
+            btn.classList.toggle("dimmed", !active);
+          });
+        }
+
+        render() {
+          this.renderNodes();
+          this.renderEdges();
+          this.renderCharts();
+          this.applyFocus();
+        }
+      }
+
+      function createPlantKnowledgeGraph() {
+        const g = new PlantKnowledgeGraph();
+
+        [
+          new GraphEntity({ id: "batch_golden", type: "GoldenBatch", label: "Golden Batch GB-2024-01", state: "normal", chart: "golden", rankHint: 0, pinned: { x: 80, y: 70 }, metadata: { description: "Reference process profile" }, metrics: { Yield: "98.7%", Speed: "280 ppm" } }),
+          new GraphEntity({ id: "material_foil", type: "Material", label: "Foil Roll A12", state: "warning", rankHint: 1, metadata: { description: "Supplier lot FR-A12-09" }, metrics: { Tension: "+7.8%", Temp: "27.4C" } }),
+          new GraphEntity({ id: "sensor_tension", type: "Sensor", label: "Web Tension Sensor", state: "warning", rankHint: 1, metadata: { description: "Sensor T-44" }, metrics: { Drift: "+7.8%", Confidence: "0.94" }, insight: "Drift detected 19 min ago" }),
+          new GraphEntity({ id: "control_heater", type: "ControlParameter", label: "Heater Zone 3", state: "warning", rankHint: 1, metadata: { description: "Control loop HZ-3" }, metrics: { Setpoint: "183C", Offset: "+2.2C" }, insight: "Likely heater offset" }),
+          new GraphEntity({ id: "asset_sealer", type: "Asset", label: "Blister Sealer", state: "critical", rankHint: 2, metadata: { description: "Packaging line B4" }, metrics: { Speed: "320 ppm", TempDrift: "+2.2C" } }),
+          new GraphEntity({ id: "deviation", type: "Deviation", label: "Seal Drift Deviation", state: "critical", rankHint: 3, metadata: { description: "DV-2026-031" }, metrics: { Severity: "Major", Window: "25 min" }, insight: "Projected scrap €132K/day" }),
+          new GraphEntity({ id: "quality_seal", type: "QualityState", label: "Seal Strength", state: "critical", chart: "quality", rankHint: 4, metadata: { description: "In-line release quality" }, metrics: { Index: "86.1/100", Forecast: "34%" } }),
+          new GraphEntity({ id: "batch_current", type: "Batch", label: "Current Batch SB-2024-04", state: "warning", chart: "current", rankHint: 4, metadata: { description: "Live production segment" }, metrics: { Speed: "320 ppm", Yield: "97.1%" } }),
+          new GraphEntity({ id: "sim_unchanged", type: "SimulationScenario", label: "If unchanged", state: "simulation", rankHint: 5, metadata: { description: "Continuation path" }, metrics: { ScrapRisk: "34%", Loss: "€132K/day" } }),
+          new GraphEntity({ id: "sim_corrected", type: "SimulationScenario", label: "If corrected", state: "simulation", rankHint: 5, metadata: { description: "Reduce speed to 260 ppm" }, metrics: { ScrapRisk: "4%", Savings: "€117K/day" } }),
+          new GraphEntity({ id: "impact_loss", type: "FinancialImpact", label: "Loss Projection", state: "warning", chart: "finance", rankHint: 6, metadata: { description: "Projected cost trajectory" }, metrics: { Unchanged: "€132K/day", Corrected: "€15K/day" } }),
+          new GraphEntity({ id: "sys_mes", type: "ExternalSystem", label: "MES", state: "external", rankHint: 7, metadata: { description: "Execution endpoint" } }),
+          new GraphEntity({ id: "sys_qa", type: "ExternalSystem", label: "QA", state: "external", rankHint: 7, metadata: { description: "Approval endpoint" } }),
+          new GraphEntity({ id: "sys_erp", type: "ExternalSystem", label: "ERP", state: "external", rankHint: 7, metadata: { description: "Cost endpoint" } }),
+
+          new GraphEntity({ id: "aux_sensor_2", type: "Sensor", label: "Web Camera", state: "normal", rankHint: 1, metadata: { description: "Non-incident context" }, metrics: { Status: "Nominal" } }),
+          new GraphEntity({ id: "aux_asset_2", type: "Asset", label: "Cutter", state: "normal", rankHint: 2, metadata: { description: "Non-incident context" }, metrics: { Speed: "285 ppm" } })
+        ].forEach((e) => g.addEntity(e));
+
+        [
+          new GraphRelation({ id: "r1", from: "material_foil", to: "asset_sealer", type: "feeds" }),
+          new GraphRelation({ id: "r2", from: "sensor_tension", to: "asset_sealer", type: "measured_by" }),
+          new GraphRelation({ id: "r3", from: "control_heater", to: "asset_sealer", type: "controls" }),
+          new GraphRelation({ id: "r4", from: "asset_sealer", to: "deviation", type: "causes" }),
+          new GraphRelation({ id: "r5", from: "deviation", to: "quality_seal", type: "affects" }),
+          new GraphRelation({ id: "r6", from: "quality_seal", to: "batch_current", type: "affects" }),
+          new GraphRelation({ id: "r7", from: "batch_current", to: "impact_loss", type: "impacts_cost" }),
+          new GraphRelation({ id: "r8", from: "batch_current", to: "batch_golden", type: "references" }),
+          new GraphRelation({ id: "r9", from: "batch_current", to: "sim_unchanged", type: "simulated_as" }),
+          new GraphRelation({ id: "r10", from: "batch_current", to: "sim_corrected", type: "simulated_as" }),
+          new GraphRelation({ id: "r11", from: "sim_unchanged", to: "impact_loss", type: "impacts_cost" }),
+          new GraphRelation({ id: "r12", from: "sim_corrected", to: "impact_loss", type: "mitigates" }),
+          new GraphRelation({ id: "r13", from: "sim_unchanged", to: "sys_mes", type: "logged_in" }),
+          new GraphRelation({ id: "r14", from: "sim_unchanged", to: "sys_qa", type: "approved_by" }),
+          new GraphRelation({ id: "r15", from: "sim_corrected", to: "sys_mes", type: "logged_in" }),
+          new GraphRelation({ id: "r16", from: "sim_corrected", to: "sys_erp", type: "logged_in" }),
+
+          new GraphRelation({ id: "r17", from: "aux_sensor_2", to: "aux_asset_2", type: "measured_by" })
+        ].forEach((r) => g.addRelation(r));
+
+        return g;
+      }
+
+      function startClock() {
+        const clock = document.getElementById("clock");
+        const tick = () => {
+          clock.textContent = new Date().toLocaleTimeString([], { hour12: false });
+        };
+        tick();
+        setInterval(tick, 1000);
+      }
+
+      function boot() {
+        startClock();
+        if (!window.Chart) {
+          console.error("Chart.js failed to load. Verify chart.umd.min.js is reachable.");
+        }
+        const graph = createPlantKnowledgeGraph();
+        const subgraph = IncidentSubgraphExtractor.extract(graph, "deviation");
+
+        const persisted = GraphStateStore.load();
+        const positions = LayoutEngine.run(subgraph, persisted?.positions || {});
+
+        const state = {
+          graph,
+          subgraph,
+          positions,
+          focus: persisted?.focus || "deviation",
+          simulation: { corrected: true },
+          transform: d3.zoomIdentity
+        };
+
+        const renderer = new Renderer(state);
+        renderer.scheduleRender();
+
+        document.getElementById("board").addEventListener("click", (e) => {
+          if (!e.target.closest(".node")) {
+            state.focus = "deviation";
+            renderer.applyFocus();
+          }
+        });
+
+        window.addEventListener("resize", () => renderer.scheduleRender());
+
+        setInterval(() => {
+          const batchChart = renderer.chartInstances.batch_current;
+          if (batchChart && batchChart.canvas && batchChart.canvas.isConnected && batchChart.data?.datasets?.[1]?.data) {
+            const ds = batchChart.data.datasets[1].data;
+            const next = Math.max(16, Math.min(28, ds[ds.length - 1] + (Math.random() - 0.35) * 0.45));
+            ds.push(Number(next.toFixed(2)));
+            ds.shift();
+            try { batchChart.update("none"); } catch (_) {}
+          }
+          const qualityChart = renderer.chartInstances.quality_seal;
+          if (qualityChart && qualityChart.canvas && qualityChart.canvas.isConnected && qualityChart.data?.datasets?.[0]?.data) {
+            const q = qualityChart.data.datasets[0].data;
+            const nextQ = Math.max(12, Math.min(24, q[q.length - 1] + (Math.random() - 0.62) * 0.38));
+            q.push(Number(nextQ.toFixed(2)));
+            q.shift();
+            const breach = q.map((v) => (v < 16.2 || v > 22.5 ? v : null));
+            if (qualityChart.data.datasets[3]) qualityChart.data.datasets[3].data = breach;
+            try { qualityChart.update("none"); } catch (_) {}
+          }
+        }, 2400);
+
+        window.addEventListener("beforeunload", () => {
+          GraphStateStore.save({ positions: state.positions, focus: state.focus });
+        });
+      }
+
+      boot();
+    })();
+  </script>
+</body>
+</html>
