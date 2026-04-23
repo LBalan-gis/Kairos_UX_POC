@@ -177,12 +177,13 @@ export const useAppStore = create(
       setSimulatedTime:  (t)  => set({ simulatedTime: t }),
       setActiveScenario: (id) => set({ activeScenario: id }),
 
-      // Re-run engine (call when entity physics change due to live data)
-      refreshPredictions: () => set((s) => ({
-        predictions: predict(s.entityPhysics, s.relationPropagation, s.relations, s.scenarios, s.entities),
-      })),
+      // Written by usePredictWorker when the off-thread compute completes.
+      // Never call predict() directly in the hot path — use the worker.
+      setPredictions: (predictions) => set({ predictions }),
 
       // ── live data ingestion (called by useLiveData on each DB row) ───────────
+      // Only updates entity state + physics. predict() is NOT called here —
+      // usePredictWorker watches entityPhysics and dispatches to the worker.
       applyLiveReading: (entityId, state, metrics, value) => set((s) => {
         const updatedEntities = s.entities.map((e) =>
           e.id === entityId
@@ -194,10 +195,9 @@ export const useAppStore = create(
             ? { ...s.entityPhysics, [entityId]: { ...s.entityPhysics[entityId], currentValue: value } }
             : s.entityPhysics;
         return {
-          entities: updatedEntities,
-          entityMap: buildEntityMap(updatedEntities),
-          entityPhysics: updatedPhysics,
-          predictions: predict(updatedPhysics, s.relationPropagation, s.relations, s.scenarios, updatedEntities),
+          entities:         updatedEntities,
+          entityMap:        buildEntityMap(updatedEntities),
+          entityPhysics:    updatedPhysics,
           signalTimestamps: { ...s.signalTimestamps, [entityId]: Date.now() },
         };
       }),
@@ -211,6 +211,37 @@ export const useAppStore = create(
       kairosEntityId: null,
       openKairos: (entityId = null) => set({ kairosOpen: true, kairosEntityId: entityId }),
       closeKairos: () => set({ kairosOpen: false, kairosEntityId: null }),
+
+      // ── pinned charts (chat → KPI dashboard) ────────────────────────────────
+      pinnedCharts: [],   // [{ id, title, chartKey }]
+      pinChart:   (item) => set((s) => ({ pinnedCharts: [...s.pinnedCharts, item] })),
+      unpinChart: (id)   => set((s) => ({ pinnedCharts: s.pinnedCharts.filter((c) => c.id !== id) })),
+
+      // ── machine onboarding wizard ────────────────────────────────────────────
+      onboardingOpen: false,
+      openOnboarding:  () => set({ onboardingOpen: true }),
+      closeOnboarding: () => set({ onboardingOpen: false }),
+      pendingMachines: [],
+      addPendingMachine: (m) => set(s => ({ pendingMachines: [...s.pendingMachines, m] })),
+
+      // ── machine offline simulation (chat-driven) ────────────────────────────
+      offlineIds: new Set(),   // set of equipment ids (e.g. 'cw_1201')
+      setMachineOffline: (id) => set(s => ({ offlineIds: new Set([...s.offlineIds, id]) })),
+      setMachineOnline:  (id) => set(s => { const n = new Set(s.offlineIds); n.delete(id); return { offlineIds: n }; }),
+      clearOffline: () => set({ offlineIds: new Set() }),
+
+      // ── action ledger (OpenClaw-style execution log) ────────────────────────
+      actionLog: [],
+      addActionLog: (entry) => set(s => ({ actionLog: [...s.actionLog.slice(-99), entry] })),
+      clearActionLog: () => set({ actionLog: [] }),
+
+      // ── spatial widgets (generative UI → 3D HUD dual-render) ─────────────────
+      // Array of { id, payload } — registered by WidgetRenderer on mount,
+      // consumed by FloorMapLayer to render floating panels over 3D entities.
+      spatialWidgets: [],
+      addSpatialWidget:    (w) => set(s => ({ spatialWidgets: [...s.spatialWidgets.filter(x => x.id !== w.id), w] })),
+      removeSpatialWidget: (id) => set(s => ({ spatialWidgets: s.spatialWidgets.filter(x => x.id !== id) })),
+      clearSpatialWidgets: ()   => set({ spatialWidgets: [] }),
 
       // ── live signal timestamps ───────────────────────────────────────────────
       // node id → timestamp of last update
@@ -226,7 +257,7 @@ export const useAppStore = create(
       },
     }),
     {
-      name: `mei_graph_state_${STORAGE_VERSION}`,
+      name: `kairos_state_${STORAGE_VERSION}`,
       // persist positions and theme — everything else rehydrates from data
       partialize: (s) => ({ positions: s.positions, dark: s.dark }),
     }

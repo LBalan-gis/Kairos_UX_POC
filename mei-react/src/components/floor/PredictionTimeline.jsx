@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const PAST_MIN   = 30;
+const PAST_MIN   = 480; // 8 hours
 const FUTURE_MIN = 30;
 const TOTAL_MIN  = PAST_MIN + FUTURE_MIN;
 
@@ -31,9 +31,15 @@ const RAIL_BG      = 'rgba(255,255,255,0.08)';
 // ── Past history ───────────────────────────────────────────────────────────────
 
 const PAST_STATES = [
-  { from: -30, to: -28, blister_machine: 'normal',  cartoner: 'normal'   },
-  { from: -28, to: -12, blister_machine: 'warning', cartoner: 'normal'   },
-  { from: -12, to:   0, blister_machine: 'warning', cartoner: 'critical' },
+  { from: -480, to: -420, blister_machine: 'normal',  cartoner: 'normal'   },
+  { from: -420, to: -360, blister_machine: 'warning', cartoner: 'normal'   },
+  { from: -360, to: -240, blister_machine: 'normal',  cartoner: 'normal'   },
+  { from: -240, to: -180, blister_machine: 'warning', cartoner: 'normal'   },
+  { from: -180, to:  -90, blister_machine: 'normal',  cartoner: 'normal'   },
+  { from:  -90, to:  -60, blister_machine: 'warning', cartoner: 'normal'   },
+  { from:  -60, to:  -28, blister_machine: 'warning', cartoner: 'warning'  },
+  { from:  -28, to:  -12, blister_machine: 'warning', cartoner: 'normal'   },
+  { from:  -12, to:    0, blister_machine: 'warning', cartoner: 'critical' },
 ];
 
 export function lookupPastStates(t) {

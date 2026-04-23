@@ -55,12 +55,18 @@ export const STATUS_LED = {
   critical: new THREE.MeshStandardMaterial({ color: "#FF6666", emissive: "#FF3333", emissiveIntensity: 1.5 }),
   warning:  new THREE.MeshStandardMaterial({ color: "#FFCC33", emissive: "#FFB800", emissiveIntensity: 1.5 }),
   normal:   new THREE.MeshStandardMaterial({ color: "#A5FCF5", emissive: "#2AF1E5", emissiveIntensity: 1.5 }),
+  offline:  new THREE.MeshStandardMaterial({ color: "#374151", emissive: "#1F2937", emissiveIntensity: 0.1 }),
+  starved:  new THREE.MeshStandardMaterial({ color: "#374151", emissive: "#1F2937", emissiveIntensity: 0.1 }),
+  pending:  new THREE.MeshStandardMaterial({ color: "#3b82f6", emissive: "#1d4ed8", emissiveIntensity: 0.6 }),
 };
 
 export const STATUS_LED_L2 = {
   critical: new THREE.MeshStandardMaterial({ color: "#FF6666", emissive: "#FF3333", emissiveIntensity: 1.5 }),
   warning:  new THREE.MeshStandardMaterial({ color: "#FFCC33", emissive: "#FFB800", emissiveIntensity: 1.5 }),
   normal:   new THREE.MeshStandardMaterial({ color: "#A5FCF5", emissive: "#2AF1E5", emissiveIntensity: 1.5 }),
+  offline:  new THREE.MeshStandardMaterial({ color: "#374151", emissive: "#1F2937", emissiveIntensity: 0.1 }),
+  starved:  new THREE.MeshStandardMaterial({ color: "#374151", emissive: "#1F2937", emissiveIntensity: 0.1 }),
+  pending:  new THREE.MeshStandardMaterial({ color: "#3b82f6", emissive: "#1d4ed8", emissiveIntensity: 0.6 }),
 };
 
 export const RUN_LED = new THREE.MeshStandardMaterial({ color: "#60aaee", emissive: "#4088cc", emissiveIntensity: 1.5 });

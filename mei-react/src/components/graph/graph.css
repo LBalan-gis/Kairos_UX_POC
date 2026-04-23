@@ -279,7 +279,7 @@ text.edge-label.material   { fill: #3D6494; }
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #DC2626, 0 0 40px rgba(220, 38, 38, 0.35) !important;
   z-index: 30;
 }
-.node-card.dimmed { pointer-events: none; }
+.node-card.dimmed { opacity: 0.05 !important; filter: blur(1.5px) grayscale(1) brightness(0.6); pointer-events: none; }
 
 
 /* ─── Node header ────────────────────────────────────────────────── */
@@ -519,7 +519,7 @@ text.edge-label.material   { fill: #3D6494; }
   box-shadow: 0 0 0 2px #0D1117, 0 0 0 4px #F85149, 0 0 40px rgba(248, 81, 73, 0.35) !important;
   z-index: 30;
 }
-[data-theme="dark"] .node-card.dimmed { opacity: 0.14 !important; filter: blur(0.5px) grayscale(0.7); pointer-events: none; }
+[data-theme="dark"] .node-card.dimmed { opacity: 0.05 !important; filter: blur(1.5px) grayscale(1) brightness(0.4); pointer-events: none; }
 
 /* Cinematic Radial Tints for States (Ambient interior glow from source over OPAQUE card body) */
 [data-theme="dark"] .node-card.state-warning { 
@@ -642,6 +642,168 @@ text.edge-label.material   { fill: #3D6494; }
 [data-theme="dark"] .ic-conf    { color: #94A3B8; }
 [data-theme="dark"] .ic-cause   { color: #F8FAFC; }
 [data-theme="dark"] .ic-action  { color: #7DD3FC; }
+
+/* ── Pipeline Uplink Card (ExternalSystem nodes) ─────────────────────────── */
+.pipeline-uplink {
+  background: rgba(6, 12, 22, 0.96);
+  border: 1px solid rgba(42,241,229,0.20);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+}
+
+.pipeline-uplink::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 0% 0%, rgba(42,241,229,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.pu-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.pu-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.pu-type {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(42,241,229,0.45);
+  margin-bottom: 3px;
+}
+
+.pu-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #F0F6FF;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pu-fullname {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+/* Animated data-flow bar */
+.pu-flow-bar {
+  height: 2px;
+  background: rgba(42,241,229,0.08);
+  border-radius: 1px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.pu-flow-track {
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--pipe-color, #2AF1E5), transparent);
+  animation: pu-scan 2.2s ease-in-out infinite;
+}
+
+@keyframes pu-scan {
+  0%   { left: -50%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { left: 150%; opacity: 0; }
+}
+
+/* Metrics rows */
+.pu-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.pu-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.pu-metric-key {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+}
+
+.pu-metric-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.65);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sync LED + status */
+.pu-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(42,241,229,0.10);
+}
+
+.pu-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pu-led-active {
+  animation: pu-led-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pu-led-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.30; }
+}
+
+.pu-status-text {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Pipeline feed edges — animated dashed overlay for sys_* targets */
+.edge.pipeline-feed {
+  stroke: rgba(42,241,229,0.55) !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 10 6;
+  fill: none;
+  marker-end: none;
+  animation: pipeline-flow 1.4s linear infinite;
+  filter: drop-shadow(0 0 3px rgba(42,241,229,0.6));
+}
+
+@keyframes pipeline-flow {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -48; }
+}
 
 /* ── MiniMap ──────────────────────────────────────────────────────────────── */
 .minimap {

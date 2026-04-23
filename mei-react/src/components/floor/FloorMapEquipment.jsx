@@ -78,6 +78,9 @@ const TARGET_COLORS = {
   normal:   { c: '#10B981', e: '#047857', i: 0.75 },
   warning:  { c: '#F59E0B', e: '#B45309', i: 0.80 },
   critical: { c: '#EF4444', e: '#B91C1C', i: 0.85 },
+  offline:  { c: '#374151', e: '#1F2937', i: 0.0 },
+  starved:  { c: '#374151', e: '#1F2937', i: 0.0 },
+  pending:  { c: '#1d4ed8', e: '#1e40af', i: 0.3 },
 };
 
 function AnimatedCap({ state, w, capY, d, isCw }) {
@@ -106,6 +109,9 @@ const TARGET_ORB = {
   normal:   { s: 0, c: '#000000', e: '#000000', l: 0 },
   warning:  { s: 1, c: '#FFB800', e: '#CC8800', l: 2.0 },
   critical: { s: 1, c: '#FF3333', e: '#CC0000', l: 3.0 },
+  offline:  { s: 0, c: '#000000', e: '#000000', l: 0 },
+  starved:  { s: 0, c: '#000000', e: '#000000', l: 0 },
+  pending:  { s: 0, c: '#000000', e: '#000000', l: 0 },
 };
 
 function AnimatedOrb({ state, h }) {

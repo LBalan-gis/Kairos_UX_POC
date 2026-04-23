@@ -2,17 +2,21 @@ import { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { useLiveSignal } from './hooks/useLiveSignal';
 import { useLiveData } from './hooks/useLiveData';
+import { usePredictWorker } from './hooks/usePredictWorker';
 import { FloorMapLayer } from './components/FloorMapLayer';
 import { GraphWhiteboardLayer } from './components/GraphWhiteboardLayer';
 import { KairOSOverlay } from './components/KairOSOverlay';
+import { KPIDashboard } from './components/KPIDashboard';
+import { MachineOnboardingWizard } from './components/MachineOnboardingWizard';
 import { CommandPalette } from './components/CommandPalette';
+import { ActionLedger } from './components/ActionLedger';
 import { AnimatePresence, motion } from 'framer-motion';
 
-// ── Scrubber constants (mirrors PredictionTimeline) ───────────────────────────
+// ── Scrubber constants ────────────────────────────────────────────────────────
 
-const PAST_MIN   = 30;
+const PRED_PAST = 30;   // default: ±30 min — keeps future predictions visible
+const HIST_PAST = 480;  // history mode: 8-hour CCTV window
 const FUTURE_MIN = 30;
-const TOTAL_MIN  = PAST_MIN + FUTURE_MIN;
 
 const STATE_COL = {
   normal:   '#2AF1E5', // Emerald
@@ -27,13 +31,28 @@ const PILL_NOW_BG = '#FFFFFF';
 const PILL_NOW_FG = '#111111';
 
 const PAST_STATES = [
-  { from: -30, to: -28, blister_machine: 'normal',  cartoner: 'normal'   },
-  { from: -28, to: -12, blister_machine: 'warning', cartoner: 'normal'   },
-  { from: -12, to:   0, blister_machine: 'warning', cartoner: 'critical' },
+  // Shift A (8h–5h ago) — normal baseline run
+  { from: -480, to: -420, blister_machine: 'normal',   cartoner: 'normal'   },
+  // Early tension drift episode (5h–4h ago)
+  { from: -420, to: -360, blister_machine: 'warning',  cartoner: 'normal'   },
+  // Corrected, back to normal (4h–3h ago)
+  { from: -360, to: -240, blister_machine: 'normal',   cartoner: 'normal'   },
+  // Second drift episode — minor (3h–2h ago)
+  { from: -240, to: -180, blister_machine: 'warning',  cartoner: 'normal'   },
+  // Recovered again (2h–90m ago)
+  { from: -180, to:  -90, blister_machine: 'normal',   cartoner: 'normal'   },
+  // Shift B starts, tension starts drifting again (90m–60m)
+  { from:  -90, to:  -60, blister_machine: 'warning',  cartoner: 'normal'   },
+  // Drift worsening, cartoner affected (60m–28m)
+  { from:  -60, to:  -28, blister_machine: 'warning',  cartoner: 'warning'  },
+  // Current incident window (28m–12m ago)
+  { from:  -28, to:  -12, blister_machine: 'warning',  cartoner: 'normal'   },
+  // Current state (12m ago → now)
+  { from:  -12, to:    0, blister_machine: 'warning',  cartoner: 'critical' },
 ];
 
-function toPct(t) {
-  return ((t + PAST_MIN) / TOTAL_MIN) * 100;
+function toPct(t, pastMin) {
+  return ((t + pastMin) / (pastMin + FUTURE_MIN)) * 100;
 }
 
 // ── App toolbar ───────────────────────────────────────────────────────────────
@@ -134,19 +153,26 @@ function AppToolbar() {
         {dark ? '☀️' : '🌙'}
       </button>
 
-      {/* View toggle — Analysis or ← Floor */}
+      {/* View toggle */}
       {view === 'floor' ? (
-        <button onClick={() => setView('graph')} style={{
-          background: 'rgba(41,182,200,0.18)',
-          border: '1px solid rgba(41,182,200,0.45)',
-          borderRadius: 20, padding: '3px 12px',
-          cursor: 'pointer',
-          color: '#29B6C8',
-          fontSize: '9px', fontWeight: 700, letterSpacing: '0.07em',
-          flexShrink: 0, whiteSpace: 'nowrap',
-        }}>
-          Analysis
-        </button>
+        <>
+          <button onClick={() => setView('graph')} style={{
+            background: 'rgba(41,182,200,0.18)', border: '1px solid rgba(41,182,200,0.45)',
+            borderRadius: 20, padding: '3px 12px', cursor: 'pointer', color: '#29B6C8',
+            fontSize: '9px', fontWeight: 700, letterSpacing: '0.07em', flexShrink: 0, whiteSpace: 'nowrap',
+          }}>Analysis</button>
+          <button onClick={() => setView('kpi')} style={{
+            background: 'rgba(88,166,255,0.14)', border: '1px solid rgba(88,166,255,0.35)',
+            borderRadius: 20, padding: '3px 12px', cursor: 'pointer', color: '#58a6ff',
+            fontSize: '9px', fontWeight: 700, letterSpacing: '0.07em', flexShrink: 0, whiteSpace: 'nowrap',
+          }}>KPI Dashboard</button>
+        </>
+      ) : view === 'kpi' ? (
+        <button onClick={() => setView('floor')} style={{
+          background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.20)',
+          borderRadius: 20, padding: '3px 12px', cursor: 'pointer', color: 'rgba(255,255,255,0.80)',
+          fontSize: '9px', fontWeight: 700, letterSpacing: '0.07em', flexShrink: 0, whiteSpace: 'nowrap',
+        }}>← Floor</button>
       ) : (
         <>
           <button onClick={() => setPositions({})} style={{
@@ -154,20 +180,12 @@ function AppToolbar() {
             borderRadius: 20, padding: '3px 12px', cursor: 'pointer',
             color: 'rgba(255,77,77,0.80)', fontSize: '9px', fontWeight: 700,
             letterSpacing: '0.07em', flexShrink: 0, whiteSpace: 'nowrap'
-          }}>
-            Reset Layout
-          </button>
+          }}>Reset Layout</button>
           <button onClick={() => setView('floor')} style={{
-            background: 'rgba(255,255,255,0.10)',
-            border: '1px solid rgba(255,255,255,0.20)',
-            borderRadius: 20, padding: '3px 12px',
-            cursor: 'pointer',
-            color: 'rgba(255,255,255,0.80)',
-            fontSize: '9px', fontWeight: 700, letterSpacing: '0.07em',
-            flexShrink: 0, whiteSpace: 'nowrap',
-          }}>
-            ← Floor
-          </button>
+            background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.20)',
+            borderRadius: 20, padding: '3px 12px', cursor: 'pointer', color: 'rgba(255,255,255,0.80)',
+            fontSize: '9px', fontWeight: 700, letterSpacing: '0.07em', flexShrink: 0, whiteSpace: 'nowrap',
+          }}>← Floor</button>
         </>
       )}
 
@@ -193,15 +211,18 @@ function ScrubberBar() {
   const setSimulatedTime  = useAppStore(s => s.setSimulatedTime);
   const setActiveScenario = useAppStore(s => s.setActiveScenario);
 
+  const [histMode, setHistMode] = useState(false);
+  const pastMin = histMode ? HIST_PAST : PRED_PAST;
+
   const trackRef = useRef(null);
   const [dragging, setDragging] = useState(false);
 
   const rawTimeFromEvent = useCallback((e) => {
     if (!trackRef.current) return null;
     const rect = trackRef.current.getBoundingClientRect();
-    const raw  = (e.clientX - rect.left) / rect.width * TOTAL_MIN - PAST_MIN;
-    return Math.round(Math.max(-PAST_MIN, Math.min(FUTURE_MIN, raw)) * 10) / 10;
-  }, []);
+    const raw  = (e.clientX - rect.left) / rect.width * (pastMin + FUTURE_MIN) - pastMin;
+    return Math.round(Math.max(-pastMin, Math.min(FUTURE_MIN, raw)) * 10) / 10;
+  }, [pastMin]);
 
   const handleMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -230,8 +251,8 @@ function ScrubberBar() {
   }, [dragging, handleMouseMove, handleMouseUp]);
 
   const isLive   = simulatedTime === null;
-  const nowPct   = toPct(0);
-  const scrubPct = isLive ? nowPct : toPct(simulatedTime);
+  const nowPct   = toPct(0, pastMin);
+  const scrubPct = isLive ? nowPct : toPct(simulatedTime, pastMin);
 
   const allBands = useMemo(() => {
     if (!predictions) return [];
@@ -243,22 +264,33 @@ function ScrubberBar() {
         const next = p.steps[i + 1];
         if (!next) return acc;
         acc.push({
-          left:  toPct(step.t),
-          width: toPct(next.t) - toPct(step.t),
+          left:  toPct(step.t, pastMin),
+          width: toPct(next.t, pastMin) - toPct(step.t, pastMin),
           col:   STATE_COL[step.entityStates?.['blister_machine'] ?? 'normal'],
         });
         return acc;
       }, []),
     }));
-  }, [predictions, activeScenario]);
+  }, [predictions, activeScenario, pastMin]);
 
   const ticks = useMemo(() => {
     const out = [];
-    for (let t = -PAST_MIN; t <= FUTURE_MIN; t += 5) {
-      out.push({ t, major: t % 10 === 0 });
+    if (histMode) {
+      // History mode: coarse ticks for 8h window, fine ticks near NOW
+      for (let t = -HIST_PAST; t < -30; t += 30) {
+        out.push({ t, major: t % 60 === 0, label: t % 60 === 0 ? `${t/60}h` : null });
+      }
+      for (let t = -30; t <= FUTURE_MIN; t += 5) {
+        out.push({ t, major: t % 10 === 0, label: null });
+      }
+    } else {
+      // Default: ±30 min, tick every 5, label every 10
+      for (let t = -PRED_PAST; t <= FUTURE_MIN; t += 5) {
+        out.push({ t, major: t % 10 === 0, label: null });
+      }
     }
     return out;
-  }, []);
+  }, [histMode]);
 
   return (
     <div style={{
@@ -272,11 +304,27 @@ function ScrubberBar() {
       padding: '0 14px',
       gap: 8,
       userSelect: 'none',
-      height: 36,
+      height: 52,
     }}>
 
-      {/* Scenario badges */}
-      <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+      {/* History mode toggle */}
+      <button
+        onClick={() => { setHistMode(h => !h); if (!histMode) setSimulatedTime(null); }}
+        title={histMode ? 'Switch to prediction view' : 'Switch to 8h history view'}
+        style={{
+          fontSize: '8px', fontWeight: 700, padding: '2px 9px', borderRadius: 20,
+          letterSpacing: '0.07em', textTransform: 'uppercase', whiteSpace: 'nowrap', flexShrink: 0,
+          cursor: 'pointer', transition: 'all 0.15s',
+          background: histMode ? 'rgba(84,110,122,0.35)' : 'none',
+          border: histMode ? '1px solid rgba(84,110,122,0.60)' : '1px solid rgba(255,255,255,0.14)',
+          color: histMode ? '#90A4AE' : 'rgba(255,255,255,0.38)',
+        }}
+      >
+        {histMode ? '⏴ −8h' : '⏴ History'}
+      </button>
+
+      {/* Scenario badges — hidden in history mode */}
+      {!histMode && <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
         {predictions?.map(p => {
           const active = activeScenario === p.scenarioId;
           const badgeBg = active
@@ -303,7 +351,7 @@ function ScrubberBar() {
             </button>
           );
         })}
-      </div>
+      </div>}
 
       {/* Track */}
       <div
@@ -312,28 +360,31 @@ function ScrubberBar() {
         style={{
           flex: 1,
           position: 'relative',
-          height: 18,
+          height: 26,
           cursor: dragging ? 'grabbing' : 'crosshair',
-          borderRadius: 5,
+          borderRadius: 6,
           overflow: 'visible',
           minWidth: 0,
         }}
       >
         {/* Rail */}
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.08)', borderRadius: 5 }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.12)', borderRadius: 6, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.40)' }} />
 
-        {/* Past state bands */}
-        {PAST_STATES.map((seg, i) => (
-          <div key={i} style={{
-            position: 'absolute',
-            left: `${toPct(seg.from)}%`,
-            width: `${toPct(seg.to) - toPct(seg.from)}%`,
-            top: 0, bottom: 0,
-            background: STATE_COL[seg.blister_machine],
-            opacity: 0.75,
-            borderRadius: i === 0 ? '5px 0 0 5px' : 0,
-          }} />
-        ))}
+        {/* Past state bands — only show segments within the current window */}
+        {PAST_STATES.filter(seg => seg.to > -pastMin).map((seg, i) => {
+          const fromClamped = Math.max(seg.from, -pastMin);
+          return (
+            <div key={i} style={{
+              position: 'absolute',
+              left: `${toPct(fromClamped, pastMin)}%`,
+              width: `${toPct(seg.to, pastMin) - toPct(fromClamped, pastMin)}%`,
+              top: 0, bottom: 0,
+              background: STATE_COL[seg.blister_machine],
+              opacity: 0.88,
+              borderRadius: fromClamped === -pastMin ? '5px 0 0 5px' : 0,
+            }} />
+          );
+        })}
 
         {/* Scenario bands */}
         {allBands.map(sc => (
@@ -355,24 +406,41 @@ function ScrubberBar() {
           </div>
         ))}
 
+        {/* CCTV drift event markers — only visible in histMode */}
+        {histMode && [
+          { t: -420, col: '#FFB800', label: '⚠ Drift A' },
+          { t: -360, col: '#2AF1E5', label: '✓ Fixed'   },
+          { t:  -90, col: '#FFB800', label: '⚠ Drift B' },
+          { t:  -60, col: '#EF4444', label: '⚠ CTN'     },
+        ].filter(ev => ev.t >= -pastMin).map(ev => (
+          <div key={ev.t} style={{ position:'absolute', left:`${toPct(ev.t, pastMin)}%`, top:0, bottom:0, pointerEvents:'none', zIndex:7, transform:'translateX(-50%)' }}>
+            <div style={{ position:'absolute', top:0, bottom:0, width:1.5, background:ev.col, opacity:0.80 }} />
+            <div style={{ position:'absolute', bottom:'calc(100% + 3px)', left:'50%', transform:'translateX(-50%)', background:'rgba(14,20,32,0.97)', border:`1px solid ${ev.col}66`, borderRadius:4, padding:'2px 6px', whiteSpace:'nowrap', fontSize:'7px', fontWeight:700, color:ev.col, letterSpacing:'0.04em' }}>
+              {ev.label}
+            </div>
+          </div>
+        ))}
+
         {/* NOW line */}
         <div style={{
           position: 'absolute', left: `${nowPct}%`,
-          top: -4, bottom: -2, width: 1.5,
-          background: 'rgba(255,255,255,0.40)',
+          top: -4, bottom: -2, width: 2,
+          background: 'rgba(255,255,255,0.70)',
           transform: 'translateX(-50%)',
           pointerEvents: 'none', zIndex: 5,
+          boxShadow: '0 0 4px rgba(255,255,255,0.40)',
         }} />
 
         {/* Pills ON the track */}
-        {ticks.map(({ t, major }) => {
+        {ticks.map(({ t, major, label }) => {
           if (!major) return null;
-          if (t === -PAST_MIN || t === FUTURE_MIN) return null;
+          if (t === -pastMin || t === FUTURE_MIN) return null;
           const isNow = t === 0;
+          const pillLabel = isNow ? 'NOW' : label ? label : (t > 0 ? `+${t}m` : `${t}m`);
           return (
             <div key={t} style={{
               position: 'absolute',
-              left: `${toPct(t)}%`,
+              left: `${toPct(t, pastMin)}%`,
               top: '50%',
               transform: 'translate(-50%, -50%)',
               pointerEvents: 'none',
@@ -389,7 +457,7 @@ function ScrubberBar() {
                 whiteSpace: 'nowrap',
                 lineHeight: 1.5,
               }}>
-                {isNow ? 'NOW' : t > 0 ? `+${t}m` : `${t}m`}
+                {pillLabel}
               </div>
             </div>
           );
@@ -399,7 +467,7 @@ function ScrubberBar() {
         {ticks.map(({ t, major }) => major ? null : (
           <div key={t} style={{
             position: 'absolute',
-            left: `${toPct(t)}%`,
+            left: `${toPct(t, pastMin)}%`,
             top: 0, bottom: 0,
             width: 1,
             background: 'rgba(255,255,255,0.12)',
@@ -457,29 +525,36 @@ export default function App({ config }) {
 
   useLiveSignal();
   useLiveData();
+  usePredictWorker(); // off-thread physics engine — subscribes to entityPhysics changes
 
   const view = useAppStore((s) => s.view);
   const dark  = useAppStore((s) => s.dark);
+  const kairosOpen = useAppStore((s) => s.kairosOpen);
 
   return (
     <div data-theme={dark ? 'dark' : 'light'} style={{
       width: '100%', height: '100vh', overflow: 'hidden',
-      background: dark ? '#161A23' : '#E4DFD8',
+      background: dark ? '#000000' : '#FFFFFF', 
       display: 'grid',
-      gridTemplateRows: '44px 44px 1fr',
+      gridTemplateRows: '44px 52px 1fr',
     }}>
       {/* Row 1: Toolbar — grid gives it exactly 44px, nothing can shrink or cover it */}
       <AppToolbar />
 
       {/* Row 2: Scrubber — same chrome as toolbar, flush beneath it */}
-      <div style={{ background: 'rgba(24,32,44,0.97)', overflow: 'hidden' }}>
+      <div style={{ background: 'rgba(24,32,44,0.97)' }}>
         <ScrubberBar />
       </div>
 
       {/* Row 3: Content — 1fr = everything left */}
-      <div style={{ position: 'relative', overflow: 'hidden' }}>
-        <AnimatePresence initial={false}>
-          {view === 'floor' && (
+      <div style={{ position: 'relative', overflow: 'hidden', display: 'flex' }}>
+        <div style={{
+          position: 'relative', height: '100%',
+          width: kairosOpen ? 'calc(100% - 38.2vw)' : '100%',
+          transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}>
+          <AnimatePresence initial={false}>
+            {view === 'floor' && (
             <motion.div
               key="floor"
               initial={{ opacity: 0 }}
@@ -504,10 +579,26 @@ export default function App({ config }) {
               <GraphWhiteboardLayer />
             </motion.div>
           )}
-        </AnimatePresence>
+
+          {view === 'kpi' && (
+            <motion.div
+              key="kpi"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              style={{ width: '100%', height: '100%', position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column' }}
+            >
+              <KPIDashboard />
+            </motion.div>
+          )}
+          </AnimatePresence>
+        </div>
         <KairOSOverlay />
       </div>
 
+      <ActionLedger />
+      <MachineOnboardingWizard />
       <CommandPalette />
     </div>
   );

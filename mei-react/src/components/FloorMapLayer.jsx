@@ -2,11 +2,12 @@ import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { useAppStore } from '../store/useAppStore';
 
 // Custom Sub-components
 import { EnvironmentDetails } from './floor/FloorMapEnvironment';
-import { FlowingVials, CausalArcTube } from './floor/FloorMapAnimations';
+import { FlowingVials, CausalArcTube, ConveyorBelt } from './floor/FloorMapAnimations';
 import { lookupPastStates } from './floor/PredictionTimeline';
 import {
   BlisterMachine,
@@ -17,6 +18,8 @@ import {
   Labeler
 } from './floor/FloorMapEquipment';
 import { MapThemeManager } from './floor/FloorMapMaterials';
+import { FloorMetrics } from './floor/FloorMetrics';
+import { FloorSpatialWidgets } from './floor/FloorSpatialWidgets';
 
 import './FloorMapLayer.css';
 
@@ -33,7 +36,7 @@ const ComponentMap = {
 // ── Camera presets ────────────────────────────────────────────────────────────
 
 const CAM_PRESETS = {
-  overview: { pos: [-1, 16, 20],  lookAt: [-1,  0.0, 2.25] },
+  overview: { pos: [-1, 18, 24],  lookAt: [-1,  0.0, 2.25] },
   l1:       { pos: [-1,  9,  8],  lookAt: [-1,  0.5, 0.0]  },
   l2:       { pos: [-1,  9, 11],  lookAt: [-1,  0.5, 4.5]  },
 };
@@ -67,10 +70,6 @@ const PresetRig = ({ preset, orbitRef, onDone }) => {
 
 // ── Toolbar ───────────────────────────────────────────────────────────────────
 
-const PANEL_BG     = 'rgba(22,30,42,0.72)';
-const PANEL_BORDER = 'rgba(255,255,255,0.12)';
-const TEXT_DIM     = 'rgba(255,255,255,0.40)';
-
 // Camera SVG icon
 const CameraIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -82,6 +81,19 @@ const CameraIcon = () => (
 
 function CameraControl({ activePreset, onPreset }) {
   const [open, setOpen] = useState(false);
+  const dark = useAppStore(s => s.dark);
+
+  const panelBg     = dark ? 'rgba(22,30,42,0.82)'      : 'rgba(248,247,245,0.88)';
+  const panelBorder = dark ? 'rgba(255,255,255,0.12)'   : 'rgba(0,0,0,0.12)';
+  const textDim     = dark ? 'rgba(255,255,255,0.45)'   : 'rgba(0,0,0,0.45)';
+  const textActive  = dark ? '#fff'                      : '#111827';
+  const activeBg    = dark ? 'rgba(255,255,255,0.14)'   : 'rgba(0,0,0,0.07)';
+  const activeBrd   = dark ? 'rgba(255,255,255,0.20)'   : 'rgba(0,0,0,0.14)';
+  const iconColor   = dark ? (open ? '#fff' : 'rgba(255,255,255,0.55)') : (open ? '#111827' : 'rgba(0,0,0,0.45)');
+  const btnBg       = dark ? (open ? 'rgba(255,255,255,0.18)' : panelBg) : (open ? 'rgba(0,0,0,0.07)' : panelBg);
+  const btnBorder   = dark ? (open ? 'rgba(255,255,255,0.28)' : panelBorder) : (open ? 'rgba(0,0,0,0.18)' : panelBorder);
+  const shadow      = dark ? '0 1px 0 0 rgba(255,255,255,0.10) inset, 0 6px 24px rgba(0,0,0,0.40)' : '0 1px 0 0 rgba(255,255,255,0.80) inset, 0 4px 16px rgba(0,0,0,0.10)';
+
   const btns = [
     { id: 'overview', label: 'Overview' },
     { id: 'l1',       label: 'Line 1'   },
@@ -93,14 +105,13 @@ function CameraControl({ activePreset, onPreset }) {
       zIndex: 11, pointerEvents: 'auto',
       display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6,
     }}>
-      {/* Preset list — shown when open */}
       {open && (
         <div style={{
-          background: PANEL_BG,
+          background: panelBg,
           backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
           borderRadius: 10,
-          border: `1px solid ${PANEL_BORDER}`,
-          boxShadow: '0 1px 0 0 rgba(255,255,255,0.18) inset, 0 6px 24px rgba(0,0,0,0.40)',
+          border: `1px solid ${panelBorder}`,
+          boxShadow: shadow,
           padding: '4px',
           display: 'flex', flexDirection: 'column', gap: 2,
           userSelect: 'none',
@@ -109,11 +120,11 @@ function CameraControl({ activePreset, onPreset }) {
             const active = activePreset === id;
             return (
               <button key={id} onClick={() => { onPreset(id); setOpen(false); }} style={{
-                background: active ? 'rgba(255,255,255,0.14)' : 'transparent',
-                border: active ? '1px solid rgba(255,255,255,0.20)' : '1px solid transparent',
+                background: active ? activeBg : 'transparent',
+                border: active ? `1px solid ${activeBrd}` : '1px solid transparent',
                 borderRadius: 7, padding: '5px 14px',
                 cursor: 'pointer',
-                color: active ? '#fff' : TEXT_DIM,
+                color: active ? textActive : textDim,
                 fontSize: '9px', fontWeight: active ? 700 : 500,
                 letterSpacing: '0.06em', textAlign: 'left',
                 transition: 'all 0.10s', whiteSpace: 'nowrap',
@@ -125,129 +136,20 @@ function CameraControl({ activePreset, onPreset }) {
         </div>
       )}
 
-      {/* Camera icon button */}
       <button onClick={() => setOpen(o => !o)} style={{
         width: 36, height: 36,
-        background: open ? 'rgba(255,255,255,0.18)' : PANEL_BG,
+        background: btnBg,
         backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
-        border: `1px solid ${open ? 'rgba(255,255,255,0.28)' : PANEL_BORDER}`,
+        border: `1px solid ${btnBorder}`,
         borderRadius: 10,
-        boxShadow: '0 1px 0 0 rgba(255,255,255,0.18) inset, 0 4px 16px rgba(0,0,0,0.35)',
+        boxShadow: shadow,
         cursor: 'pointer',
-        color: open ? '#fff' : 'rgba(255,255,255,0.55)',
+        color: iconColor,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'all 0.12s',
       }}>
         <CameraIcon />
       </button>
-    </div>
-  );
-}
-
-// ── Side metric panels ────────────────────────────────────────────────────────
-
-const SEV_COL = { critical: '#EF4444', warning: '#F59E0B' };
-const ACTIVE_ALARMS = [
-  { id: 'ctn_1101', label: 'CTN-1101', severity: 'critical', msg: 'Starved · queue backing up' },
-  { id: 'bf_1101',  label: 'BF-1101',  severity: 'warning',  msg: 'Film tension 34 N → 42 N' },
-];
-
-const LINE_DATA = [
-  {
-    accent: '#F59E0B', badge: 'L1', badgeBg: 'rgba(245,158,11,0.25)', lineName: 'Line 1',
-    oee: 78.4, throughput: 218, batchId: 'PH-2026-018 · SKU 41829',
-    packed: 1120, target: 2960,
-    correction: { action: 'Adjust FT-1101 → 42 N', detail: '94% confidence · recovers in 12 min · saves £29K' },
-  },
-  {
-    accent: '#10B981', badge: 'L2', badgeBg: 'rgba(16,185,129,0.22)', lineName: 'Line 2',
-    oee: 93.4, throughput: 224, batchId: 'PH-2026-019 · SKU 41830',
-    packed: 2210, target: 2960,
-    correction: null,
-  },
-];
-
-function OpsCard({ onSelect }) {
-  const topSev = ACTIVE_ALARMS[0].severity;
-  const topCol = SEV_COL[topSev];
-
-  return (
-    <div style={{
-      background: PANEL_BG,
-      backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
-      borderRadius: 12,
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderLeft: `3px solid ${topCol}`,
-      boxShadow: '0 1px 0 0 rgba(255,255,255,0.14) inset, 0 6px 24px rgba(0,0,0,0.35)',
-      width: 210,
-      overflow: 'hidden',
-    }}>
-
-      {/* ── Alarms section ── */}
-      <div style={{ padding: '10px 12px 8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: topCol, boxShadow: `0 0 6px ${topCol}99`, flexShrink: 0 }} />
-          <span style={{ fontSize: '8px', fontWeight: 800, color: topCol, letterSpacing: '0.10em', textTransform: 'uppercase' }}>
-            Active Alarms · {ACTIVE_ALARMS.length}
-          </span>
-        </div>
-        {ACTIVE_ALARMS.map((a, i) => (
-          <button key={a.id} onClick={() => onSelect?.(a.id)} style={{
-            display: 'flex', alignItems: 'flex-start', gap: 8,
-            width: '100%', background: 'transparent', border: 'none',
-            borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-            padding: '5px 0', cursor: 'pointer', textAlign: 'left',
-          }}>
-            <div style={{ width: 3, minHeight: 26, borderRadius: 2, background: SEV_COL[a.severity], flexShrink: 0 }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '9px', fontWeight: 700, color: '#fff', marginBottom: 1 }}>{a.label}</div>
-              <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.4 }}>{a.msg}</div>
-            </div>
-            <span style={{ fontSize: '7px', fontWeight: 700, color: SEV_COL[a.severity], letterSpacing: '0.07em', textTransform: 'uppercase', marginTop: 1, flexShrink: 0 }}>
-              {a.severity}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* ── Line panels ── */}
-      {LINE_DATA.map((line, idx) => {
-        const progress = Math.round((line.packed / line.target) * 100);
-        return (
-          <div key={line.badge} style={{
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-            padding: '8px 12px',
-          }}>
-            {/* Line header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
-              <div style={{ background: line.badgeBg, borderRadius: 5, padding: '1px 7px', fontSize: '8px', fontWeight: 800, color: '#fff', letterSpacing: '0.08em' }}>
-                {line.badge}
-              </div>
-              <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.70)' }}>{line.lineName}</span>
-              <div style={{ flex: 1 }} />
-              <span style={{ fontSize: '16px', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>{line.oee}</span>
-              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginLeft: 1 }}>%</span>
-            </div>
-            {/* Progress */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
-              <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Target</span>
-              <span style={{ fontSize: '8px', fontWeight: 700, color: line.accent }}>{line.packed.toLocaleString()} / {line.target.toLocaleString()}</span>
-            </div>
-            <div style={{ height: 3, background: 'rgba(255,255,255,0.10)', borderRadius: 2, marginBottom: 5 }}>
-              <div style={{ height: '100%', width: `${progress}%`, background: line.accent, borderRadius: 2 }} />
-            </div>
-            <div style={{ fontSize: '7.5px', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.03em', marginBottom: line.correction ? 6 : 0 }}>
-              {line.batchId} · {line.throughput} bpm
-            </div>
-            {line.correction && (
-              <div style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 7, padding: '6px 9px' }}>
-                <div style={{ fontSize: '8px', fontWeight: 800, color: '#10B981', letterSpacing: '0.04em', marginBottom: 2 }}>{line.correction.action}</div>
-                <div style={{ fontSize: '7.5px', color: 'rgba(255,255,255,0.38)' }}>{line.correction.detail}</div>
-              </div>
-            )}
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -307,7 +209,7 @@ const IndicatorPill = ({ eq, onClick, isDiving, hoveredId }) => {
     }
   });
 
-  const bgColor = eq.state === 'critical' ? '#EF4444' : eq.state === 'warning' ? '#F59E0B' : '#1A2636';
+  const bgColor = eq.state === 'critical' ? '#EF4444' : eq.state === 'warning' ? '#F59E0B' : (eq.state === 'offline' || eq.state === 'starved') ? '#374151' : eq.state === 'pending' ? '#1d3461' : '#1A2636';
 
   return (
     <Html position={eqPos} center zIndexRange={[100, 0]}>
@@ -332,10 +234,13 @@ const IndicatorPill = ({ eq, onClick, isDiving, hoveredId }) => {
           WebkitFontSmoothing: 'antialiased',
         }}
       >
+        {eq.state === 'offline'  && <span style={{ fontSize: '10px' }}>⏻</span>}
+        {eq.state === 'starved'  && <span style={{ fontSize: '10px' }}>⊘</span>}
+        {eq.state === 'pending'  && <span style={{ fontSize: '10px' }}>◌</span>}
         <span style={{ fontSize: '11px', fontWeight: 800, color: '#fff', letterSpacing: '0.06em' }}>
           {eq.label}
         </span>
-        <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.75)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <span style={{ fontSize: '9px', fontWeight: 700, color: (eq.state === 'offline' || eq.state === 'starved') ? '#9CA3AF' : eq.state === 'pending' ? '#58a6ff' : 'rgba(255,255,255,0.75)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {eq.stateLabel}
         </span>
       </div>
@@ -374,6 +279,20 @@ const EQUIPMENT_L2 = [
     metrics: [{ tag: 'ST-1202', label: 'Label Rate',    value: '302 /min', s: 'ok' }, { tag: 'QE-1202', label: 'Rejects',       value: '0',       s: 'ok' }, { tag: 'KPI-OEE', label: 'OEE', value: '98.1 %', s: 'ok' }] },
 ];
 
+// Line flow order — upstream → downstream (used for starvation propagation)
+const LINE1_ORDER = ['bf_1101','ctn_1101','agg_1101','vis_1101','cw_1101','lab_1101'];
+const LINE2_ORDER = ['bf_1201','ctn_1201','agg_1201','vis_1201','cw_1201','lab_1201'];
+
+// Default dimensions per machine type (matches EQUIPMENT arrays)
+const COMPONENT_DIMS = {
+  BlisterMachine:       { w:2.8,  h:1.2,  d:1.4 },
+  Cartoner:             { w:1.8,  h:1.8,  d:1.2 },
+  SerializationStation: { w:1.2,  h:1.5,  d:1.0 },
+  InspectionMachine:    { w:1.1,  h:1.8,  d:1.0 },
+  Checkweigher:         { w:1.4,  h:0.85, d:1.2 },
+  Labeler:              { w:1.0,  h:1.3,  d:1.0 },
+};
+
 // Entity-id → equipment lookup — must be after both arrays are defined
 const ENTITY_TO_EQ = Object.fromEntries(
   [...EQUIPMENT_L1, ...EQUIPMENT_L2]
@@ -381,13 +300,68 @@ const ENTITY_TO_EQ = Object.fromEntries(
     .map(e => [e.entityId, e])
 );
 
+// ── Offline / Starved 3D overlay ──────────────────────────────────────────────
+
+function OfflineOverlay({ eq, starved = false }) {
+  return (
+    <group position={[eq.x, eq.h / 2, eq.z]}>
+      <mesh renderOrder={999}>
+        <boxGeometry args={[eq.w + 0.12, eq.h + 0.12, eq.d + 0.12]} />
+        <meshStandardMaterial color="#1F2937" transparent opacity={starved ? 0.48 : 0.62} depthWrite={false} />
+      </mesh>
+      <Html center zIndexRange={[50, 0]}>
+        <div style={{ pointerEvents:'none', userSelect:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
+          <span style={{ fontSize: starved ? 14 : 18, color:'#6B7280', filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.9))' }}>
+            {starved ? '⊘' : '⏻'}
+          </span>
+          <span style={{ fontSize:7, fontWeight:800, letterSpacing:'0.12em', textTransform:'uppercase', color:'#9CA3AF', textShadow:'0 1px 4px rgba(0,0,0,0.9)' }}>
+            {starved ? 'STARVED' : 'OFFLINE'}
+          </span>
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+// ── Pending IQ/OQ 3D overlay ──────────────────────────────────────────────────
+
+function PendingOverlay({ eq }) {
+  const meshRef = useRef();
+  useFrame(({ clock }) => {
+    if (meshRef.current) {
+      meshRef.current.material.opacity = 0.18 + Math.sin(clock.elapsedTime * 2.2) * 0.10;
+    }
+  });
+  return (
+    <group position={[eq.x, eq.h / 2, eq.z]}>
+      {/* Pulsing fill */}
+      <mesh ref={meshRef} renderOrder={999}>
+        <boxGeometry args={[eq.w + 0.14, eq.h + 0.14, eq.d + 0.14]} />
+        <meshStandardMaterial color="#3b82f6" transparent opacity={0.22} depthWrite={false} />
+      </mesh>
+      {/* Wireframe edge */}
+      <mesh renderOrder={998}>
+        <boxGeometry args={[eq.w + 0.18, eq.h + 0.18, eq.d + 0.18]} />
+        <meshStandardMaterial color="#58a6ff" transparent opacity={0.55} depthWrite={false} wireframe />
+      </mesh>
+      <Html center zIndexRange={[50, 0]}>
+        <div style={{ pointerEvents:'none', userSelect:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+          <span style={{ fontSize:8, fontWeight:800, letterSpacing:'0.10em', textTransform:'uppercase', color:'#58a6ff', textShadow:'0 1px 6px rgba(0,0,0,0.95)', background:'rgba(13,17,23,0.88)', padding:'2px 7px', borderRadius:3, border:'1px solid rgba(88,166,255,0.35)', whiteSpace:'nowrap' }}>
+            PENDING IQ/OQ
+          </span>
+        </div>
+      </Html>
+    </group>
+  );
+}
+
 // ── Environment Lighting (Dark / Light mapping) ───────────────────────────────
 
 function EnvironmentLights({ isSimulation, dark }) {
   const mainLightRef = useRef();
   const hemiLightRef = useRef();
-  const ambientLightRef = useRef(); // Added ref for ambient light
-  const directionalLightRef = useRef(); // Added ref for the main directional light
+  const ambientLightRef = useRef();
+  const directionalLightRef = useRef();
 
   const targetMain = useMemo(() => new THREE.Color(), []);
   const targetHemi = new THREE.Color();
@@ -401,7 +375,7 @@ function EnvironmentLights({ isSimulation, dark }) {
     targetHemi.set(isSimulation ? (dark ? '#0F131A' : '#D1D5DB') : (dark ? '#161A23' : '#F8F9FA'));
     targetAmb.set(isSimulation ? '#5B6F8A' : (dark ? '#859AB8' : '#FFFFFF'));
     targetDir.set(isSimulation ? '#88A0C4' : (dark ? '#C4D4ED' : '#FFFFFF'));
-    
+
     mainLightRef.current.color.lerp(targetMain, delta * 3.5);
     hemiLightRef.current.color.lerp(targetHemi, delta * 3.5);
     ambientLightRef.current.color.lerp(targetAmb, delta * 3.5);
@@ -411,7 +385,7 @@ function EnvironmentLights({ isSimulation, dark }) {
   return (
     <>
       <hemisphereLight ref={hemiLightRef} args={[0xA3B5D1, 0x161A23, 1.3]} />
-      <ambientLight color="#859AB8" intensity={1.5} />
+      <ambientLight ref={ambientLightRef} color="#859AB8" intensity={1.5} />
       <directionalLight
         ref={mainLightRef}
         color="#C4D4ED"
@@ -427,8 +401,9 @@ function EnvironmentLights({ isSimulation, dark }) {
         shadow-camera-bottom={-10}
         shadow-bias={-0.001}
       />
-      <directionalLight color="#F8F9FA" intensity={0.2} position={[8, 6, -4]} />
+      <directionalLight ref={directionalLightRef} color="#F8F9FA" intensity={0.2} position={[8, 6, -4]} />
       <directionalLight color="#FFFFFF" intensity={0.15} position={[0, 4, -10]} />
+
     </>
   );
 }
@@ -447,6 +422,9 @@ export function FloorMapLayer() {
     el.addEventListener('wheel', prevent, { passive: false });
     return () => el.removeEventListener('wheel', prevent);
   }, []);
+
+  const offlineIds           = useAppStore(s => s.offlineIds);
+  const pendingMachines      = useAppStore(s => s.pendingMachines);
   const relations            = useAppStore(s => s.relations);
   const relationPropagation  = useAppStore(s => s.relationPropagation);
   const simulatedTime        = useAppStore(s => s.simulatedTime);
@@ -491,13 +469,71 @@ export function FloorMapLayer() {
   // Single source of truth for entity states — live or simulated
   const currentEntityStates = simulatedTime === null ? liveEntityStates : stateOverrides;
 
+  // Derive starved machines — everything downstream of any offline machine on the same line
+  const starvedIds = useMemo(() => {
+    const result = new Set();
+    [LINE1_ORDER, LINE2_ORDER].forEach(order => {
+      order.forEach((id, idx) => {
+        if (offlineIds.has(id)) {
+          for (let i = idx + 1; i < order.length; i++) result.add(order[i]);
+        }
+      });
+    });
+    return result;
+  }, [offlineIds]);
+
   // Apply current entity state to an equipment object for rendering
   const applyState = useCallback((eq) => {
+    if (offlineIds.has(eq.id)) return { ...eq, state: 'offline', stateLabel: 'OFFLINE' };
+    if (starvedIds.has(eq.id)) return { ...eq, state: 'starved', stateLabel: 'STARVED' };
     if (!eq.entityId) return eq;
     const next = currentEntityStates[eq.entityId];
     if (!next || next === eq.state) return eq;
     return { ...eq, state: next, stateLabel: next.toUpperCase() };
-  }, [currentEntityStates]);
+  }, [currentEntityStates, offlineIds, starvedIds]);
+
+  // Convert pending machines from store into renderable equipment objects
+  const pendingEquipment = useMemo(() => {
+    const l1 = pendingMachines.filter(m => m.line !== 'Line 2');
+    const l2 = pendingMachines.filter(m => m.line === 'Line 2');
+    return pendingMachines.map(m => {
+      const dims  = COMPONENT_DIMS[m.componentClass || m.type] || { w:1.4, h:1.2, d:1.2 };
+      const isL2  = m.line === 'Line 2';
+      const arr   = isL2 ? l2 : l1;
+      const idx   = arr.indexOf(m);
+      return {
+        id:             m.id.toLowerCase().replace(/-/g,'_') + '_pending',
+        label:          m.id,
+        componentClass: m.componentClass || m.type,
+        state:          'pending',
+        stateLabel:     'PENDING',
+        x:              8.2 + idx * 2.4,
+        z:              isL2 ? 4.5 : 0.0,
+        metrics:        [],
+        ...dims,
+      };
+    });
+  }, [pendingMachines]);
+
+  // Offline alarms — injected into FloorMetrics
+  const offlineAlarms = useMemo(() =>
+    [...EQUIPMENT_L1, ...EQUIPMENT_L2]
+      .filter(eq => applyState(eq).state === 'offline')
+      .map(eq => ({ id: eq.id, label: eq.label, severity: 'offline', msg: `Offline · ${eq.type}` }))
+  , [applyState]);
+
+  // X ranges blocked for vial flow — offline machines on each line
+  const offlineL1XRanges = useMemo(() =>
+    EQUIPMENT_L1
+      .filter(eq => applyState(eq).state === 'offline')
+      .map(eq => [eq.x - eq.w / 2 - 0.15, eq.x + eq.w / 2 + 0.15])
+  , [applyState]);
+
+  const offlineL2XRanges = useMemo(() =>
+    EQUIPMENT_L2
+      .filter(eq => applyState(eq).state === 'offline')
+      .map(eq => [eq.x - eq.w / 2 - 0.15, eq.x + eq.w / 2 + 0.15])
+  , [applyState]);
 
   const [isDiving, setIsDiving]         = useState(false);
   const [diveTargetX, setDiveTargetX]   = useState(0);
@@ -528,19 +564,16 @@ export function FloorMapLayer() {
 
   return (
     <div ref={containerRef} className="fl-three-wrap" style={{ width: '100%', height: '100%', background: '#E4DFD8', position: 'relative', overflow: 'hidden' }}>
-      <div style={{
-        position: 'absolute', right: 12, top: 56,
-        zIndex: 10, display: 'flex', flexDirection: 'column', gap: 8,
-        maxWidth: 'calc(100% - 24px)', maxHeight: 'calc(100% - 80px)', overflowY: 'auto',
-      }}>
-        <OpsCard onSelect={handleMachineClick} />
-      </div>
+
+      {/* ── Monolithic Telemetry Sidebar ── */}
+      <FloorMetrics dark={dark} onMachineClick={handleMachineClick} offlineAlarms={offlineAlarms} />
+
       <CameraControl activePreset={activePreset} onPreset={handlePreset} />
 
       <Canvas
         shadows
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.25 }}
-        camera={{ position: [-1, 16, 20], fov: 48, near: 0.1, far: 100 }}
+        camera={{ position: [-1, 18, 24], fov: 48, near: 0.1, far: 100 }}
       >
         <MapThemeManager />
         <color attach="background" args={[dark ? '#161A23' : '#E4DFD8']} />
@@ -563,8 +596,8 @@ export function FloorMapLayer() {
 
         <group position={[0, -0.6, 0]}>
           <EnvironmentDetails />
-          <FlowingVials isL2={false} />
-          <FlowingVials isL2={true} />
+          <FlowingVials isL2={false} offlineXRanges={offlineL1XRanges} />
+          <FlowingVials isL2={true}  offlineXRanges={offlineL2XRanges} />
 
           {/* Arcs only appear during scrub — they replay the causal chain through time */}
           {simulatedTime !== null && causalArcs
@@ -594,7 +627,7 @@ export function FloorMapLayer() {
           {(() => {
             const hEq = hoveredId ? [...EQUIPMENT_L1, ...EQUIPMENT_L2].find(e => e.id === hoveredId) : null;
             if (!hEq) return null;
-            const col = hEq.state === 'critical' ? '#EF4444' : hEq.state === 'warning' ? '#F59E0B' : '#10B981';
+            const col = hEq.state === 'critical' ? '#EF4444' : hEq.state === 'warning' ? '#F59E0B' : (hEq.state === 'offline' || hEq.state === 'starved') ? '#4B5563' : '#10B981';
             return <pointLight key="hover-glow" position={[hEq.x, hEq.h + 1.2, hEq.z]} color={col} intensity={2.5} distance={5} decay={2} />;
           })()}
 
@@ -607,8 +640,9 @@ export function FloorMapLayer() {
               <React.Fragment key={eq.id}>
                 <group>
                   <Comp eq={eqEff} isL2={false} onClick={handleMachineClick} hoveredId={hoveredId} setHoveredId={setHoveredId} />
+                  {(eqEff.state === 'offline' || eqEff.state === 'starved') && <OfflineOverlay eq={eqEff} starved={eqEff.state === 'starved'} />}
                 </group>
-                <IndicatorPill eq={eq} onClick={handleMachineClick} isDiving={isDiving} hoveredId={hoveredId} />
+                <IndicatorPill eq={eqEff} onClick={handleMachineClick} isDiving={isDiving} hoveredId={hoveredId} />
               </React.Fragment>
             );
           })}
@@ -622,8 +656,52 @@ export function FloorMapLayer() {
               <React.Fragment key={eq.id}>
                 <group>
                   <Comp eq={eqEff} isL2={true} onClick={handleMachineClick} hoveredId={hoveredId} setHoveredId={setHoveredId} />
+                  {(eqEff.state === 'offline' || eqEff.state === 'starved') && <OfflineOverlay eq={eqEff} starved={eqEff.state === 'starved'} />}
                 </group>
-                <IndicatorPill eq={eq} isL2={true} onClick={handleMachineClick} isDiving={isDiving} hoveredId={hoveredId} />
+                <IndicatorPill eq={eqEff} isL2={true} onClick={handleMachineClick} isDiving={isDiving} hoveredId={hoveredId} />
+              </React.Fragment>
+            );
+          })}
+          {/* Conveyor belts — Line 1: between consecutive machines */}
+          {EQUIPMENT_L1.slice(0, -1).map((eq, i) => {
+            const next   = EQUIPMENT_L1[i + 1];
+            const eqEff  = applyState(eq);
+            const midX   = (eq.x + next.x) / 2;
+            const length = Math.abs(next.x - eq.x) - (eq.w / 2 + next.w / 2) - 0.05;
+            if (length <= 0) return null;
+            const isActive = eqEff.state !== 'offline' && eqEff.state !== 'starved';
+            return (
+              <ConveyorBelt key={`conv-l1-${i}`} x={midX} z={eq.z} length={length} isActive={isActive} />
+            );
+          })}
+
+          {/* Conveyor belts — Line 2: between consecutive machines */}
+          {EQUIPMENT_L2.slice(0, -1).map((eq, i) => {
+            const next   = EQUIPMENT_L2[i + 1];
+            const eqEff  = applyState(eq);
+            const midX   = (eq.x + next.x) / 2;
+            const length = Math.abs(next.x - eq.x) - (eq.w / 2 + next.w / 2) - 0.05;
+            if (length <= 0) return null;
+            const isActive = eqEff.state !== 'offline' && eqEff.state !== 'starved';
+            return (
+              <ConveyorBelt key={`conv-l2-${i}`} x={midX} z={eq.z} length={length} isActive={isActive} />
+            );
+          })}
+
+          {/* Spatial widgets — compact expandable HUD pins anchored to 3D entities */}
+          <FloorSpatialWidgets />
+
+          {/* Pending machines — submitted via onboarding, awaiting IQ/OQ */}
+          {pendingEquipment.map(eq => {
+            const Comp = ComponentMap[eq.componentClass];
+            if (!Comp) return null;
+            return (
+              <React.Fragment key={eq.id}>
+                <group style={{ opacity: 0.5 }}>
+                  <Comp eq={eq} isL2={eq.z > 2} onClick={() => {}} hoveredId={null} setHoveredId={() => {}} />
+                  <PendingOverlay eq={eq} />
+                </group>
+                <IndicatorPill eq={eq} onClick={() => {}} isDiving={isDiving} hoveredId={hoveredId} />
               </React.Fragment>
             );
           })}
@@ -642,7 +720,15 @@ export function FloorMapLayer() {
           panSpeed={0.8}
           target={[-1, 0, 2.25]}
         />
-        
+        <EffectComposer>
+          <Bloom
+            luminanceThreshold={0.55}
+            luminanceSmoothing={0.4}
+            intensity={0.9}
+            mipmapBlur
+          />
+        </EffectComposer>
+
       </Canvas>
     </div>
   );

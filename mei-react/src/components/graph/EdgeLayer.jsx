@@ -74,10 +74,11 @@ export function EdgeLayer({ relations, positions, sizes, actualSizesRef, focusEd
         const labelText = r.type.replace(/_/g, ' ');
 
         // Simulation scrub: highlight edge by source entity predicted state
-        const srcState = isSimulating ? (entityStateMap?.[r.from] ?? 'normal') : 'normal';
-        const simCls   = isSimulating && srcState !== 'normal' ? `sim-${srcState}` : '';
+        const srcState   = isSimulating ? (entityStateMap?.[r.from] ?? 'normal') : 'normal';
+        const simCls     = isSimulating && srcState !== 'normal' ? `sim-${srcState}` : '';
+        const isPipeline = r.to.startsWith('sys_');
 
-        return { r, ...path, vcls, pcls, dimmed, focused, labelText, simCls };
+        return { r, ...path, vcls, pcls, dimmed, focused, labelText, simCls, isPipeline };
       }).filter(Boolean);
 
       setRenderData(data);
@@ -102,10 +103,10 @@ export function EdgeLayer({ relations, positions, sizes, actualSizesRef, focusEd
       </defs>
 
       {/* Edge paths — drawn first so labels sit on top */}
-      {renderData.map(({ r, d, vcls, pcls, dimmed, focused, simCls }) => {
+      {renderData.map(({ r, d, vcls, pcls, dimmed, focused, simCls, isPipeline }) => {
         let markerPrefix = EDGE_STYLE[r.type]?.marker ?? 'arrow-causal';
         if (pcls.includes('golden-ref')) markerPrefix = 'arrow-golden';
-        
+
         const srcState = entityStateMap?.[r.from] ?? 'normal';
         const isPulsing = srcState !== 'normal';
 
@@ -122,6 +123,14 @@ export function EdgeLayer({ relations, positions, sizes, actualSizesRef, focusEd
               <path
                 key={`pulse-${r.id}`}
                 className={`edge energy-pulse pulse-${srcState}`}
+                d={d}
+              />
+            )}
+            {/* Pipeline feed animation — edges into external system nodes */}
+            {isPipeline && !dimmed && (
+              <path
+                key={`pipeline-${r.id}`}
+                className="edge pipeline-feed"
                 d={d}
               />
             )}

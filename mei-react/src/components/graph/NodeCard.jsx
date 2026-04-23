@@ -7,6 +7,20 @@ import { useSignalAge } from '../../hooks/useLiveSignal';
 
 const SIGNAL_TYPES = new Set(['Sensor', 'QualityState', 'ControlParameter', 'Asset']);
 
+// ─── Pipeline Uplink card (ExternalSystem nodes) ──────────────────────────
+const PIPELINE_SYNC = {
+  'Pending':      { color: '#2AF1E5', pulse: true,  status: 'Cloud Sync · Receiving' },
+  'On hold':      { color: '#FFB800', pulse: false, status: 'Hold · Approval Required' },
+  'Sync pending': { color: '#FFB800', pulse: false, status: 'Sync Pending · Queued' },
+};
+
+const SYS_ICONS = { sys_mes: '⬡', sys_qa: '◈', sys_erp: '⬡' };
+const SYS_FULL  = {
+  sys_mes: 'Manufacturing Execution System',
+  sys_qa:  'Quality Assurance Layer',
+  sys_erp: 'Enterprise Resource Planning',
+};
+
 function layoutClass(entity) {
   if (entity.type === 'GoldenBatch' || entity.id === 'batch_current') return 'anchor-card';
   if (entity.type === 'SimulationScenario') return 'simulation-card';
@@ -67,6 +81,70 @@ export function NodeCard({
 
   const { root_cause_probability: rcp, metadata, metrics, insight, action, state, type, label } = entity;
 
+  // ── External system → pipeline uplink rendering ──────────────────────────
+  if (state === 'external') {
+    const workflowVal = metrics?.Workflow ?? '';
+    const sync = PIPELINE_SYNC[workflowVal] ?? { color: '#2AF1E5', pulse: true, status: 'Online' };
+    return (
+      <motion.div
+        ref={cardRef}
+        drag
+        dragMomentum={false}
+        style={{ x: mx, y: my, position: 'absolute', width: 220, zIndex: isFocused ? 100 : isFocal ? 50 : 10 }}
+        animate={{
+          opacity: isDimmed ? 0.05 : 1,
+          filter:  isDimmed ? 'blur(1.5px) grayscale(1) brightness(0.4)' : 'none',
+        }}
+        whileDrag={{ cursor: 'grabbing', zIndex: 999, scale: 1.02 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+        onPointerDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+        onTap={() => onClick?.(entity.id)}
+        onDragStart={() => { isDragging.current = true; }}
+        onDrag={() => { onDrag?.(entity.id, mx.get(), my.get()); }}
+        onDragEnd={() => { isDragging.current = false; onDragEnd?.(entity.id, mx.get(), my.get()); }}
+      >
+        <div className="pipeline-uplink" style={{ '--pipe-color': sync.color, borderLeft: `3px solid ${sync.color}` }}>
+          {/* Header */}
+          <div className="pu-header">
+            <span className="pu-icon" style={{ color: sync.color }}>{SYS_ICONS[entity.id] ?? '⬡'}</span>
+            <div>
+              <div className="pu-type">Data Pipeline</div>
+              <div className="pu-title">{label}</div>
+            </div>
+          </div>
+
+          {/* Full system name */}
+          <div className="pu-fullname">{SYS_FULL[entity.id] ?? metadata?.description}</div>
+
+          {/* Animated data-flow bar */}
+          <div className="pu-flow-bar">
+            <div className="pu-flow-track" />
+          </div>
+
+          {/* Metrics */}
+          <div className="pu-metrics">
+            {Object.entries(metrics ?? {}).map(([k, v]) => (
+              <div key={k} className="pu-metric-row">
+                <span className="pu-metric-key">{k}</span>
+                <span className="pu-metric-val">{v}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Sync status LED */}
+          <div className="pu-status">
+            <div
+              className={`pu-led ${sync.pulse ? 'pu-led-active' : 'pu-led-pending'}`}
+              style={{ background: sync.color, boxShadow: sync.pulse ? `0 0 6px ${sync.color}` : 'none' }}
+            />
+            <span className="pu-status-text" style={{ color: sync.color }}>{sync.status}</span>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   const typeClass = `type-${type.toLowerCase().replace(/\s+/g, '')}`;
 
   const cardClass = [
@@ -94,8 +172,8 @@ export function NodeCard({
       }}
       initial={{ opacity: 0 }}
       animate={{
-        opacity: isDimmed ? 0.18 : 1,
-        filter:  isDimmed ? 'blur(0.5px) grayscale(0.7)' : 'none',
+        opacity: isDimmed ? 0.05 : 1,
+        filter:  isDimmed ? 'blur(1.5px) grayscale(1) brightness(0.4)' : 'none',
       }}
       whileDrag={{ cursor: 'grabbing', zIndex: 999, scale: 1.02 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}

@@ -13,7 +13,7 @@ const STATE_COL = {
 
 // ── FlowingVials ──────────────────────────────────────────────────────────────
 
-export const FlowingVials = ({ isL2 }) => {
+export const FlowingVials = ({ isL2, offlineXRanges = [] }) => {
   const zPos = isL2 ? 4.5 : 0;
   const vialGeo = useMemo(() => new THREE.CylinderGeometry(0.048, 0.048, 0.19, 10), []);
   const vialMat = useMemo(() => isL2
@@ -27,11 +27,22 @@ export const FlowingVials = ({ isL2 }) => {
       }), [isL2]);
 
   const groupRef = useRef();
+  const offlineRef = useRef(offlineXRanges);
+  useEffect(() => { offlineRef.current = offlineXRanges; }, [offlineXRanges]);
+
   useFrame((_, delta) => {
     if (!groupRef.current) return;
+    const ranges = offlineRef.current;
     groupRef.current.children.forEach(v => {
-      v.position.x += 1.5 * delta;
-      if (v.position.x > 8.5) v.position.x -= 17;
+      const nextX = v.position.x + 1.5 * delta;
+      // Stop vials at the entrance of an offline machine (queue up, don't vanish)
+      const blocker = ranges.find(([lo]) => v.position.x < lo && nextX >= lo);
+      if (blocker) {
+        v.position.x = blocker[0] - 0.08;
+      } else {
+        v.position.x = nextX > 8.5 ? nextX - 17 : nextX;
+      }
+      v.visible = true;
     });
   });
 
@@ -135,5 +146,68 @@ export const CausalArcTube = ({
       dashRatio={0.7}
       depthTest={false}
     />
+  );
+};
+
+// ── ConveyorBelt ───────────────────────────────────────────────────────────────
+
+const STRIPE_COUNT = 7;
+const STRIPE_SPACING = 1 / STRIPE_COUNT;
+
+export const ConveyorBelt = ({ x, z, length, isActive }) => {
+  const offsetRef = useRef(0);
+  const stripeRefs = useRef([]);
+
+  const beltGeo  = useMemo(() => new THREE.BoxGeometry(length, 0.05, 0.35), [length]);
+  const beltMat  = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#2a2a3a', roughness: 0.85, metalness: 0.1,
+  }), []);
+
+  const stripeGeo = useMemo(() => new THREE.BoxGeometry(0.04, 0.07, 0.33), []);
+  const stripeMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#1a1a28', roughness: 0.9, metalness: 0.05,
+  }), []);
+
+  const railGeo  = useMemo(() => new THREE.BoxGeometry(length, 0.06, 0.03), [length]);
+  const railMat  = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#38384a', roughness: 0.7, metalness: 0.3,
+  }), []);
+
+  useFrame((_, delta) => {
+    if (!isActive) return;
+    offsetRef.current = (offsetRef.current + delta * 1.2) % length;
+    stripeRefs.current.forEach((ref, i) => {
+      if (!ref) return;
+      const baseX = -length / 2 + ((i * STRIPE_SPACING * length + offsetRef.current) % length);
+      ref.position.x = baseX;
+    });
+  });
+
+  const initialXPositions = useMemo(() =>
+    Array.from({ length: STRIPE_COUNT }, (_, i) =>
+      -length / 2 + (i * STRIPE_SPACING * length)
+    )
+  , [length]);
+
+  return (
+    <group position={[x, 0.78, z]}>
+      {/* Belt surface */}
+      <mesh geometry={beltGeo} material={beltMat} />
+
+      {/* Conveyor ribs / stripes */}
+      {initialXPositions.map((px, i) => (
+        <mesh
+          key={i}
+          ref={el => { stripeRefs.current[i] = el; }}
+          geometry={stripeGeo}
+          material={stripeMat}
+          position={[px, 0.031, 0]}
+        />
+      ))}
+
+      {/* Side rails */}
+      <mesh geometry={railGeo} material={railMat} position={[0, 0.055, -0.18]} />
+      <mesh geometry={railGeo} material={railMat} position={[0, 0.055,  0.18]} />
+    </group>
   );
 };

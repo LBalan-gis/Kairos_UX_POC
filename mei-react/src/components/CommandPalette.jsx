@@ -143,7 +143,7 @@ export function CommandPalette() {
             {/* Footer */}
             <div style={{ padding: '10px 20px', borderTop: '1px solid #30363D', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0D1117' }}>
               <span style={{ fontSize: 11, color: '#8b949e' }}>Use <strong>↑↓</strong> to navigate, <strong>Enter</strong> to select</span>
-              <span style={{ fontSize: 11, color: '#8b949e', fontWeight: 500 }}>Mei OS Cmd</span>
+              <span style={{ fontSize: 11, color: '#8b949e', fontWeight: 500 }}>KairOS Cmd</span>
             </div>
           </motion.div>
         </div>
