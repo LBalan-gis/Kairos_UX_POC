@@ -571,7 +571,7 @@ export function FloorMapLayer() {
 
       <Canvas
         shadows
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.25 }}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
         camera={{ position: [-1, 18, 24], fov: 48, near: 0.1, far: 100 }}
       >
         <MapThemeManager />

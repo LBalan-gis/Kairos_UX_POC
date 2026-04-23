@@ -159,26 +159,26 @@ export const EnvironmentDetails = () => {
     {/* Main base */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1.0, -0.001, 2.25]} receiveShadow>
       <planeGeometry args={[18.5, 14.0]} />
-      <meshStandardMaterial color={dark ? "#273143" : "#F8F9FA"} roughness={1.0} metalness={0} />
+      <meshStandardMaterial color={dark ? "#273143" : "#BCCAE3"} roughness={1.0} metalness={0} />
     </mesh>
     {/* Grade A clean room zones — around each BF arm */}
     {[{ cx: -7.75, cz: -1.5 }, { cx: -7.75, cz: 5.75 }].map((p, i) => (
       <mesh key={`cleanA-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p.cx, 0.003, p.cz]} receiveShadow>
         <planeGeometry args={[3.5, 4.5]} />
-        <meshStandardMaterial color={dark ? "#33415C" : "#F1F3F4"} roughness={1.0} metalness={0} />
+        <meshStandardMaterial color={dark ? "#33415C" : "#A8B8D4"} roughness={1.0} metalness={0} />
       </mesh>
     ))}
     {/* Secondary packaging corridor zones */}
     {LINES.map(({ lz }, i) => (
       <mesh key={`corr-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-0.5, 0.002, lz]} receiveShadow>
         <planeGeometry args={[15.5, 2.2]} />
-        <meshStandardMaterial color={dark ? "#3B4863" : "#E8EAED"} roughness={1.0} metalness={0} />
+        <meshStandardMaterial color={dark ? "#3B4863" : "#9AA8C4"} roughness={1.0} metalness={0} />
       </mesh>
     ))}
     {/* Central aisle between lines */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-0.5, 0.002, 2.25]} receiveShadow>
       <planeGeometry args={[15.5, 2.1]} />
-      <meshStandardMaterial color={dark ? "#2D3A54" : "#F1F3F4"} roughness={1.0} metalness={0} />
+      <meshStandardMaterial color={dark ? "#2D3A54" : "#A8B8D4"} roughness={1.0} metalness={0} />
     </mesh>
     {/* Grade boundary markers — clean room edge and corridor end */}
     {[-6.0, 7.0].map((x, i) => (
@@ -201,7 +201,7 @@ export const EnvironmentDetails = () => {
     {[{ x: -7.5, z: -2.5 }, { x: -1.5, z: 0 }, { x: -7.5, z: 7.0 }, { x: -1.5, z: 4.5 }].map((p, i) => (
       <mesh key={`hepa-${i}`} position={[p.x, 5.38, p.z]}>
         <boxGeometry args={[3.2, 0.16, 1.5]} />
-        <meshStandardMaterial color={dark ? "#5A6D8F" : "#E8EAED"} metalness={0} roughness={1.0} />
+        <meshStandardMaterial color={dark ? "#5A6D8F" : "#A8B8D4"} metalness={0} roughness={1.0} />
       </mesh>
     ))}
 
