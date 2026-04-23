@@ -1,5 +1,5 @@
 import { useRef, useMemo, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Line } from '@react-three/drei';
 
@@ -29,12 +29,17 @@ export const FlowingVials = ({ isL2, offlineXRanges = [] }) => {
   const groupRef = useRef();
   const offlineRef = useRef(offlineXRanges);
   useEffect(() => { offlineRef.current = offlineXRanges; }, [offlineXRanges]);
+  const { invalidate } = useThree();
+  const accRef = useRef(0);
 
   useFrame((_, delta) => {
+    accRef.current += delta;
+    if (accRef.current < 1 / 30) { invalidate(); return; }
+    accRef.current -= 1 / 30;
     if (!groupRef.current) return;
     const ranges = offlineRef.current;
     groupRef.current.children.forEach(v => {
-      const nextX = v.position.x + 1.5 * delta;
+      const nextX = v.position.x + 1.5 * (1 / 30);
       // Stop vials at the entrance of an offline machine (queue up, don't vanish)
       const blocker = ranges.find(([lo]) => v.position.x < lo && nextX >= lo);
       if (blocker) {
@@ -44,6 +49,7 @@ export const FlowingVials = ({ isL2, offlineXRanges = [] }) => {
       }
       v.visible = true;
     });
+    invalidate();
   });
 
   return (
@@ -108,7 +114,9 @@ export const CausalArcTube = ({
   const targetProgRef = useRef(drawProgress);
   targetProgRef.current = drawProgress;
   const progRef = useRef(0);
-  
+  const { invalidate: invalidateArc } = useThree();
+  const arcAccRef = useRef(0);
+
   // Interpolated vertex colors for the gradient effect
   const colorArray = useMemo(() => {
     const arr = [];
@@ -121,12 +129,15 @@ export const CausalArcTube = ({
   }, [colA, colB]);
 
   useFrame((_, delta) => {
+    arcAccRef.current += delta;
+    if (arcAccRef.current < 1 / 30) { invalidateArc(); return; }
+    arcAccRef.current -= 1 / 30;
     progRef.current += (targetProgRef.current - progRef.current) * 0.15;
     if (lineRef.current && lineRef.current.material) {
-      // Sleek animated dash flow ("marching ants" effect) travelling from start to end
-      lineRef.current.material.dashOffset -= delta * 1.5;
+      lineRef.current.material.dashOffset -= (1 / 30) * 1.5;
       lineRef.current.material.opacity = Math.max(0, progRef.current * 0.85);
     }
+    invalidateArc();
   });
 
   // If drawProgress is near 0, component shouldn't render significantly
@@ -157,6 +168,8 @@ const STRIPE_SPACING = 1 / STRIPE_COUNT;
 export const ConveyorBelt = ({ x, z, length, isActive }) => {
   const offsetRef = useRef(0);
   const stripeRefs = useRef([]);
+  const { invalidate: invalidateBelt } = useThree();
+  const beltAccRef = useRef(0);
 
   const beltGeo  = useMemo(() => new THREE.BoxGeometry(length, 0.05, 0.35), [length]);
   const beltMat  = useMemo(() => new THREE.MeshStandardMaterial({
@@ -174,13 +187,17 @@ export const ConveyorBelt = ({ x, z, length, isActive }) => {
   }), []);
 
   useFrame((_, delta) => {
+    beltAccRef.current += delta;
+    if (beltAccRef.current < 1 / 30) { if (isActive) invalidateBelt(); return; }
+    beltAccRef.current -= 1 / 30;
     if (!isActive) return;
-    offsetRef.current = (offsetRef.current + delta * 1.2) % length;
+    offsetRef.current = (offsetRef.current + (1 / 30) * 1.2) % length;
     stripeRefs.current.forEach((ref, i) => {
       if (!ref) return;
       const baseX = -length / 2 + ((i * STRIPE_SPACING * length + offsetRef.current) % length);
       ref.position.x = baseX;
     });
+    invalidateBelt();
   });
 
   const initialXPositions = useMemo(() =>

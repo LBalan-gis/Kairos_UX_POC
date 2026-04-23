@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, startTransition } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { detectIntent, KNOWLEDGE, FALLBACK, resolveMachineId } from '../../lib/kairosIntent';
 import { buildWidgetPayload } from '../../lib/widgetFactory';
 
@@ -38,25 +39,31 @@ const WIDGET_PRESETS = {
 export const KairosContext = React.createContext(null);
 
 export function KairosProvider({ children }) {
-  const kairosOpen        = useAppStore(s => s.kairosOpen);
-  const kairosEntityId    = useAppStore(s => s.kairosEntityId);
-  const entityMap         = useAppStore(s => s.entityMap);
-  const enterFocus        = useAppStore(s => s.enterFocus);
-  const setMachineOffline = useAppStore(s => s.setMachineOffline);
-  const setMachineOnline  = useAppStore(s => s.setMachineOnline);
-  const clearOffline      = useAppStore(s => s.clearOffline);
-  const openOnboarding    = useAppStore(s => s.openOnboarding);
-  const dark              = useAppStore(s => s.dark);
-  const addActionLog      = useAppStore(s => s.addActionLog);
-  const addSpatialWidget  = useAppStore(s => s.addSpatialWidget);
-  const entityPhysics     = useAppStore(s => s.entityPhysics);
-  const liveIds           = useAppStore(s => s.liveIds);
+  const {
+    kairosOpen, kairosEntityId, entityMap, dark, liveIds, entityPhysics,
+    enterFocus, setMachineOffline, setMachineOnline, clearOffline,
+    openOnboarding, addActionLog, addSpatialWidget,
+  } = useAppStore(useShallow(s => ({
+    kairosOpen:        s.kairosOpen,
+    kairosEntityId:    s.kairosEntityId,
+    entityMap:         s.entityMap,
+    dark:              s.dark,
+    liveIds:           s.liveIds,
+    entityPhysics:     s.entityPhysics,
+    enterFocus:        s.enterFocus,
+    setMachineOffline: s.setMachineOffline,
+    setMachineOnline:  s.setMachineOnline,
+    clearOffline:      s.clearOffline,
+    openOnboarding:    s.openOnboarding,
+    addActionLog:      s.addActionLog,
+    addSpatialWidget:  s.addSpatialWidget,
+  })));
 
-  // DI boundary: the only place in the widget pipeline that knows about the store.
-  const liveDataProvider = useCallback(
-    (tag) => entityPhysics?.[tag]?.currentValue,
-    [entityPhysics]
-  );
+  // DI boundary: use a ref so liveDataProvider is always stable and never
+  // triggers context re-renders when entityPhysics ticks.
+  const entityPhysicsRef = useRef(entityPhysics);
+  useEffect(() => { entityPhysicsRef.current = entityPhysics; }, [entityPhysics]);
+  const liveDataProvider = useCallback((tag) => entityPhysicsRef.current?.[tag]?.currentValue, []);
 
   const [messages, setMessages] = useState([
     mkMsg('kairos', { text:'Film tension drift on BM-1101 is starving the line — 23 min hidden micro-stop loss unlogged. Root cause probability 96%. Ask me anything or use a quick command below.', actions:[] }),
@@ -69,7 +76,6 @@ export function KairosProvider({ children }) {
       ],
     }),
   ]);
-  const [input, setInput]               = useState('');
   const [thinking, setThinking]         = useState(false);
   const [currentPanel, setCurrentPanel] = useState(null);
   const [cfrPending, setCfrPending]     = useState(null);
@@ -77,7 +83,6 @@ export function KairosProvider({ children }) {
   const [cfrError, setCfrError]         = useState(false);
 
   const threadRef = useRef(null);
-  const inputRef  = useRef(null);
 
   // ─── Inner handlers ──────────────────────────────────────────────────────────
   const handleReport = useCallback((text) => {
@@ -245,12 +250,18 @@ export function KairosProvider({ children }) {
     })]);
   }, [currentPanel]);
 
-  const submit = useCallback((text) => {
+  // Stable ref to the submit implementation — updated every render so the
+  // setTimeout body always reads fresh state without submit itself recreating.
+  const submitImplRef = useRef(null);
+  submitImplRef.current = (text) => {
     const t = text.trim();
     if (!t) return;
-    setInput('');
-    setMessages(prev => [...prev, mkMsg('user', { text: t, actions: [] })]);
-    setThinking(true);
+    // startTransition: adding messages is non-urgent — don't block the input's
+    // own paint (clearing the field) before React renders the new bubble.
+    startTransition(() => {
+      setMessages(prev => [...prev, mkMsg('user', { text: t, actions: [] })]);
+      setThinking(true);
+    });
     setTimeout(() => {
       setThinking(false);
       const intent = detectIntent(t, currentPanel);
@@ -394,7 +405,9 @@ export function KairosProvider({ children }) {
         handleQuestion(t);
       }
     }, 380);
-  }, [currentPanel, detectIntent, handleReport, handleCommand, handleOfflineSim, handleQuestion, handlePanelModify, clearOffline, addActionLog, openOnboarding]);
+  };
+  // Stable identity — never recreates, so context value and KairosInput don't re-render
+  const submit = useCallback((text) => submitImplRef.current(text), []);
 
   // ─── Effects ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -417,22 +430,28 @@ export function KairosProvider({ children }) {
     return () => window.removeEventListener('kairos-cmd', handler);
   }, [submit]);
 
-  const value = {
+  // Memoize so consumers only re-render when these values actually change,
+  // not on every KairosProvider render (which re-renders on many store subscriptions).
+  const value = useMemo(() => ({
     messages, setMessages,
-    input, setInput,
     thinking, setThinking,
     currentPanel, setCurrentPanel,
     cfrPending, setCfrPending,
     cfrPin, setCfrPin,
     cfrError, setCfrError,
-    threadRef, inputRef,
+    threadRef,
     liveDataProvider,
     liveIds,
     submit,
     dark,
     addActionLog,
     addSpatialWidget,
-  };
+  }), [
+    messages, thinking, currentPanel,
+    cfrPending, cfrPin, cfrError,
+    liveDataProvider, liveIds, submit, dark,
+    addActionLog, addSpatialWidget,
+  ]);
 
   return (
     <KairosContext.Provider value={value}>

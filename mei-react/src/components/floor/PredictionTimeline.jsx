@@ -143,7 +143,7 @@ export function PredictionTimeline() {
           position: 'absolute', top: 10, right: 14,
           pointerEvents: 'auto',
           background: PANEL_BG,
-          backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+          backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
           border: '1px solid rgba(255,255,255,0.12)',
           borderRadius: 10,
           boxShadow: '0 1px 0 0 rgba(255,255,255,0.18) inset, 0 4px 16px rgba(0,0,0,0.35)',
@@ -164,7 +164,7 @@ export function PredictionTimeline() {
       <div style={{
         margin: '10px 14px',
         background: PANEL_BG,
-        backdropFilter: 'blur(18px)',
+        backdropFilter: 'blur(6px)',
         WebkitBackdropFilter: 'blur(18px)',
         borderRadius: 12,
         border: `1px solid rgba(255,255,255,0.12)`,

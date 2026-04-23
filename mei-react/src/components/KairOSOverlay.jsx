@@ -5,7 +5,7 @@ import { useKairos } from './kairos/KairosContext';
 
 function getKairosTokens(dark) {
   return dark ? {
-    panelBg:      'linear-gradient(170deg,rgba(22,28,36,0.85) 0%,rgba(16,20,28,0.85) 100%)',
+    panelBg:      'linear-gradient(170deg,rgba(22,28,36,0.96) 0%,rgba(16,20,28,0.96) 100%)',
     panelBorder:  'rgba(255,255,255,0.12)',
     panelShadow:  '0 1px 0 rgba(255,255,255,0.10) inset, 0 16px 48px rgba(0,0,0,0.60)',
     headerBg:     'rgba(30,40,50,0.4)',
@@ -17,7 +17,7 @@ function getKairosTokens(dark) {
     closeColor:   'rgba(255,255,255,0.80)',
     placeholder:  'rgba(255,255,255,0.5)',
   } : {
-    panelBg:      'linear-gradient(170deg,rgba(255,255,255,0.85) 0%,rgba(245,247,250,0.85) 100%)',
+    panelBg:      'linear-gradient(170deg,rgba(255,255,255,0.97) 0%,rgba(245,247,250,0.97) 100%)',
     panelBorder:  'rgba(0,0,0,0.10)',
     panelShadow:  '0 1px 0 rgba(255,255,255,0.80) inset, 0 16px 48px rgba(0,0,0,0.15)',
     headerBg:     'rgba(0,0,0,0.03)',
@@ -47,7 +47,7 @@ function KairosPanel({ onClose }) {
         width:'38.2vw',
         display:'flex', flexDirection:'column',
         background:T.panelBg,
-        backdropFilter:'blur(32px)', WebkitBackdropFilter:'blur(32px)',
+        backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)',
         borderLeft:`1px solid ${T.panelBorder}`,
         boxShadow:T.panelShadow,
         zIndex:199, overflow:'hidden',
@@ -123,7 +123,7 @@ export const KairOSOverlay = () => {
                 width: 44, height: 44, borderRadius: '50%',
                 border: `1px solid ${T.panelBorder}`,
                 background: T.panelBg,
-                backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
                 boxShadow: T.panelShadow,
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',

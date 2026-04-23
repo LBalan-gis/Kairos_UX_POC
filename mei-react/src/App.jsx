@@ -1,14 +1,28 @@
-import { useRef, useState, useCallback, useMemo, useEffect } from 'react';
+import { memo, lazy, Suspense, useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { useLiveSignal } from './hooks/useLiveSignal';
 import { useLiveData } from './hooks/useLiveData';
 import { usePredictWorker } from './hooks/usePredictWorker';
-import { FloorMapLayer } from './components/FloorMapLayer';
-import { GraphWhiteboardLayer } from './components/GraphWhiteboardLayer';
+// FloorMapLayer is the default view — kept eager so Three.js initializes
+// synchronously and the R3F canvas never hits a Suspense boundary.
+import { FloorMapLayer as _FloorMapLayer } from './components/FloorMapLayer';
+const FloorMapLayer = memo(_FloorMapLayer);
+
+// Non-default views and on-demand modals: lazy-loaded to keep the initial bundle small.
+const GraphWhiteboardLayer = lazy(() =>
+  import('./components/GraphWhiteboardLayer').then(m => ({ default: m.GraphWhiteboardLayer }))
+);
+const KPIDashboard = lazy(() =>
+  import('./components/KPIDashboard').then(m => ({ default: m.KPIDashboard }))
+);
+const MachineOnboardingWizard = lazy(() =>
+  import('./components/MachineOnboardingWizard').then(m => ({ default: m.MachineOnboardingWizard }))
+);
+const CommandPalette = lazy(() =>
+  import('./components/CommandPalette').then(m => ({ default: m.CommandPalette }))
+);
+
 import { KairOSOverlay } from './components/KairOSOverlay';
-import { KPIDashboard } from './components/KPIDashboard';
-import { MachineOnboardingWizard } from './components/MachineOnboardingWizard';
-import { CommandPalette } from './components/CommandPalette';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // ── Scrubber constants ────────────────────────────────────────────────────────
@@ -87,9 +101,7 @@ function AppToolbar() {
   return (
     <div style={{
       height: 44,
-      background: 'rgba(24,32,44,0.97)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
+      background: '#18202C',
       display: 'flex', alignItems: 'center',
       padding: '0 14px',
       gap: 8,
@@ -303,9 +315,7 @@ function ScrubberBar() {
   return (
     <div style={{
       flexShrink: 0,
-      background: 'rgba(24,32,44,0.97)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
+      background: '#18202C',
       borderTop: '1px solid rgba(255,255,255,0.06)',
       borderBottom: '1px solid rgba(255,255,255,0.10)',
       display: 'flex', alignItems: 'center',
@@ -550,7 +560,7 @@ export default function App({ config }) {
       <AppToolbar />
 
       {/* Row 2: Scrubber — same chrome as toolbar, flush beneath it */}
-      <div style={{ background: 'rgba(24,32,44,0.97)' }}>
+      <div style={{ background: '#18202C' }}>
         <ScrubberBar />
       </div>
 
@@ -559,7 +569,6 @@ export default function App({ config }) {
         <div style={{
           position: 'relative', height: '100%',
           width: kairosOpen ? 'calc(100% - 38.2vw)' : '100%',
-          transition: 'width 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
         }}>
           <AnimatePresence initial={false}>
             {view === 'floor' && (
@@ -584,7 +593,7 @@ export default function App({ config }) {
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               style={{ width: '100%', height: '100%', position: 'absolute', inset: 0, zIndex: 2 }}
             >
-              <GraphWhiteboardLayer />
+              <Suspense fallback={null}><GraphWhiteboardLayer /></Suspense>
             </motion.div>
           )}
 
@@ -597,7 +606,7 @@ export default function App({ config }) {
               transition={{ duration: 0.3 }}
               style={{ width: '100%', height: '100%', position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column' }}
             >
-              <KPIDashboard />
+              <Suspense fallback={null}><KPIDashboard /></Suspense>
             </motion.div>
           )}
           </AnimatePresence>
@@ -605,8 +614,8 @@ export default function App({ config }) {
         <KairOSOverlay />
       </div>
 
-      <MachineOnboardingWizard />
-      <CommandPalette />
+      <Suspense fallback={null}><MachineOnboardingWizard /></Suspense>
+      <Suspense fallback={null}><CommandPalette /></Suspense>
     </div>
   );
 }

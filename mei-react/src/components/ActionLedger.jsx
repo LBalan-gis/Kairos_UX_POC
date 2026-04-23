@@ -49,7 +49,7 @@ export function ActionLedger() {
             style={{
               width: 420, height: 220,
               background: 'rgba(5,10,18,0.97)',
-              backdropFilter: 'blur(24px)',
+              backdropFilter: 'blur(6px)',
               border: '1px solid rgba(42,241,229,0.14)',
               borderRadius: 12,
               boxShadow: '0 0 0 1px rgba(42,241,229,0.05), 0 20px 60px rgba(0,0,0,0.70)',
@@ -94,7 +94,7 @@ export function ActionLedger() {
           width: 34, height: 34, borderRadius: 9,
           background: open ? 'rgba(42,241,229,0.10)' : 'rgba(5,10,18,0.85)',
           border: `1px solid ${open ? 'rgba(42,241,229,0.38)' : flash ? 'rgba(42,241,229,0.50)' : 'rgba(42,241,229,0.16)'}`,
-          backdropFilter: 'blur(16px)',
+          backdropFilter: 'blur(6px)',
           cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: open ? '#2AF1E5' : flash ? '#2AF1E5' : 'rgba(255,255,255,0.35)',

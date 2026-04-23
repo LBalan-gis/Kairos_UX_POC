@@ -2,9 +2,9 @@ import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 
 // Custom Sub-components
 import { EnvironmentDetails } from './floor/FloorMapEnvironment';
@@ -109,7 +109,7 @@ function CameraControl({ activePreset, onPreset }) {
       {open && (
         <div style={{
           background: panelBg,
-          backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+          backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
           borderRadius: 10,
           border: `1px solid ${panelBorder}`,
           boxShadow: shadow,
@@ -140,7 +140,7 @@ function CameraControl({ activePreset, onPreset }) {
       <button onClick={() => setOpen(o => !o)} style={{
         width: 44, height: 44,
         background: btnBg,
-        backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+        backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
         border: `1px solid ${btnBorder}`,
         borderRadius: '50%',
         boxShadow: shadow,
@@ -425,7 +425,7 @@ function EnvironmentLights({ isSimulation, dark }) {
         color="#C4D4ED"
         intensity={1.2}
         position={[-4, 12, 4]}
-        castShadow
+       
         shadow-mapSize={[2048, 2048]}
         shadow-camera-near={1}
         shadow-camera-far={40}
@@ -443,8 +443,22 @@ function EnvironmentLights({ isSimulation, dark }) {
 }
 
 export function FloorMapLayer() {
-  const dark             = useAppStore(s => s.dark);
-  const setView          = useAppStore(s => s.setView);
+  const {
+    dark, setView,
+    offlineIds, pendingMachines, relations, relationPropagation,
+    simulatedTime, activeScenario, predictions,
+  } = useAppStore(useShallow(s => ({
+    dark:               s.dark,
+    setView:            s.setView,
+    offlineIds:         s.offlineIds,
+    pendingMachines:    s.pendingMachines,
+    relations:          s.relations,
+    relationPropagation: s.relationPropagation,
+    simulatedTime:      s.simulatedTime,
+    activeScenario:     s.activeScenario,
+    predictions:        s.predictions,
+  })));
+
   const containerRef     = useRef();
   const [loaded, setLoaded] = useState(false);
 
@@ -457,14 +471,6 @@ export function FloorMapLayer() {
     el.addEventListener('wheel', prevent, { passive: false });
     return () => el.removeEventListener('wheel', prevent);
   }, []);
-
-  const offlineIds           = useAppStore(s => s.offlineIds);
-  const pendingMachines      = useAppStore(s => s.pendingMachines);
-  const relations            = useAppStore(s => s.relations);
-  const relationPropagation  = useAppStore(s => s.relationPropagation);
-  const simulatedTime        = useAppStore(s => s.simulatedTime);
-  const activeScenario       = useAppStore(s => s.activeScenario);
-  const predictions          = useAppStore(s => s.predictions);
 
   // Derive causal arcs from store relations — only links where both endpoints
   // map to floor equipment (via entityId). Carry delayMin for arc grow animation.
@@ -610,8 +616,9 @@ export function FloorMapLayer() {
       </AnimatePresence>
 
       <Canvas
-        shadows
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
+        frameloop="demand"
+        dpr={[1, 1.5]}
+        gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
         camera={{ position: [-1, 18, 24], fov: 48, near: 0.1, far: 100 }}
         onCreated={() => setTimeout(() => setLoaded(true), 400)}
       >
@@ -760,14 +767,6 @@ export function FloorMapLayer() {
           panSpeed={0.8}
           target={[-1, 0, 2.25]}
         />
-        <EffectComposer>
-          <Bloom
-            luminanceThreshold={0.90}
-            luminanceSmoothing={0.15}
-            intensity={1.2}
-            mipmapBlur
-          />
-        </EffectComposer>
 
       </Canvas>
     </div>

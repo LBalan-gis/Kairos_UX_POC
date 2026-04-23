@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, memo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale, LinearScale, PointElement, LineElement, BarElement,
@@ -296,7 +296,8 @@ function AegisRejection({ msg }) {
 }
 
 // ─── Bubble (message component) ───────────────────────────────────────────────
-function Bubble({ msg, onCmd, dark, liveDataProvider, liveIds }) {
+// memo: existing messages must not re-render when a new message is appended.
+const Bubble = memo(function Bubble({ msg, onCmd, dark, liveDataProvider, liveIds }) {
   const isKairos     = msg.role === 'kairos';
   const cfg          = msg.chartKey && CHARTS[msg.chartKey];
   const ChartComp    = cfg?.type === 'bar' ? Bar : Line;
@@ -423,7 +424,7 @@ function Bubble({ msg, onCmd, dark, liveDataProvider, liveIds }) {
       )}
     </div>
   );
-}
+});
 
 // ─── KairosThread ─────────────────────────────────────────────────────────────
 export function KairosThread() {

@@ -43,7 +43,7 @@ function SpatialHudPin({ id, payload, eq, dark, removeSpatialWidget, liveDataPro
       background: panelBg,
       border: `1px solid ${border}`,
       borderRadius: 8,
-      backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+      backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
       boxShadow: dark ? '0 6px 24px rgba(0,0,0,0.60)' : '0 4px 16px rgba(0,0,0,0.13)',
       overflow: 'hidden',
       fontFamily: 'system-ui,-apple-system,sans-serif',

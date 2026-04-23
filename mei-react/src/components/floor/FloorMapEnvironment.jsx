@@ -157,26 +157,26 @@ export const EnvironmentDetails = () => {
   <group>
     {/* ── Floor zones ──────────────────────────────────────────── */}
     {/* Main base */}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1.0, -0.001, 2.25]} receiveShadow>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1.0, -0.001, 2.25]}>
       <planeGeometry args={[18.5, 14.0]} />
       <meshStandardMaterial color={dark ? "#273143" : "#F8F9FA"} roughness={1.0} metalness={0} />
     </mesh>
     {/* Grade A clean room zones — around each BF arm */}
     {[{ cx: -7.75, cz: -1.5 }, { cx: -7.75, cz: 5.75 }].map((p, i) => (
-      <mesh key={`cleanA-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p.cx, 0.003, p.cz]} receiveShadow>
+      <mesh key={`cleanA-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[p.cx, 0.003, p.cz]}>
         <planeGeometry args={[3.5, 4.5]} />
         <meshStandardMaterial color={dark ? "#33415C" : "#F1F3F4"} roughness={1.0} metalness={0} />
       </mesh>
     ))}
     {/* Secondary packaging corridor zones */}
     {LINES.map(({ lz }, i) => (
-      <mesh key={`corr-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-0.5, 0.002, lz]} receiveShadow>
+      <mesh key={`corr-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-0.5, 0.002, lz]}>
         <planeGeometry args={[15.5, 2.2]} />
         <meshStandardMaterial color={dark ? "#3B4863" : "#E8EAED"} roughness={1.0} metalness={0} />
       </mesh>
     ))}
     {/* Central aisle between lines */}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-0.5, 0.002, 2.25]} receiveShadow>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-0.5, 0.002, 2.25]}>
       <planeGeometry args={[15.5, 2.1]} />
       <meshStandardMaterial color={dark ? "#2D3A54" : "#F1F3F4"} roughness={1.0} metalness={0} />
     </mesh>
@@ -231,7 +231,7 @@ export const EnvironmentDetails = () => {
     {LINES.map(({ lz, armZCenter, armLen }, i) => (
       <group key={`conv-${i}`}>
         {/* Horizontal belt */}
-        <mesh position={[-0.25, 0.88, lz]} castShadow receiveShadow>
+        <mesh position={[-0.25, 0.88, lz]}>
           <boxGeometry args={[15.5, 0.14, 0.65]} />
           <primitive object={MAT.conveyor} attach="material" />
         </mesh>
@@ -256,7 +256,7 @@ export const EnvironmentDetails = () => {
           <primitive object={MAT.conveyor} attach="material" />
         </mesh>
         {/* Arm belt along Z */}
-        <mesh position={[-7.5, 0.88, armZCenter]} castShadow receiveShadow>
+        <mesh position={[-7.5, 0.88, armZCenter]}>
           <boxGeometry args={[0.65, 0.14, armLen]} />
           <primitive object={MAT.conveyor} attach="material" />
         </mesh>
@@ -271,12 +271,12 @@ export const EnvironmentDetails = () => {
     ))}
 
     {/* ── Compressed air rail ──────────────────────────────────── */}
-    <mesh position={[7.0, 1.2, 2.25]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+    <mesh position={[7.0, 1.2, 2.25]} rotation={[Math.PI / 2, 0, 0]}>
       <cylinderGeometry args={[0.06, 0.06, 4.8, 8]} />
       <meshStandardMaterial color={dark ? "#3B4863" : "#A8D8EA"} emissive={dark ? "#1D2A3A" : "#75C5E6"} emissiveIntensity={0.15} metalness={0} roughness={1.0} />
     </mesh>
     {LINES.map(({ lz }, i) => (
-      <mesh key={`feed-${i}`} position={[7.0, 0.8, lz]} castShadow>
+      <mesh key={`feed-${i}`} position={[7.0, 0.8, lz]}>
         <cylinderGeometry args={[0.04, 0.04, 0.8, 6]} />
         <meshStandardMaterial color={dark ? "#3B4863" : "#A8D8EA"} emissive={dark ? "#1D2A3A" : "#75C5E6"} emissiveIntensity={0.15} metalness={0} roughness={1.0} />
       </mesh>

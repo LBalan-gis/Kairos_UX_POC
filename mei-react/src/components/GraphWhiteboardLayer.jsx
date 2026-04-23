@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useLayout, computeFitTransform } from '../hooks/useLayout';
 import { buildProjectionRelations } from '../engine/relations';
 import { GraphBoard } from './graph/GraphBoard';
@@ -56,24 +57,35 @@ function restack(dragId, dragY, zoneEntities, getMV, getSize, getY) {
 }
 
 export const GraphWhiteboardLayer = () => {
-  const entities          = useAppStore((s) => s.entities);
-  const relations         = useAppStore((s) => s.relations);
-  const focusId           = useAppStore((s) => s.focusId);
-  const visibleIds        = useAppStore((s) => s.visibleIds);        // board = pinned ∪ temp
-  const focusNeighborhood = useAppStore((s) => s.focusNeighborhood); // for dimming
-  const focusEdgeIds      = useAppStore((s) => s.focusEdgeIds);      // for edge dimming
-  const storedPos         = useAppStore((s) => s.positions);
-  const enterFocus        = useAppStore((s) => s.enterFocus);
-  const exitFocus         = useAppStore((s) => s.exitFocus);
-  const revealAll         = useAppStore((s) => s.revealAll);
-  const setPositions      = useAppStore((s) => s.setPositions);
-  const simulatedTime     = useAppStore((s) => s.simulatedTime);
-  const predictions       = useAppStore((s) => s.predictions);
-  const activeScenario    = useAppStore((s) => s.activeScenario);
-  const entityPhysics     = useAppStore((s) => s.entityPhysics);
-  const pinnedIds         = useAppStore((s) => s.pinnedIds);
-  const zoneMap           = useAppStore((s) => s.zoneMap);
-  const zoneLabels        = useAppStore((s) => s.zoneLabels);
+  const {
+    entities, relations, focusId,
+    visibleIds,        // board = pinned ∪ temp
+    focusNeighborhood, // for dimming
+    focusEdgeIds,      // for edge dimming
+    storedPos,
+    enterFocus, exitFocus, revealAll, setPositions,
+    simulatedTime, predictions, activeScenario,
+    entityPhysics, pinnedIds, zoneMap, zoneLabels,
+  } = useAppStore(useShallow(s => ({
+    entities:          s.entities,
+    relations:         s.relations,
+    focusId:           s.focusId,
+    visibleIds:        s.visibleIds,
+    focusNeighborhood: s.focusNeighborhood,
+    focusEdgeIds:      s.focusEdgeIds,
+    storedPos:         s.positions,
+    enterFocus:        s.enterFocus,
+    exitFocus:         s.exitFocus,
+    revealAll:         s.revealAll,
+    setPositions:      s.setPositions,
+    simulatedTime:     s.simulatedTime,
+    predictions:       s.predictions,
+    activeScenario:    s.activeScenario,
+    entityPhysics:     s.entityPhysics,
+    pinnedIds:         s.pinnedIds,
+    zoneMap:           s.zoneMap,
+    zoneLabels:        s.zoneLabels,
+  })));
 
   const isSimulating = simulatedTime !== null && simulatedTime > 0;
 

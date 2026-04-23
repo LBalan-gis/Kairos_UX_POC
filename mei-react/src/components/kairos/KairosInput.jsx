@@ -1,7 +1,10 @@
+import { useState, useRef } from 'react';
 import { useKairos } from './KairosContext';
 
 export function KairosInput() {
-  const { input, setInput, submit, inputRef, dark } = useKairos();
+  const { submit, dark } = useKairos();
+  const [input, setInput] = useState('');
+  const inputRef = useRef(null);
 
   const T = dark ? {
     divider:     'rgba(255,255,255,0.08)',
@@ -22,7 +25,7 @@ export function KairosInput() {
         className="kai-input"
         value={input}
         onChange={e => setInput(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(input); } }}
+        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(input); setInput(''); } }}
         placeholder="Ask anything about the line…"
         data-dark={String(dark)}
         style={{
@@ -31,7 +34,7 @@ export function KairosInput() {
           transition:'border-color 0.15s, box-shadow 0.15s',
         }}
       />
-      <button className="kai-send" onClick={() => submit(input)} style={{
+      <button className="kai-send" onClick={() => { submit(input); setInput(''); }} style={{
         background:'linear-gradient(135deg,#7A5CAD,#4A5AA8)', border:'none', borderRadius:50,
         width:36, height:36, flexShrink:0,
         fontSize:14, color:'#fff', cursor:'pointer', fontWeight:700,

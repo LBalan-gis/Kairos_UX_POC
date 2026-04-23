@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { OpenClawTerminal } from './OpenClawTerminal';
 
-// ── Live ticker hook ──────────────────────────────────────────────────────────
-function useLiveTicker(base, amplitude = 0.6, intervalMs = 1800) {
-  const [val, setVal] = useState(base);
+// ── Live ticker hook — single interval for multiple values ────────────────────
+// configs: [{base, amplitude}]  intervalMs: shared tick rate
+function useLiveMetrics(configs, intervalMs = 2000) {
+  const [vals, setVals] = useState(() => configs.map(c => c.base));
+  const cfgRef = useRef(configs);
+  useEffect(() => { cfgRef.current = configs; });
   useEffect(() => {
     const id = setInterval(() => {
-      const delta = (Math.random() - 0.5) * 2 * amplitude;
-      setVal(+(base + delta).toFixed(1));
-    }, intervalMs + Math.random() * 400);
+      setVals(cfgRef.current.map(c => +(c.base + (Math.random() - 0.5) * 2 * c.amplitude).toFixed(1)));
+    }, intervalMs);
     return () => clearInterval(id);
-  }, [base, amplitude, intervalMs]);
-  return val;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intervalMs]);
+  return vals;
 }
 
 // ── Severity colours ──────────────────────────────────────────────────────────
@@ -40,8 +43,10 @@ const LINE_DATA = [
 // ── LineMetrics ───────────────────────────────────────────────────────────────
 function LineMetrics({ line }) {
   const dark = useAppStore(s => s.dark);
-  const liveOee  = useLiveTicker(line.oee, 0.5, 2200);
-  const liveBpm  = useLiveTicker(line.throughput, 1.2, 1600);
+  const [liveOee, liveBpm] = useLiveMetrics(
+    [{ base: line.oee, amplitude: 0.5 }, { base: line.throughput, amplitude: 1.2 }],
+    2000
+  );
   const progress = Math.round((line.packed / line.target) * 100);
   const t = dark ? {
     div: 'rgba(255,255,255,0.12)', name: 'rgba(255,255,255,0.90)', oee: '#fff',
@@ -156,8 +161,10 @@ function SubBar({ label, val, dark }) {
 
 function OEEOTIFWidget() {
   const dark = useAppStore(s => s.dark);
-  const l1Oee = useLiveTicker(78.4, 0.3, 2400);
-  const l2Oee = useLiveTicker(93.4, 0.2, 3200);
+  const [l1Oee, l2Oee] = useLiveMetrics(
+    [{ base: 78.4, amplitude: 0.3 }, { base: 93.4, amplitude: 0.2 }],
+    2800
+  );
   const live = [l1Oee, l2Oee];
   return (
     <div style={{ width: '100%', pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: 0, fontFamily: 'inherit' }}>
@@ -202,7 +209,7 @@ export function FloorMetrics({ dark, onMachineClick, offlineAlarms }) {
       zIndex: 120, display: 'flex', flexDirection: 'column',
       width: 300, pointerEvents: 'auto',
       background: dark ? 'linear-gradient(170deg,rgba(18,24,40,0.97) 0%,rgba(12,16,28,0.97) 100%)' : 'linear-gradient(170deg,rgba(250,251,252,0.98) 0%,rgba(235,238,242,0.98) 100%)',
-      backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)',
+      backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
       borderRight: dark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(100,60,160,0.12)',
       boxShadow: dark ? '0 1px 0 rgba(255,255,255,0.10) inset,0 0 0 1px rgba(122,92,173,0.12),0 28px 72px rgba(0,0,0,0.60)' : '0 0 0 1px rgba(100,60,160,0.10),0 28px 72px rgba(0,0,0,0.16)',
       overflow: 'hidden'
