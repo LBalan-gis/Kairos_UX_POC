@@ -534,7 +534,7 @@ export default function App({ config }) {
   return (
     <div data-theme={dark ? 'dark' : 'light'} style={{
       width: '100%', height: '100vh', overflow: 'hidden',
-      background: dark ? '#000000' : '#FFFFFF', 
+      background: dark ? '#161A23' : '#E4DFD8',
       display: 'grid',
       gridTemplateRows: '44px 52px 1fr',
     }}>

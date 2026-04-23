@@ -2,7 +2,6 @@ import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { useAppStore } from '../store/useAppStore';
 
 // Custom Sub-components
@@ -563,7 +562,7 @@ export function FloorMapLayer() {
 
 
   return (
-    <div ref={containerRef} className="fl-three-wrap" style={{ width: '100%', height: '100%', background: '#E4DFD8', position: 'relative', overflow: 'hidden' }}>
+    <div ref={containerRef} className="fl-three-wrap" style={{ width: '100%', height: '100%', background: dark ? '#161A23' : '#E4DFD8', position: 'relative', overflow: 'hidden' }}>
 
       {/* ── Monolithic Telemetry Sidebar ── */}
       <FloorMetrics dark={dark} onMachineClick={handleMachineClick} offlineAlarms={offlineAlarms} />
@@ -720,14 +719,7 @@ export function FloorMapLayer() {
           panSpeed={0.8}
           target={[-1, 0, 2.25]}
         />
-        <EffectComposer>
-          <Bloom
-            luminanceThreshold={0.55}
-            luminanceSmoothing={0.4}
-            intensity={0.9}
-            mipmapBlur
-          />
-        </EffectComposer>
+
 
       </Canvas>
     </div>
