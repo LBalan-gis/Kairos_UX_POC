@@ -18,13 +18,6 @@
   overflow: hidden;
 }
 
-/* Isolate the R3F canvas from global CSS resets — no inherited background */
-.fl-three-wrap canvas {
-  display: block !important;
-  background: transparent !important;
-  outline: none;
-}
-
 /* Incident bar */
 .fl-incident-bar {
   position: absolute;

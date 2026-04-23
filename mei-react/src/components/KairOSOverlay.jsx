@@ -41,7 +41,7 @@ function KairosPanel({ onClose }) {
       initial={{ opacity:0, x:'38.2vw' }}
       animate={{ opacity:1, x:0 }}
       exit={{ opacity:0, x:'38.2vw' }}
-      transition={{ type:'spring', stiffness:360, damping:30 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       style={{
         position:'fixed', top:96, right:0, bottom:0,
         width:'38.2vw',
@@ -56,9 +56,21 @@ function KairosPanel({ onClose }) {
       {/* Header */}
       <div style={{ padding:'13px 18px 11px', borderBottom:`1px solid ${T.headerBorder}`, display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0, background:T.headerBg }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ position:'relative', width:9, height:9 }}>
-            <div style={{ width:9, height:9, borderRadius:'50%', background:'#7A5CAD', boxShadow:'0 0 7px rgba(122,92,173,0.80)' }} />
-            <div style={{ position:'absolute', inset:0, borderRadius:'50%', background:'#A990D4', animation:'statusBlink 2.4s ease-in-out infinite', opacity:0 }} />
+          <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', width:20, height:20 }}>
+            <svg viewBox="0 0 100 100" width="20" height="20" style={{ overflow: 'visible' }}>
+              <path d="M 74 26 A 34 34 0 1 0 74 74" stroke={dark ? '#E2E8F0' : '#1A202C'} strokeWidth="6" fill="none" strokeLinecap="round" />
+              <line x1="16" y1="50" x2="37" y2="50" stroke={dark ? '#E2E8F0' : '#1A202C'} strokeWidth="6" strokeLinecap="round" />
+              
+              {/* Blinking outer glow shadow */}
+              <circle cx="50" cy="50" r="8" fill="#FF5000" style={{ animation: 'statusBlink 2.4s ease-in-out infinite', filter: 'drop-shadow(0 0 12px rgba(255,80,0,1))' }} />
+              {/* Solid core with border matching header background to create negative space */}
+              <circle cx="50" cy="50" r="8" fill="#FF5000" stroke={T.headerBg} strokeWidth="3" />
+              
+              {/* Fibonacci Trailing Dots */}
+              <circle cx="63" cy="50" r="3" fill={dark ? '#E2E8F0' : '#1A202C'} />
+              <circle cx="72" cy="50" r="3" fill={dark ? '#E2E8F0' : '#1A202C'} />
+              <circle cx="81" cy="50" r="3" fill={dark ? '#E2E8F0' : '#1A202C'} />
+            </svg>
           </div>
           <div>
             <div style={{ fontSize:11.5, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:T.brand, lineHeight:1.1 }}>KairOS</div>
@@ -96,21 +108,38 @@ export const KairOSOverlay = () => {
         .kai-input::placeholder  { color:${T.placeholder}; }
       `}</style>
 
-      {/* Orb */}
-      <button className="kai-orb" onClick={() => kairosOpen ? closeKairos() : openKairos()} style={{
-        position:'fixed', bottom:24, left:28, zIndex: 9999,
-        width:48, height:48, borderRadius:'50%', border:'1px solid rgba(255,255,255,0.16)',
-        background:'linear-gradient(145deg,#8B6DC0 0%,#5B6BC0 100%)',
-        animation:'orbGlow 3s ease-in-out infinite',
-        cursor:'pointer',
-        display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:16, color:'white',
-        transition:'transform 0.18s',
-      }}>✦</button>
-
       <KairOS.Provider>
-        <AnimatePresence>
-          {kairosOpen && <KairosPanel onClose={closeKairos} />}
+        <AnimatePresence mode="wait">
+          {!kairosOpen && (
+            <motion.button
+              key="kai-invoker"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              onClick={openKairos}
+              style={{
+                position:'fixed', bottom:68, right:16, zIndex: 9999,
+                width: 44, height: 44, borderRadius: '50%',
+                border: `1px solid ${T.panelBorder}`,
+                background: T.panelBg,
+                backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                boxShadow: T.panelShadow,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <svg viewBox="0 0 100 100" width="26" height="26" style={{ overflow: 'visible' }}>
+                <path d="M 74 26 A 34 34 0 1 0 74 74" stroke={dark ? '#E2E8F0' : '#2A2F35'} strokeWidth="6" fill="none" strokeLinecap="round" />
+                <line x1="16" y1="50" x2="37" y2="50" stroke={dark ? '#E2E8F0' : '#2A2F35'} strokeWidth="6" strokeLinecap="round" />
+                <circle cx="50" cy="50" r="8" fill="#FF5000" stroke={dark ? '#111721' : '#FFFFFF'} strokeWidth="2.5" style={{ filter: 'drop-shadow(0 0 10px rgba(255,80,0,0.85))' }} />
+                <circle cx="63" cy="50" r="3" fill={dark ? '#E2E8F0' : '#2A2F35'} />
+                <circle cx="72" cy="50" r="3" fill={dark ? '#E2E8F0' : '#2A2F35'} />
+                <circle cx="81" cy="50" r="3" fill={dark ? '#E2E8F0' : '#2A2F35'} />
+              </svg>
+            </motion.button>
+          )}
+          {kairosOpen && <KairosPanel key="kai-panel" onClose={closeKairos} />}
         </AnimatePresence>
         <KairOS.CFRGate />
       </KairOS.Provider>

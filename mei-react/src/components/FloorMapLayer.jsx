@@ -2,6 +2,8 @@ import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 
 // Custom Sub-components
@@ -136,11 +138,11 @@ function CameraControl({ activePreset, onPreset }) {
       )}
 
       <button onClick={() => setOpen(o => !o)} style={{
-        width: 36, height: 36,
+        width: 44, height: 44,
         background: btnBg,
         backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
         border: `1px solid ${btnBorder}`,
-        borderRadius: 10,
+        borderRadius: '50%',
         boxShadow: shadow,
         cursor: 'pointer',
         color: iconColor,
@@ -152,6 +154,39 @@ function CameraControl({ activePreset, onPreset }) {
     </div>
   );
 }
+
+// ── WebGL Compilation Loader ──────────────────────────────────────────────────
+const KairosLoader = ({ dark }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.6, ease: 'easeInOut' }}
+      style={{
+        position: 'absolute', inset: 0, zIndex: 9999,
+        background: dark ? '#10141C' : '#F8F9FA',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <style>{`
+        @keyframes kaiDot1 { 0%, 100% { opacity: 0.25; } 33% { opacity: 1; transform: scale(1.15); } }
+        @keyframes kaiDot2 { 0%, 100% { opacity: 0.25; } 66% { opacity: 1; transform: scale(1.15); } }
+        @keyframes kaiDot3 { 0%, 100% { opacity: 0.25; } 99% { opacity: 1; transform: scale(1.15); } }
+      `}</style>
+      <svg viewBox="0 0 100 100" width="72" height="72" style={{ overflow: 'visible' }}>
+        <path d="M 74 26 A 34 34 0 1 0 74 74" stroke={dark ? '#30363D' : '#E2E8F0'} strokeWidth="5" fill="none" strokeLinecap="round" />
+        <line x1="16" y1="50" x2="37" y2="50" stroke={dark ? '#30363D' : '#E2E8F0'} strokeWidth="5" strokeLinecap="round" />
+        <circle cx="50" cy="50" r="8" fill="#FF5000" stroke={dark ? '#10141C' : '#F8F9FA'} strokeWidth="3" style={{ filter: 'drop-shadow(0 0 10px rgba(255,80,0,0.6))' }} />
+        <circle cx="63" cy="50" r="3" fill={dark ? '#E2E8F0' : '#1A202C'} style={{ animation: 'kaiDot1 1.2s infinite', transformOrigin: '63px 50px' }} />
+        <circle cx="72" cy="50" r="3" fill={dark ? '#E2E8F0' : '#1A202C'} style={{ animation: 'kaiDot2 1.2s infinite', transformOrigin: '72px 50px' }} />
+        <circle cx="81" cy="50" r="3" fill={dark ? '#E2E8F0' : '#1A202C'} style={{ animation: 'kaiDot3 1.2s infinite', transformOrigin: '81px 50px' }} />
+      </svg>
+      <div style={{ marginTop: 24, fontSize: 11, fontWeight: 700, color: dark ? '#30363D' : '#A0AEC0', letterSpacing: '0.25em', textTransform: 'uppercase' }}>
+        Initializing Workspace
+      </div>
+    </motion.div>
+  );
+};
 
 // ── Cinematic dive rig — timed ease-in-out, fires view switch mid-flight ──────
 const DIVE_DURATION = 0.45; // seconds
@@ -383,12 +418,12 @@ function EnvironmentLights({ isSimulation, dark }) {
 
   return (
     <>
-      <hemisphereLight ref={hemiLightRef} args={[0xA3B5D1, 0x161A23, 1.3]} />
-      <ambientLight ref={ambientLightRef} color="#859AB8" intensity={1.5} />
+      <hemisphereLight ref={hemiLightRef} args={[0xA3B5D1, 0x161A23, 0.6]} />
+      <ambientLight ref={ambientLightRef} color="#859AB8" intensity={0.6} />
       <directionalLight
         ref={mainLightRef}
         color="#C4D4ED"
-        intensity={0.6}
+        intensity={1.2}
         position={[-4, 12, 4]}
         castShadow
         shadow-mapSize={[2048, 2048]}
@@ -411,6 +446,7 @@ export function FloorMapLayer() {
   const dark             = useAppStore(s => s.dark);
   const setView          = useAppStore(s => s.setView);
   const containerRef     = useRef();
+  const [loaded, setLoaded] = useState(false);
 
   // Prevent wheel events from triggering browser zoom (same fix as GraphBoard).
   // OrbitControls still receives them via the canvas; we just stop the browser default.
@@ -562,21 +598,26 @@ export function FloorMapLayer() {
 
 
   return (
-    <div ref={containerRef} className="fl-three-wrap" style={{ width: '100%', height: '100%', background: dark ? '#161A23' : '#E4DFD8', position: 'relative', overflow: 'hidden' }}>
+    <div ref={containerRef} className="fl-three-wrap" style={{ width: '100%', height: '100%', background: '#E4DFD8', position: 'relative', overflow: 'hidden' }}>
 
       {/* ── Monolithic Telemetry Sidebar ── */}
       <FloorMetrics dark={dark} onMachineClick={handleMachineClick} offlineAlarms={offlineAlarms} />
 
       <CameraControl activePreset={activePreset} onPreset={handlePreset} />
 
+      <AnimatePresence>
+        {!loaded && <KairosLoader dark={dark} />}
+      </AnimatePresence>
+
       <Canvas
         shadows
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
         camera={{ position: [-1, 18, 24], fov: 48, near: 0.1, far: 100 }}
+        onCreated={() => setTimeout(() => setLoaded(true), 400)}
       >
         <MapThemeManager />
-        <color attach="background" args={[dark ? '#161A23' : '#E4DFD8']} />
-        <fog attach="fog" args={[dark ? '#161A23' : '#E4DFD8', 24, 48]} />
+        <color attach="background" args={[dark ? '#161A23' : '#ECEFF4']} />
+        <fog attach="fog" args={[dark ? '#161A23' : '#ECEFF4', 24, 48]} />
         <EnvironmentLights isSimulation={simulatedTime !== null} dark={dark} />
 
         {/* Camera preset rig */}
@@ -719,7 +760,14 @@ export function FloorMapLayer() {
           panSpeed={0.8}
           target={[-1, 0, 2.25]}
         />
-
+        <EffectComposer>
+          <Bloom
+            luminanceThreshold={0.90}
+            luminanceSmoothing={0.15}
+            intensity={1.2}
+            mipmapBlur
+          />
+        </EffectComposer>
 
       </Canvas>
     </div>

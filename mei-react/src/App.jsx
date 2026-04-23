@@ -9,7 +9,6 @@ import { KairOSOverlay } from './components/KairOSOverlay';
 import { KPIDashboard } from './components/KPIDashboard';
 import { MachineOnboardingWizard } from './components/MachineOnboardingWizard';
 import { CommandPalette } from './components/CommandPalette';
-import { ActionLedger } from './components/ActionLedger';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // ── Scrubber constants ────────────────────────────────────────────────────────
@@ -99,7 +98,16 @@ function AppToolbar() {
 
       {/* Brand */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1 }}>✦</span>
+        <div style={{ width: 14, height: 14, display: 'flex' }}>
+          <svg viewBox="0 0 100 100" width="14" height="14" style={{ overflow: 'visible' }}>
+            <path d="M 74 26 A 34 34 0 1 0 74 74" stroke="rgba(255,255,255,0.8)" strokeWidth="8" fill="none" strokeLinecap="round" />
+            <line x1="16" y1="50" x2="37" y2="50" stroke="rgba(255,255,255,0.8)" strokeWidth="8" strokeLinecap="round" />
+            <circle cx="50" cy="50" r="8" fill="#FF5000" />
+            <circle cx="63" cy="50" r="3" fill="rgba(255,255,255,0.8)" />
+            <circle cx="72" cy="50" r="3" fill="rgba(255,255,255,0.8)" />
+            <circle cx="81" cy="50" r="3" fill="rgba(255,255,255,0.8)" />
+          </svg>
+        </div>
         <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', letterSpacing: '0.06em' }}>
           KairOS
         </span>
@@ -534,7 +542,7 @@ export default function App({ config }) {
   return (
     <div data-theme={dark ? 'dark' : 'light'} style={{
       width: '100%', height: '100vh', overflow: 'hidden',
-      background: dark ? '#161A23' : '#E4DFD8',
+      background: dark ? '#000000' : '#FFFFFF', 
       display: 'grid',
       gridTemplateRows: '44px 52px 1fr',
     }}>
@@ -551,7 +559,7 @@ export default function App({ config }) {
         <div style={{
           position: 'relative', height: '100%',
           width: kairosOpen ? 'calc(100% - 38.2vw)' : '100%',
-          transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'width 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
         }}>
           <AnimatePresence initial={false}>
             {view === 'floor' && (
@@ -597,7 +605,6 @@ export default function App({ config }) {
         <KairOSOverlay />
       </div>
 
-      <ActionLedger />
       <MachineOnboardingWizard />
       <CommandPalette />
     </div>

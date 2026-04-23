@@ -1887,8 +1887,6 @@ function speakNatural(text){
     synth.speak(u);
   },150);
 }
-var KAIROS_API_KEY=''; // ← paste your Anthropic API key here
-var KAIROS_SYS='You are Kairos — a proactive AI process intelligence for Servier Arklow, Building 4. You speak directly and confidently, like a trusted colleague who has already done the analysis. You never wait to be asked; you surface what matters. Current plant state: Blister Line has an active seal temperature drift of +1.8°C above the golden batch corridor, detected at 14:16, integrity risk in approximately 25 minutes, confidence 0.94. Bottle Line nominal. Granulator running, endpoint in 4.2 minutes. Tablet Press nominal. Coating running, endpoint in 18 minutes. Net financial impact today: +€411,900. Respond in 2-3 natural spoken sentences — no bullet points, no headers. Speak as if talking to an experienced operator who needs the key point immediately.';
 function initSpeech(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;
   var r=new SR();r.continuous=true;r.interimResults=true;r.lang='en-US';
@@ -1931,23 +1929,14 @@ async function handleSpeech(text){
   var u=document.createElement('div');u.className='voice-message user';u.innerHTML='<div class="voice-message-avatar">You</div><div class="voice-message-content">'+text+'</div>';f.appendChild(u);f.scrollTop=f.scrollHeight;
   var rid='kr-'+Date.now();
   var k=document.createElement('div');k.className='voice-message kairos';k.innerHTML='<div class="voice-message-avatar">∞</div><div class="voice-message-content" id="'+rid+'" style="opacity:.5">…</div>';f.appendChild(k);f.scrollTop=f.scrollHeight;
-  if(!KAIROS_API_KEY){
-    var el=document.getElementById(rid);if(el){el.textContent='No API key set. Add your Anthropic key to KAIROS_API_KEY at the top of the script.';el.style.opacity='1';}
-    if(ai){ai.classList.remove('ai-thinking');setBoardMood(_currentMood);}
-    if(vt)vt.textContent=voiceOn?'Listening...':'Voice Mode';
-    return;
-  }
   try{
-    var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':KAIROS_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:150,system:KAIROS_SYS,messages:[{role:'user',content:text}]})});
-    var data=await res.json();
-    var reply=data.content&&data.content[0]?data.content[0].text:'No response.';
+    // Voice intelligence stub — wire up your own inference endpoint here
+    var reply='KairOS voice intelligence is ready. Connect your inference backend to enable live responses.';
     var el=document.getElementById(rid);if(el){el.textContent=reply;el.style.opacity='1';}
     f.scrollTop=f.scrollHeight;
-    // Response lands on the board — not just in the overlay panel
     showBrief(reply,false,10000);
     speakNatural(reply);
-    // Log and spotlight whichever card the response is about
-    var rel=_detectCard(reply)||_detectCard(text);
+    var rel=_detectCard(text);
     logObservation(reply,rel,'insight',['In response to: "'+text.slice(0,60)+(text.length>60?'…':'')+'"']);
     if(rel){
       spotlightCard(rel,true);
@@ -1956,7 +1945,6 @@ async function handleSpeech(text){
   }catch(err){
     var el=document.getElementById(rid);if(el){el.textContent='Error: '+err.message;el.style.opacity='1';}
   }finally{
-    // Restore mood indicator once Kairos is done thinking
     if(ai){ai.classList.remove('ai-thinking');setBoardMood(_currentMood);}
     if(vt)vt.textContent=voiceOn?'Listening...':'Voice Mode';
   }

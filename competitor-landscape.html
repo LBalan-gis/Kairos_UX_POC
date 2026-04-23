@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manufacturing Intelligence — Competitive Landscape 2026</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0C0F18;
+    --surface:  #121722;
+    --card:     #161D2B;
+    --border:   rgba(255,255,255,0.07);
+    --text:     rgba(255,255,255,0.88);
+    --muted:    rgba(255,255,255,0.45);
+    --dim:      rgba(255,255,255,0.22);
+    --brand:    #7A5CAD;
+    --brandlit: #A990D4;
+    --red:      #EF4444;
+    --amber:    #F59E0B;
+    --green:    #10B981;
+    --cyan:     #2AF1E5;
+    --blue:     #58a6ff;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    text-align: center;
+    padding: 72px 24px 56px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .hero-tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--brandlit); border: 1px solid rgba(122,92,173,0.35);
+    padding: 4px 14px; border-radius: 20px; margin-bottom: 24px;
+    background: rgba(122,92,173,0.08);
+  }
+  .hero h1 {
+    font-size: clamp(28px, 4vw, 44px); font-weight: 800; letter-spacing: -0.02em;
+    line-height: 1.15; margin-bottom: 18px;
+  }
+  .hero h1 span { color: var(--brandlit); }
+  .hero p {
+    font-size: 16px; color: var(--muted); max-width: 560px; margin: 0 auto 32px; line-height: 1.7;
+  }
+  .hero-meta {
+    display: flex; align-items: center; justify-content: center; gap: 24px;
+    font-size: 11px; color: var(--dim); letter-spacing: 0.04em;
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+  /* ── Section label ── */
+  .section-label {
+    text-align: center; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--dim); margin: 64px 0 32px;
+  }
+
+  /* ── Grid ── */
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    gap: 28px; max-width: 1280px; margin: 0 auto; padding: 0 28px 80px;
+  }
+
+  /* ── Competitor card ── */
+  .comp-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .comp-header {
+    padding: 18px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  }
+  .comp-vendor { font-size: 10px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+  .comp-product { font-size: 16px; font-weight: 700; color: var(--text); }
+  .comp-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+  }
+  .badge-legacy  { background: rgba(107,114,128,0.15); color: #9CA3AF; border: 1px solid rgba(107,114,128,0.25); }
+  .badge-modern  { background: rgba(59,130,246,0.12);  color: #60A5FA; border: 1px solid rgba(59,130,246,0.25); }
+  .badge-bi      { background: rgba(245,158,11,0.12);  color: #FCD34D; border: 1px solid rgba(245,158,11,0.25); }
+  .badge-iiot    { background: rgba(16,185,129,0.12);  color: #34D399; border: 1px solid rgba(16,185,129,0.25); }
+
+  /* ── Mock screen ── */
+  .mock-screen {
+    margin: 0; position: relative;
+    background: #1C2030; border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+  /* Browser chrome */
+  .mock-chrome {
+    background: #252A3A; padding: 8px 12px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .chrome-dots { display: flex; gap: 5px; }
+  .chrome-dot  { width: 9px; height: 9px; border-radius: 50%; }
+  .chrome-bar  {
+    flex: 1; height: 18px; border-radius: 4px;
+    background: rgba(255,255,255,0.06); margin: 0 8px;
+    display: flex; align-items: center; padding: 0 8px;
+    font-size: 9px; color: rgba(255,255,255,0.20); letter-spacing: 0.02em;
+    overflow: hidden; white-space: nowrap;
+  }
+
+  /* ── Weaknesses ── */
+  .weaknesses {
+    padding: 16px 20px 20px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .weakness-title {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 4px;
+  }
+  .weakness {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 12px; color: var(--muted); line-height: 1.5;
+  }
+  .weakness-icon {
+    width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; margin-top: 1px;
+  }
+  .wi-red   { background: rgba(239,68,68,0.15);   color: var(--red);   border: 1px solid rgba(239,68,68,0.30);   }
+  .wi-amber { background: rgba(245,158,11,0.15);  color: var(--amber); border: 1px solid rgba(245,158,11,0.30);  }
+
+  /* ═══════════════════════════════════════════
+     SCADA / HMI MOCK  (Wonderware / iFIX style)
+  ═══════════════════════════════════════════ */
+  .scada-ui {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    background: #C0C0C0; /* classic Win3.1 grey */
+    color: #000;
+    padding: 0;
+    height: 320px;
+    overflow: hidden;
+    position: relative;
+  }
+  .scada-titlebar {
+    background: #000080; color: #fff; padding: 2px 6px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; font-weight: bold;
+  }
+  .scada-titlebar-btns { display: flex; gap: 2px; }
+  .scada-titlebar-btn {
+    background: #C0C0C0; color: #000; border: 1px solid #000;
+    width: 14px; height: 12px; font-size: 9px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center; cursor: default;
+  }
+  .scada-menubar {
+    background: #C0C0C0; border-bottom: 1px solid #808080;
+    display: flex; gap: 0; font-size: 10px; padding: 1px 2px;
+  }
+  .scada-menu-item { padding: 1px 8px; cursor: default; }
+  .scada-menu-item:hover { background: #000080; color: #fff; }
+  .scada-body { display: flex; height: calc(100% - 52px); }
+  .scada-sidebar {
+    width: 120px; flex-shrink: 0;
+    background: #B0B0B0; border-right: 2px solid #808080;
+    padding: 4px; font-size: 9px;
+  }
+  .scada-sidebar-title {
+    background: #000080; color: #fff; font-weight: bold;
+    padding: 1px 4px; margin-bottom: 3px; font-size: 10px;
+  }
+  .scada-tree-item {
+    padding: 1px 4px; cursor: default;
+    display: flex; align-items: center; gap: 3px;
+  }
+  .scada-tree-item.active { background: #000080; color: #fff; }
+  .scada-ind {
+    width: 8px; height: 8px; border-radius: 50%; border: 1px solid #000; flex-shrink: 0;
+    display: inline-block;
+  }
+  .scada-canvas {
+    flex: 1; background: #E8E8E8; position: relative; overflow: hidden;
+    border: 2px inset #808080;
+  }
+  /* P&ID pipe segments */
+  .pipe { position: absolute; background: #555; }
+  .pipe-h { height: 6px; }
+  .pipe-v { width: 6px; }
+  .tank {
+    position: absolute; border: 2px solid #000; background: #DDDDFF;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: bold; cursor: default;
+  }
+  .scada-value {
+    position: absolute; background: #000; color: #00FF00;
+    font-family: 'Courier New', monospace; font-size: 9px; font-weight: bold;
+    padding: 1px 4px; border: 1px solid #444;
+  }
+  .scada-alarm-row {
+    display: flex; align-items: center; gap: 4px;
+    padding: 1px 4px; font-size: 9px; font-family: monospace;
+    border-bottom: 1px solid #aaa;
+  }
+  .scada-alarm-panel {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #F0F0F0; border-top: 2px solid #808080; height: 70px; overflow: hidden;
+  }
+  .scada-alarm-hdr {
+    background: #800000; color: #fff; font-weight: bold; font-size: 9px;
+    padding: 1px 6px; display: flex; justify-content: space-between;
+  }
+  .ack { background: #FFFF00; color: #000; font-size: 8px; font-weight: bold; padding: 0 4px; border: 1px solid #000; cursor: default; }
+
+  /* ═══════════════════════════════════════════
+     IGNITION / AVEVA STYLE MOCK
+  ═══════════════════════════════════════════ */
+  .ignition-ui {
+    background: #1A1F2E; color: #E2E8F0; font-size: 11px;
+    height: 320px; overflow: hidden; position: relative;
+    display: flex; flex-direction: column;
+  }
+  .ign-topbar {
+    background: #0F1420; border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 6px 14px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  }
+  .ign-logo { font-size: 12px; font-weight: 800; color: #F97316; letter-spacing: 0.04em; }
+  .ign-breadcrumb { font-size: 10px; color: rgba(255,255,255,0.35); }
+  .ign-nav {
+    background: #141927; border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; gap: 0; padding: 0 12px; flex-shrink: 0;
+  }
+  .ign-nav-item {
+    padding: 7px 14px; font-size: 10px; font-weight: 600; cursor: default;
+    color: rgba(255,255,255,0.40); border-bottom: 2px solid transparent;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .ign-nav-item.active { color: #F97316; border-bottom-color: #F97316; }
+  .ign-body { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto 1fr; gap: 8px; padding: 10px; overflow: hidden; }
+  .ign-kpi {
+    background: #0F1420; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
+    padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .ign-kpi-label { font-size: 8px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.08em; }
+  .ign-kpi-value { font-size: 22px; font-weight: 800; line-height: 1; }
+  .ign-kpi-sub { font-size: 8px; color: rgba(255,255,255,0.30); }
+  .ign-chart-panel {
+    grid-column: 1 / 3;
+    background: #0F1420; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
+    padding: 8px 10px; overflow: hidden;
+  }
+  .ign-chart-title { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .ign-alarm-panel {
+    background: #0F1420; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
+    padding: 6px 8px; overflow: hidden;
+  }
+  .ign-alarm-row {
+    display: flex; gap: 6px; align-items: center; padding: 3px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 9px;
+  }
+  .ign-sev { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; }
+  /* Mini bar chart */
+  .mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 70px; }
+  .mbar { flex: 1; border-radius: 2px 2px 0 0; background: #F97316; opacity: 0.7; }
+
+  /* ═══════════════════════════════════════════
+     POWER BI / BI TOOL FOR MANUFACTURING
+  ═══════════════════════════════════════════ */
+  .powerbi-ui {
+    background: #fff; color: #252423; font-size: 11px;
+    height: 320px; overflow: hidden; position: relative;
+    display: flex; flex-direction: column;
+  }
+  .pbi-topbar {
+    background: #F3F2F1; border-bottom: 1px solid #EDEBE9;
+    padding: 5px 12px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .pbi-logo { font-size: 12px; font-weight: 800; color: #F2C811; display: flex; align-items: center; gap: 4px; }
+  .pbi-logo-icon { width: 16px; height: 16px; background: #F2C811; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #000; font-weight: 900; }
+  .pbi-breadcrumb { font-size: 10px; color: #605E5C; }
+  .pbi-nav { background: #FAF9F8; border-bottom: 1px solid #EDEBE9; display: flex; gap: 0; padding: 0 12px; flex-shrink: 0; }
+  .pbi-tab { padding: 6px 14px; font-size: 10px; font-weight: 600; cursor: default; color: #605E5C; border-bottom: 2px solid transparent; }
+  .pbi-tab.active { color: #F2C811; border-bottom-color: #F2C811; }
+  .pbi-body { flex: 1; display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 10px; overflow: hidden; }
+  .pbi-visual {
+    background: #FAF9F8; border: 1px solid #EDEBE9; border-radius: 4px;
+    padding: 8px; overflow: hidden;
+  }
+  .pbi-visual-title { font-size: 9px; font-weight: 700; color: #605E5C; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .pbi-big-num { font-size: 26px; font-weight: 800; color: #323130; line-height: 1; }
+  .pbi-sub { font-size: 9px; color: #A19F9D; margin-top: 2px; }
+  .pbi-wide { grid-column: 1 / 3; }
+  /* Donut */
+  .donut-wrap { display: flex; align-items: center; gap: 8px; height: 60px; }
+  .donut { width: 60px; height: 60px; border-radius: 50%; background: conic-gradient(#F2C811 0% 78%, #EDEBE9 78% 100%); flex-shrink: 0; }
+  .donut-inner { position: relative; display: flex; align-items: center; justify-content: center; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #605E5C; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+  /* Stacked bars */
+  .stacked-wrap { height: 60px; display: flex; flex-direction: column; justify-content: flex-end; gap: 1px; }
+  .stacked-row { display: flex; height: 12px; border-radius: 1px; overflow: hidden; }
+  /* Filter pane indicator */
+  .pbi-filter-note { font-size: 9px; color: #A19F9D; font-style: italic; text-align: center; padding-top: 4px; }
+
+  /* ═══════════════════════════════════════════
+     IIOT PLATFORM (Azure IoT / AWS IoT style)
+  ═══════════════════════════════════════════ */
+  .iiot-ui {
+    background: #0C1022; color: #E2E8F0; font-size: 11px;
+    height: 320px; overflow: hidden; position: relative;
+    display: flex; flex-direction: column;
+  }
+  .iiot-topbar {
+    background: #050A14; border-bottom: 1px solid rgba(0,120,212,0.25);
+    padding: 6px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .iiot-logo { font-size: 11px; font-weight: 700; color: #0078D4; display: flex; align-items: center; gap: 5px; }
+  .iiot-logo-box { width: 20px; height: 20px; background: #0078D4; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 900; }
+  .iiot-breadcrumb { font-size: 10px; color: rgba(255,255,255,0.30); margin-left: 8px; }
+  .iiot-sidebar {
+    width: 44px; background: #050A14; border-right: 1px solid rgba(0,120,212,0.15);
+    display: flex; flex-direction: column; align-items: center; padding: 8px 0; gap: 6px; flex-shrink: 0;
+  }
+  .iiot-nav-icon {
+    width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.04);
+    display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: default;
+  }
+  .iiot-nav-icon.active { background: rgba(0,120,212,0.25); color: #0078D4; }
+  .iiot-main { flex: 1; display: flex; overflow: hidden; }
+  .iiot-content { flex: 1; padding: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto 1fr; gap: 8px; overflow: hidden; }
+  .iiot-widget {
+    background: #0F1829; border: 1px solid rgba(0,120,212,0.18); border-radius: 8px;
+    padding: 8px 10px; overflow: hidden;
+  }
+  .iiot-widget-title { font-size: 8px; font-weight: 700; color: rgba(255,255,255,0.30); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+  .iiot-big { font-size: 24px; font-weight: 800; color: #0078D4; line-height: 1; }
+  .iiot-sub { font-size: 9px; color: rgba(255,255,255,0.25); margin-top: 2px; }
+  .iiot-status-grid { display: flex; flex-wrap: wrap; gap: 3px; }
+  .iiot-device {
+    width: 26px; height: 26px; border-radius: 4px; background: rgba(0,120,212,0.12);
+    border: 1px solid rgba(0,120,212,0.25); display: flex; align-items: center;
+    justify-content: center; font-size: 7px; color: rgba(255,255,255,0.40);
+    font-weight: 700;
+  }
+  .iiot-device.online { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.30); color: #10B981; }
+  .iiot-device.err    { background: rgba(239,68,68,0.12);   border-color: rgba(239,68,68,0.30);   color: #EF4444; }
+  .iiot-wide { grid-column: 1 / 3; }
+  /* Telemetry sparkline area */
+  .sparkline-area { height: 50px; position: relative; overflow: hidden; }
+  .spark-line {
+    position: absolute; bottom: 0; left: 0; right: 0; top: 0;
+    background: linear-gradient(to bottom, rgba(0,120,212,0.15) 0%, transparent 100%);
+  }
+  .spark-svg { width: 100%; height: 100%; }
+
+  /* ═══════════════════════════════════════════
+     SUMMARY COMPARISON TABLE
+  ═══════════════════════════════════════════ */
+  .compare-section {
+    max-width: 1000px; margin: 0 auto; padding: 0 28px 80px;
+  }
+  .compare-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 12px;
+  }
+  .compare-table th {
+    padding: 10px 14px; font-size: 9px; font-weight: 700; letter-spacing: 0.10em;
+    text-transform: uppercase; color: var(--dim); text-align: left;
+    border-bottom: 1px solid var(--border); background: var(--surface);
+  }
+  .compare-table td {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    vertical-align: middle; color: var(--muted);
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table td:first-child { color: var(--text); font-weight: 600; }
+  .th-kairos { color: var(--brandlit) !important; }
+
+  .check { color: var(--green); font-weight: 700; }
+  .cross { color: var(--red);   font-weight: 700; }
+  .partial { color: var(--amber); font-weight: 700; }
+
+  .kairos-col { color: var(--brandlit); font-weight: 700; }
+
+  /* KairOS brand footer */
+  .brand-footer {
+    text-align: center; padding: 48px 24px 64px; border-top: 1px solid var(--border);
+  }
+  .brand-footer .logo {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.01em; color: var(--brandlit);
+    margin-bottom: 8px;
+  }
+  .brand-footer p { font-size: 13px; color: var(--dim); }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); max-width: 1280px; margin: 0 auto 0; }
+
+  /* Scroll reveal animation */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .comp-card { animation: fadeUp 0.4s ease both; }
+  .comp-card:nth-child(1) { animation-delay: 0.05s; }
+  .comp-card:nth-child(2) { animation-delay: 0.12s; }
+  .comp-card:nth-child(3) { animation-delay: 0.19s; }
+  .comp-card:nth-child(4) { animation-delay: 0.26s; }
+</style>
+</head>
+<body>
+
+<!-- ══ Hero ══ -->
+<div class="hero">
+  <div class="hero-tag">Competitive Landscape · 2026</div>
+  <h1>Manufacturing intelligence <span>is still broken</span></h1>
+  <p>Today's tools were built to display data — not to reason about it. Every existing solution forces engineers to diagnose problems manually, react after the fact, and configure endlessly.</p>
+  <div class="hero-meta">
+    <span><span class="dot"></span> Research compiled April 2026</span>
+    <span>4 product archetypes</span>
+    <span>Pharma packaging focus</span>
+  </div>
+</div>
+
+<div class="section-label">The incumbents — what they look like today</div>
+
+<!-- ══ Competitor grid ══ -->
+<div class="grid">
+
+  <!-- ── 1. Traditional SCADA / HMI ── -->
+  <div class="comp-card">
+    <div class="comp-header">
+      <div>
+        <div class="comp-vendor">AVEVA / Schneider Electric</div>
+        <div class="comp-product">InTouch HMI / System Platform</div>
+      </div>
+      <div class="comp-badge badge-legacy">Legacy SCADA</div>
+    </div>
+
+    <div class="mock-screen">
+      <div class="mock-chrome">
+        <div class="chrome-dots">
+          <div class="chrome-dot" style="background:#FF5F57"></div>
+          <div class="chrome-dot" style="background:#FFBD2E"></div>
+          <div class="chrome-dot" style="background:#28C840"></div>
+        </div>
+        <div class="chrome-bar">\\PLANT-SCADA-01\LINE1_PACKAGING — AVEVA InTouch 2023 R2</div>
+      </div>
+
+      <!-- Classic Win-grey SCADA UI -->
+      <div class="scada-ui">
+        <div class="scada-titlebar">
+          <span>LINE 1 — BLISTER PACKAGING OVERVIEW</span>
+          <div class="scada-titlebar-btns">
+            <div class="scada-titlebar-btn">_</div>
+            <div class="scada-titlebar-btn">□</div>
+            <div class="scada-titlebar-btn">×</div>
+          </div>
+        </div>
+        <div class="scada-menubar">
+          <div class="scada-menu-item">File</div>
+          <div class="scada-menu-item">View</div>
+          <div class="scada-menu-item">Navigate</div>
+          <div class="scada-menu-item">Alarms</div>
+          <div class="scada-menu-item">Trends</div>
+          <div class="scada-menu-item">Help</div>
+        </div>
+        <div class="scada-body">
+          <div class="scada-sidebar">
+            <div class="scada-sidebar-title">NAVIGATOR</div>
+            <div class="scada-tree-item active"><span class="scada-ind" style="background:#00FF00"></span> LINE1_PKG</div>
+            <div class="scada-tree-item"><span class="scada-ind" style="background:#FFFF00"></span> LINE2_PKG</div>
+            <div class="scada-tree-item"><span class="scada-ind" style="background:#00FF00"></span> UTILITIES</div>
+            <div class="scada-tree-item"><span class="scada-ind" style="background:#00FF00"></span> HVAC</div>
+            <div class="scada-tree-item"><span class="scada-ind" style="background:#00FF00"></span> CLEANRM</div>
+            <div style="margin-top:8px; border-top:1px solid #808080; padding-top:4px;">
+              <div style="font-size:9px; font-weight:bold; color:#800000;">ALARMS</div>
+              <div class="scada-tree-item"><span style="color:#FF0000; font-weight:bold;">■</span> CRIT: 1</div>
+              <div class="scada-tree-item"><span style="color:#FFFF00; font-weight:bold;">■</span> WARN: 3</div>
+              <div class="scada-tree-item"><span style="color:#808080; font-weight:bold;">■</span> INFO: 7</div>
+            </div>
+          </div>
+          <div class="scada-canvas">
+            <!-- P&ID style equipment blocks -->
+            <!-- Blister former -->
+            <div class="tank" style="left:18px; top:30px; width:70px; height:44px; background:#DDEEFF;">
+              <div style="font-size:8px; font-weight:bold;">BF-1101</div>
+              <div style="font-size:7px; color:#008000;">● RUN</div>
+            </div>
+            <!-- Pipe -->
+            <div class="pipe pipe-h" style="left:88px; top:48px; width:22px;"></div>
+            <!-- Cartoner -->
+            <div class="tank" style="left:110px; top:30px; width:70px; height:44px; background:#FFEEDD;">
+              <div style="font-size:8px; font-weight:bold; color:#CC4400;">CTN-1101</div>
+              <div style="font-size:7px; color:#FF4400; font-weight:bold;">● STARVED</div>
+            </div>
+            <!-- Pipe -->
+            <div class="pipe pipe-h" style="left:180px; top:48px; width:22px;"></div>
+            <!-- Serializer -->
+            <div class="tank" style="left:202px; top:30px; width:70px; height:44px; background:#DDEEFF;">
+              <div style="font-size:8px; font-weight:bold;">SER-1101</div>
+              <div style="font-size:7px; color:#008000;">● RUN</div>
+            </div>
+            <!-- Pipe -->
+            <div class="pipe pipe-h" style="left:272px; top:48px; width:22px;"></div>
+            <!-- Checkweigher -->
+            <div class="tank" style="left:294px; top:30px; width:70px; height:44px; background:#DDEEFF;">
+              <div style="font-size:8px; font-weight:bold;">CW-1301</div>
+              <div style="font-size:7px; color:#008000;">● RUN</div>
+            </div>
+
+            <!-- Values overlaid -->
+            <div class="scada-value" style="left:22px; top:82px;">FT: 38.2 N</div>
+            <div class="scada-value" style="left:114px; top:82px;">RATE: 0 cpm</div>
+            <div class="scada-value" style="left:206px; top:82px;">SCAN: 97.1%</div>
+            <div class="scada-value" style="left:298px; top:82px;">WT: 502 mg</div>
+
+            <!-- Trend label -->
+            <div style="position:absolute; left:10px; top:112px; font-size:8px; font-weight:bold; color:#000080;">TREND — FT-1101 Film Tension (last 1h)</div>
+            <!-- Fake trend line area -->
+            <div style="position:absolute; left:10px; top:124px; right:10px; height:50px; background:#001100; border:1px inset #000;">
+              <svg width="100%" height="100%" style="display:block;">
+                <polyline fill="none" stroke="#00FF00" stroke-width="1.5"
+                  points="0,30 20,28 40,26 60,32 80,30 100,25 120,22 140,28 160,30 180,24 200,22 220,20 240,24 260,38 280,42 300,40"/>
+              </svg>
+            </div>
+
+            <!-- Alarm panel -->
+            <div class="scada-alarm-panel">
+              <div class="scada-alarm-hdr">
+                <span>ACTIVE ALARMS — 4 UNACKNOWLEDGED</span>
+                <span class="ack">ACK ALL</span>
+              </div>
+              <div class="scada-alarm-row" style="background:#FFCCCC;">
+                <span style="color:#FF0000; font-weight:bold;">■ CRIT</span>
+                <span>14:22:07</span>
+                <span style="flex:1; font-weight:bold;">CTN-1101_STARVED — Downstream queue empty, rate=0</span>
+                <span class="ack">ACK</span>
+              </div>
+              <div class="scada-alarm-row" style="background:#FFFFCC;">
+                <span style="color:#CC8800; font-weight:bold;">■ WARN</span>
+                <span>14:19:41</span>
+                <span style="flex:1;">FT-1101_HI — Film tension 38.2 N (HiHi=45)</span>
+                <span class="ack">ACK</span>
+              </div>
+              <div class="scada-alarm-row">
+                <span style="color:#CC8800; font-weight:bold;">■ WARN</span>
+                <span>13:55:12</span>
+                <span style="flex:1;">BF-1101_SPEED_LO — Below setpoint 195/218 bpm</span>
+                <span class="ack">ACK</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="weaknesses">
+      <div class="weakness-title">Key limitations</div>
+      <div class="weakness">
+        <div class="weakness-icon wi-red">✕</div>
+        Reactive-only: shows alarms after they occur with no predictive capability. Engineers diagnose cause manually.
+      </div>
+      <div class="weakness">
+        <div class="weakness-icon wi-red">✕</div>
+        No causal reasoning — "CTN-1101 STARVED" gives no indication that BF-1101 film tension is the root cause.
+      </div>
+      <div class="weakness">
+        <div class="weakness-icon wi-amber">!</div>
+        Requires expensive, certified integrators for configuration. Typical deployment: 6–18 months.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. Ignition / AVEVA Unified ── -->
+  <div class="comp-card">
+    <div class="comp-header">
+      <div>
+        <div class="comp-vendor">Inductive Automation</div>
+        <div class="comp-product">Ignition 8.3 — Unified SCADA</div>
+      </div>
+      <div class="comp-badge badge-modern">Modern SCADA</div>
+    </div>
+
+    <div class="mock-screen">
+      <div class="mock-chrome">
+        <div class="chrome-dots">
+          <div class="chrome-dot" style="background:#FF5F57"></div>
+          <div class="chrome-dot" style="background:#FFBD2E"></div>
+          <div class="chrome-dot" style="background:#28C840"></div>
+        </div>
+        <div class="chrome-bar">plant-gateway.local:8088/data/perspective/client/line1-overview</div>
+      </div>
+
+      <div class="ignition-ui">
+        <div class="ign-topbar">
+          <div class="ign-logo">IGNITION</div>
+          <div class="ign-breadcrumb">Plant / Line 1 / Packaging Overview</div>
+          <div style="margin-left:auto; font-size:9px; color:rgba(255,255,255,0.30);">Gateway: ONLINE · 142 tags · 14:27:03</div>
+        </div>
+        <div class="ign-nav">
+          <div class="ign-nav-item active">Overview</div>
+          <div class="ign-nav-item">Trends</div>
+          <div class="ign-nav-item">Alarms</div>
+          <div class="ign-nav-item">Reports</div>
+          <div class="ign-nav-item">Tag Browser</div>
+          <div class="ign-nav-item">Scripts</div>
+        </div>
+        <div class="ign-body">
+          <!-- KPIs row -->
+          <div class="ign-kpi">
+            <div class="ign-kpi-label">OEE Line 1</div>
+            <div class="ign-kpi-value" style="color:#F59E0B;">78.4<span style="font-size:14px; font-weight:400;">%</span></div>
+            <div class="ign-kpi-sub">Target: 90.0% · Δ −11.6pp</div>
+          </div>
+          <div class="ign-kpi">
+            <div class="ign-kpi-label">Throughput</div>
+            <div class="ign-kpi-value" style="color:#60A5FA;">218<span style="font-size:13px; font-weight:400;"> bpm</span></div>
+            <div class="ign-kpi-sub">Capacity: 240 bpm · 90.8%</div>
+          </div>
+          <div class="ign-kpi">
+            <div class="ign-kpi-label">Active Alarms</div>
+            <div class="ign-kpi-value" style="color:#EF4444;">4</div>
+            <div class="ign-kpi-sub">1 critical · 3 warning</div>
+          </div>
+          <!-- Chart -->
+          <div class="ign-chart-panel">
+            <div class="ign-chart-title">Film Tension FT-1101 — Last 4 hours</div>
+            <div class="mini-bars">
+              <div class="mbar" style="height:38%; opacity:0.6;"></div>
+              <div class="mbar" style="height:42%;"></div>
+              <div class="mbar" style="height:40%;"></div>
+              <div class="mbar" style="height:45%;"></div>
+              <div class="mbar" style="height:43%;"></div>
+              <div class="mbar" style="height:50%;"></div>
+              <div class="mbar" style="height:55%;"></div>
+              <div class="mbar" style="height:58%;"></div>
+              <div class="mbar" style="height:60%;"></div>
+              <div class="mbar" style="height:65%; background:#EF4444;"></div>
+              <div class="mbar" style="height:70%; background:#EF4444;"></div>
+              <div class="mbar" style="height:68%; background:#EF4444;"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:8px; color:rgba(255,255,255,0.25); margin-top:3px;">
+              <span>−4h</span><span>−3h</span><span>−2h</span><span>−1h</span><span>Now</span>
+            </div>
+          </div>
+          <!-- Alarm panel -->
+          <div class="ign-alarm-panel">
+            <div class="ign-chart-title">Active Alarms</div>
+            <div class="ign-alarm-row">
+              <div class="ign-sev" style="background:#EF4444;"></div>
+              <span style="color:#EF4444; font-weight:700; font-size:8px;">CRIT</span>
+              <span style="flex:1;">CTN-1101 Starved</span>
+            </div>
+            <div class="ign-alarm-row">
+              <div class="ign-sev" style="background:#F59E0B;"></div>
+              <span style="color:#F59E0B; font-weight:700; font-size:8px;">WARN</span>
+              <span style="flex:1;">FT-1101 Tension HI</span>
+            </div>
+            <div class="ign-alarm-row">
+              <div class="ign-sev" style="background:#F59E0B;"></div>
+              <span style="color:#F59E0B; font-weight:700; font-size:8px;">WARN</span>
+              <span style="flex:1;">BF-1101 Speed LO</span>
+            </div>
+            <div style="font-size:8px; color:rgba(255,255,255,0.20); margin-top:4px; font-style:italic;">1 more suppressed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="weaknesses">
+      <div class="weakness-title">Key limitations</div>
+      <div class="weakness">
+        <div class="weakness-icon wi-red">✕</div>
+        Cleaner UI but same reactive model — no ML, no causal graph, no prediction horizon.
+      </div>
+      <div class="weakness">
+        <div class="weakness-icon wi-red">✕</div>
+        "Film Tension HI" and "CTN-1101 Starved" appear as separate independent alarms. No automated root-cause linkage.
+      </div>
+      <div class="weakness">
+        <div class="weakness-icon wi-amber">!</div>
+        Python/script modules available but require significant custom development for any ML feature.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3. Power BI / Tableau for Manufacturing ── -->
+  <div class="comp-card">
+    <div class="comp-header">
+      <div>
+        <div class="comp-vendor">Microsoft / Tableau</div>
+        <div class="comp-product">Power BI + Azure Data Factory</div>
+      </div>
+      <div class="comp-badge badge-bi">BI / Analytics</div>
+    </div>
+
+    <div class="mock-screen">
+      <div class="mock-chrome">
+        <div class="chrome-dots">
+          <div class="chrome-dot" style="background:#FF5F57"></div>
+          <div class="chrome-dot" style="background:#FFBD2E"></div>
+          <div class="chrome-dot" style="background:#28C840"></div>
+        </div>
+        <div class="chrome-bar">app.powerbi.com/groups/me/reports/a3f2c1d0.../ReportSection</div>
+      </div>
+
+      <div class="powerbi-ui">
+        <div class="pbi-topbar">
+          <div class="pbi-logo"><div class="pbi-logo-icon">⚡</div> Power BI</div>
+          <div class="pbi-breadcrumb">Manufacturing KPIs · Line 1 OEE Dashboard</div>
+          <div style="margin-left:auto; font-size:9px; color:#A19F9D;">Last refresh: 14:00 · Next: 15:00</div>
+        </div>
+        <div class="pbi-nav">
+          <div class="pbi-tab active">OEE Overview</div>
+          <div class="pbi-tab">Downtime Analysis</div>
+          <div class="pbi-tab">Batch History</div>
+          <div class="pbi-tab">Quality</div>
+        </div>
+        <div class="pbi-body">
+          <div class="pbi-visual">
+            <div class="pbi-visual-title">OEE — MTD</div>
+            <div class="pbi-big-num">78.4<span style="font-size:14px;font-weight:400">%</span></div>
+            <div class="pbi-sub">Month-to-date avg · Target 90%</div>
+            <div style="margin-top:8px; height:4px; background:#EDEBE9; border-radius:2px;">
+              <div style="width:78.4%; height:100%; background:#F2C811; border-radius:2px;"></div>
+            </div>
+          </div>
+          <div class="pbi-visual">
+            <div class="pbi-visual-title">Availability</div>
+            <div class="pbi-big-num" style="color:#2196F3;">91.2<span style="font-size:14px;font-weight:400">%</span></div>
+            <div class="pbi-sub">Planned stops excluded</div>
+          </div>
+          <div class="pbi-visual">
+            <div class="pbi-visual-title">Quality Rate</div>
+            <div class="pbi-big-num" style="color:#10B981;">99.1<span style="font-size:14px;font-weight:400">%</span></div>
+            <div class="pbi-sub">Rejects: 42 units</div>
+          </div>
+          <!-- Wide chart -->
+          <div class="pbi-visual pbi-wide">
+            <div class="pbi-visual-title">OEE Trend — Last 30 Days</div>
+            <div style="height:60px; position:relative;">
+              <svg width="100%" height="100%">
+                <defs>
+                  <linearGradient id="oeeGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#F2C811" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="#F2C811" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path fill="url(#oeeGrad)" d="M0,30 C20,28 40,25 60,22 C80,20 100,32 120,28 C140,25 160,18 180,20 C200,22 220,26 240,24 C260,22 280,30 300,32 L300,60 L0,60 Z"/>
+                <path fill="none" stroke="#F2C811" stroke-width="1.5" d="M0,30 C20,28 40,25 60,22 C80,20 100,32 120,28 C140,25 160,18 180,20 C200,22 220,26 240,24 C260,22 280,30 300,32"/>
+                <!-- Target line -->
+                <line x1="0" y1="15" x2="300" y2="15" stroke="#ED7D31" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+                <text x="302" y="17" font-size="8" fill="#ED7D31" opacity="0.7">90%</text>
+              </svg>
+            </div>
+            <div class="pbi-filter-note">⚠ Data refreshes hourly — real-time monitoring not available</div>
+          </div>
+          <div class="pbi-visual">
+            <div class="pbi-visual-title">Top Downtime Reasons</div>
+            <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="width:60%; height:8px; background:#ED7D31; border-radius:2px;"></div>
+                <span style="font-size:8px; color:#605E5C;">Film breaks 60%</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="width:25%; height:8px; background:#5A9BD5; border-radius:2px;"></div>
+                <span style="font-size:8px; color:#605E5C;">Jams 25%</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="width:15%; height:8px; background:#70AD47; border-radius:2px;"></div>
+                <span style="font-size:8px; color:#605E5C;">Changeover 15%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="weaknesses">
+      <div class="weakness-title">Key limitations</div>
+      <div class="weakness">
+        <div class="weakness-icon wi-red">✕</div>
+        Batch refresh (hourly/daily) — not real-time. "OEE 78.4%" is yesterday's number during an active incident.
+      </div>
+      <div class="weakness">
+        <div class="weakness-icon wi-red">✕</div>
+        Pure historical analytics — no live process data, no alarm integration, no predictive capability.
+      </div>
+      <div class="weakness">
+        <div class="weakness-icon wi-amber">!</div>
+        Requires separate historian (OSIsoft PI / Azure Data Explorer) and ETL pipeline. High integration cost.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. Azure IoT / AWS IoT ── -->
+  <div class="comp-card">
+    <div class="comp-header">
+      <div>
+        <div class="comp-vendor">Microsoft / Amazon Web Services</div>
+        <div class="comp-product">Azure IoT Central / AWS IoT SiteWise</div>
+      </div>
+      <div class="comp-badge badge-iiot">IIoT Platform</div>
+    </div>
+
+    <div class="mock-screen">
+      <div class="mock-chrome">
+        <div class="chrome-dots">
+          <div class="chrome-dot" style="background:#FF5F57"></div>
+          <div class="chrome-dot" style="background:#FFBD2E"></div>
+          <div class="chrome-dot" style="background:#28C840"></div>
+        </div>
+        <div class="chrome-bar">plant-id.azureiotcentral.com/dashboards/line1-monitoring</div>
+      </div>
+
+      <div class="iiot-ui">
+        <div class="iiot-topbar">
+          <div class="iiot-logo"><div class="iiot-logo-box">⬡</div> Azure IoT Central</div>
+          <div class="iiot-breadcrumb">/ Dashboards / Line 1 Monitoring</div>
+          <div style="margin-left:auto; font-size:9px; color:rgba(255,255,255,0.25);">14 devices · 142 telemetry streams</div>
+        </div>
+        <div style="flex:1; display:flex; overflow:hidden;">
+          <div class="iiot-sidebar">
+            <div class="iiot-nav-icon active">⊞</div>
+            <div class="iiot-nav-icon">📊</div>
+            <div class="iiot-nav-icon">🔔</div>
+            <div class="iiot-nav-icon">⚙</div>
+            <div class="iiot-nav-icon">📋</div>
+          </div>
+          <div class="iiot-content">
+            <div class="iiot-widget">
+              <div class="iiot-widget-title">Connected Devices</div>
+              <div class="iiot-big">14</div>
+              <div class="iiot-sub">All online · last heartbeat 2s ago</div>
+            </div>
+            <div class="iiot-widget">
+              <div class="iiot-widget-title">Telemetry / min</div>
+              <div class="iiot-big" style="color:#10B981;">8,640</div>
+              <div class="iiot-sub">Avg 617 msgs/device</div>
+            </div>
+            <div class="iiot-widget">
+              <div class="iiot-widget-title">Rules Triggered</div>
+              <div class="iiot-big" style="color:#EF4444;">3</div>
+              <div class="iiot-sub">Today · 1 critical</div>
+            </div>
+            <!-- Wide telemetry chart -->
+            <div class="iiot-widget iiot-wide">
+              <div class="iiot-widget-title">Telemetry — FT-1101 · Film Tension (raw stream)</div>
+              <div class="sparkline-area">
+                <svg class="spark-svg" viewBox="0 0 400 50" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#0078D4" stop-opacity="0.25"/>
+                      <stop offset="100%" stop-color="#0078D4" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path fill="url(#sparkGrad)"
+                    d="M0,35 L20,33 L40,30 L60,32 L80,28 L100,26 L120,30 L140,27 L160,24 L180,22 L200,20 L220,22 L240,18 L260,15 L280,14 L300,16 L320,14 L340,12 L360,10 L380,8 L400,6 L400,50 L0,50 Z"/>
+                  <path fill="none" stroke="#0078D4" stroke-width="1.5"
+                    d="M0,35 L20,33 L40,30 L60,32 L80,28 L100,26 L120,30 L140,27 L160,24 L180,22 L200,20 L220,22 L240,18 L260,15 L280,14 L300,16 L320,14 L340,12 L360,10 L380,8 L400,6"/>
+                  <!-- Threshold line -->
+                  <line x1="0" y1="10" x2="400" y2="10" stroke="#EF4444" stroke-width="1" stroke-dasharray="6,4" opacity="0.6"/>
+                </svg>
+              </div>
+              <div style="font-size:8px; color:rgba(255,255,255,0.25); margin-top:3px;">
+                Raw MQTT stream · threshold rule: HiHi alert at 45 N · <span style="color:#EF4444;">threshold exceeded at 14:18</span>
+              </div>
+            </div>
+            <!-- Device grid -->
+            <div class="iiot-widget">
+              <div class="iiot-widget-title">Device Status</div>
+              <div class="iiot-status-grid">
+                <div class="iiot-device online">BF01</div>
+                <div class="iiot-device online">CTN1</div>
+                <div class="iiot-device err">FT01</div>
+                <div class="iiot-device online">SER1</div>
+                <div class="iiot-device online">CW01</div>
+                <div class="iiot-device online">VIS1</div>
+                <div class="iiot-device online">LBL1</div>
+                <div class="iiot-device online">BF02</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="weaknesses">
+      <div class="weakness-title">Key limitations</div>
+      <div class="weakness">
+        <div class="weakness-icon wi-red">✕</div>
+        Generic connectivity layer — knows telemetry values but has no understanding of what machines do or how they relate.
+      </div>
+      <div class="weakness">
+        <div class="weakness-icon wi-red">✕</div>
+        "Rules" are simple threshold triggers (FT > 45 N → alert). No multi-variate or causal reasoning built-in.
+      </div>
+      <div class="weakness">
+        <div class="weakness-icon wi-amber">!</div>
+        Requires custom-built ML pipelines (Azure ML / SageMaker) for any intelligence. Pharma compliance adds months.
+      </div>
+    </div>
+  </div>
+
+</div><!-- /grid -->
+
+<div class="divider"></div>
+
+<!-- ══ Comparison table ══ -->
+<div class="compare-section">
+  <div class="section-label">Feature comparison — what matters in pharma packaging</div>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th style="width:220px;">Capability</th>
+        <th>AVEVA InTouch</th>
+        <th>Ignition 8</th>
+        <th>Power BI + Historian</th>
+        <th>Azure IoT Central</th>
+        <th class="th-kairos">KairOS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Real-time live data</td>
+        <td><span class="check">✓</span> Polling</td>
+        <td><span class="check">✓</span> Polling</td>
+        <td><span class="cross">✕</span> Batch only</td>
+        <td><span class="check">✓</span> MQTT stream</td>
+        <td class="kairos-col">✓ MQTT + EtherCAT</td>
+      </tr>
+      <tr>
+        <td>Root-cause causal graph</td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="cross">✕</span></td>
+        <td class="kairos-col">✓ Live causal DAG</td>
+      </tr>
+      <tr>
+        <td>Predictive fault horizon</td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="partial">~</span> Custom scripts</td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="partial">~</span> Azure ML add-on</td>
+        <td class="kairos-col">✓ 30-min horizon</td>
+      </tr>
+      <tr>
+        <td>Actionable correction advice</td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="cross">✕</span></td>
+        <td class="kairos-col">✓ Confidence-gated</td>
+      </tr>
+      <tr>
+        <td>Auto equipment discovery</td>
+        <td><span class="cross">✕</span> Manual OPC config</td>
+        <td><span class="partial">~</span> Tag browser</td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="partial">~</span> Device templates</td>
+        <td class="kairos-col">✓ MQTT radar scan</td>
+      </tr>
+      <tr>
+        <td>Natural language operator query</td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="partial">~</span> Copilot (beta)</td>
+        <td><span class="cross">✕</span></td>
+        <td class="kairos-col">✓ Embedded AI chat</td>
+      </tr>
+      <tr>
+        <td>GxP / 21 CFR Part 11 ready</td>
+        <td><span class="check">✓</span> With add-ons</td>
+        <td><span class="partial">~</span> Module needed</td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="cross">✕</span></td>
+        <td class="kairos-col">✓ Built-in audit trail</td>
+      </tr>
+      <tr>
+        <td>Floor map + graph unified view</td>
+        <td><span class="cross">✕</span> P&ID only</td>
+        <td><span class="partial">~</span> Custom SVG</td>
+        <td><span class="cross">✕</span></td>
+        <td><span class="cross">✕</span></td>
+        <td class="kairos-col">✓ 3-D + causal graph</td>
+      </tr>
+      <tr>
+        <td>Time to deploy (std. pharma line)</td>
+        <td>6–18 months</td>
+        <td>3–9 months</td>
+        <td>4–12 months</td>
+        <td>2–6 months</td>
+        <td class="kairos-col">Days (auto-discover)</td>
+      </tr>
+      <tr>
+        <td>Typical licence cost / year</td>
+        <td>£120–400K</td>
+        <td>£40–120K</td>
+        <td>£30–80K + infra</td>
+        <td>£20–60K + IoT units</td>
+        <td class="kairos-col">Outcome-based SaaS</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══ Brand footer ══ -->
+<div class="brand-footer">
+  <div class="logo">KairOS</div>
+  <p>The manufacturing intelligence layer that predicts, explains, and acts — not just monitors.</p>
+</div>
+
+</body>
+</html>
