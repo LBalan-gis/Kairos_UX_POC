@@ -64,14 +64,15 @@ type GraphDetailPanelProps = {
   relations: Relation[];
   entities: Entity[];
   zoneMap: Record<string, ZoneId>;
+  graphConfig: import('../../types/config').GraphContentConfig | null;
   dark: boolean;
   onClose: () => void;
 };
 
-function GraphDetailPanel({ entity, relations, entities, zoneMap, dark, onClose }: GraphDetailPanelProps) {
+function GraphDetailPanel({ entity, relations, entities, zoneMap, graphConfig, dark, onClose }: GraphDetailPanelProps) {
   const [tab, setTab] = useState('details');
   const { label, type, insight, action } = entity;
-  const viewModel = useMemo(() => buildGraphDetailPanelVM({ entity, relations, entities, zoneMap, dark }), [entity, relations, entities, zoneMap, dark]);
+  const viewModel = useMemo(() => buildGraphDetailPanelVM({ entity, relations, entities, zoneMap, graphConfig, dark }), [entity, relations, entities, zoneMap, graphConfig, dark]);
 
   const dispatchCmd = (cmd: string) => window.dispatchEvent(new CustomEvent('kairos-cmd', { detail: cmd }));
 
@@ -227,7 +228,7 @@ export const GraphWhiteboardLayer = () => {
   const {
     dark, entities, relations, effectiveEntities, focusId, focusOn, focusedEntity,
     focusNeighborhood, focusEdgeIds, hiddenCount, simulatedTime,
-    isSimulating, positions, sizes, zoneMap, zoneLabels, entityStateMap,
+    isSimulating, positions, sizes, zoneMap, zoneLabels, graphConfig, entityStateMap,
     fitTransform, boardRef, actualSizes, mvReg,
     enterFocus, exitFocus, revealAll,
     handleRegister, handleSizeChange, handleNodeDrag, handleNodeDragEnd,
@@ -254,7 +255,7 @@ export const GraphWhiteboardLayer = () => {
             4 main drivers
           </span>
           <span className="graph-header-desc">
-            CT-1101 micro-stops are causing hidden loss that is impacting OEE and batch risk.
+            {graphConfig?.headerDescription ?? 'CT-1101 micro-stops are causing hidden loss that is impacting OEE and batch risk.'}
           </span>
         </div>
         <div className="graph-header-right">
@@ -265,7 +266,7 @@ export const GraphWhiteboardLayer = () => {
             <input
               type="checkbox"
               checked={focusOn}
-              onChange={(event) => event.target.checked ? enterFocus('film_tension') : exitFocus()}
+              onChange={(event) => event.target.checked ? enterFocus(graphConfig?.defaultFocusId ?? 'film_tension') : exitFocus()}
             />
             <span className="graph-focus-track" style={{ '--graph-focus-track-bg': focusOn ? '#6366F1' : theme.focusTrackOff } as CSSProperties} />
             <span className="graph-focus-label">Focus mode</span>
@@ -300,6 +301,7 @@ export const GraphWhiteboardLayer = () => {
             <NodeLayer
               entities={boardEntities} positions={positions} sizes={sizes}
               visibleIds={focusNeighborhood} focusId={focusId} simulatedTime={simulatedTime}
+              graphConfig={graphConfig}
               zoneMap={zoneMap}
               onNodeClick={handleNodeClick} onNodeDragEnd={handleNodeDragEnd}
               onNodeDrag={handleNodeDrag} onRegister={handleRegister} onSizeChange={handleSizeChange}
@@ -321,6 +323,7 @@ export const GraphWhiteboardLayer = () => {
               relations={relations}
               entities={effectiveEntities}
               zoneMap={zoneMap}
+              graphConfig={graphConfig}
               dark={dark}
               onClose={exitFocus}
             />

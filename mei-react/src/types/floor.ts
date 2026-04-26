@@ -1,5 +1,5 @@
 export type MetricSeverity = 'crit' | 'warn' | 'ok';
-export type FloorLineTheme = 'l1' | 'l2';
+export type FloorLineTheme = string;
 
 export interface FloorMachineMetric {
   tag: string;
@@ -52,10 +52,33 @@ export interface FloorBounds {
   cz: number;
 }
 
+export interface FloorDims {
+  w: number;
+  h: number;
+  d: number;
+}
+
+export interface FloorPendingPlacement {
+  baseX: number;
+  xStep: number;
+  defaultLineRef?: string;
+  defaultComponentClass: string;
+  defaultColor: string;
+  defaultState: string;
+}
+
+export interface FloorProjectionConfig {
+  stateLabels: Record<string, string>;
+  componentDims: Record<string, FloorDims>;
+  defaultDims: FloorDims;
+  pendingPlacement: FloorPendingPlacement;
+}
+
 export interface FloorConfig {
   bounds: FloorBounds;
   cleanRooms: Array<{ cx: number; cz: number }>;
   lines: FloorLine[];
   causalSegs: FloorCausalSeg[];
   armSeg: { fromEntity: string; dampingFactor: number };
+  projection: FloorProjectionConfig;
 }

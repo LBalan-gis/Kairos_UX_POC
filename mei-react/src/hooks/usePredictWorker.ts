@@ -61,7 +61,7 @@ export function usePredictWorker() {
         entityPhysics: state.entityPhysics,
         relationPropagation: state.relationPropagation,
         relations: state.relations,
-        scenarios: state.scenarios,
+        scenarios: state.simulation.scenarios,
         entities: state.entities,
       });
     });

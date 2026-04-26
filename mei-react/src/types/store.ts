@@ -8,7 +8,8 @@ import type {
   RelationPropagationMap,
   Scenario,
 } from './simulation';
-import type { TenantConfig } from './config';
+import type { GraphContentConfig, TenantConfig } from './config';
+import type { PlantRuntimeContext } from '../domain/plant/model';
 
 export type AppView = 'floor' | 'graph' | 'kpi';
 
@@ -34,18 +35,27 @@ export interface ActionLogEntry {
   [key: string]: unknown;
 }
 
+export interface SimulationStoreState {
+  scenarios: Scenario[];
+  predictions: PredictionResult[];
+  simulatedTime: number | null;
+  activeScenario: string;
+}
+
+export interface PlantStoreState extends PlantRuntimeContext {}
+
 export interface AppStoreState {
   entities: Entity[];
   relations: Relation[];
   entityMap: Record<string, Entity>;
   entityPhysics: EntityPhysicsMap;
   relationPropagation: RelationPropagationMap;
-  scenarios: Scenario[];
-  predictions: PredictionResult[];
+  simulation: SimulationStoreState;
+  plant: PlantStoreState;
   zoneMap: Record<string, ZoneId>;
   zoneLabels: Record<ZoneId, string>;
-  liveIds: string[];
   floorConfig: FloorConfig | null;
+  graphConfig: GraphContentConfig | null;
   view: AppView;
   positions: Record<string, Position>;
   pinnedIds: Set<string>;
@@ -54,18 +64,14 @@ export interface AppStoreState {
   focusId: string | null;
   focusNeighborhood: Set<string>;
   focusEdgeIds: Set<string>;
-  simulatedTime: number | null;
-  activeScenario: string;
   dark: boolean;
   kairosOpen: boolean;
   kairosEntityId: string | null;
   pinnedCharts: PinnedChart[];
   onboardingOpen: boolean;
   pendingMachines: PendingMachine[];
-  offlineIds: Set<string>;
   actionLog: ActionLogEntry[];
   spatialWidgets: SpatialWidgetEntry[];
-  signalTimestamps: Record<string, number>;
 }
 
 export interface AppStoreActions {

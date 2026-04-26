@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Html } from '@react-three/drei';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store/useAppStore';
+import { selectPlantRuntime } from '../../domain/plant/selectors';
 import { buildFloorWidgetAnchors, resolveFloorWidgetAnchor } from '../../services/widgets/spatial';
 import { WidgetRenderer } from '../widget/WidgetRenderer';
 import type { WidgetPayload, FloorWidgetAnchor } from '../../types/widgets';
@@ -75,7 +77,7 @@ export function FloorSpatialWidgets() {
   const dark                = useAppStore(s => s.dark);
   const floorConfig         = useAppStore(s => s.floorConfig);
   const entityPhysics       = useAppStore(s => s.entityPhysics);
-  const liveIds             = useAppStore(s => s.liveIds);
+  const { liveIds }         = useAppStore(useShallow(selectPlantRuntime));
 
   const liveDataProvider = useCallback(
     (tag: string) => entityPhysics?.[tag]?.currentValue,

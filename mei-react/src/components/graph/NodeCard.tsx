@@ -3,8 +3,10 @@ import { motion, useMotionValue } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import { MetricSparkline } from './MetricSparkline';
 import { KinematicMetric } from './KinematicMetric';
+import { getGraphNodeClassNames } from './graphPresentation';
 import { useSignalAge } from '../../hooks/useLiveSignal';
 import type { Entity, ZoneId } from '../../types/domain';
+import type { GraphContentConfig } from '../../types/config';
 import type { Position } from '../../types/store';
 
 const SIGNAL_TYPES = new Set(['Sensor', 'QualityState', 'ControlParameter', 'Asset']);
@@ -26,21 +28,6 @@ const STATUS_DOT: Record<string, { color: string; label: string }> = {
   'critical':      { color: '#DC2626', label: 'Critical' },
 };
 
-function layoutClass(entity: Entity) {
-  if (entity.type === 'GoldenBatch' || entity.id === 'batch_current') return 'anchor-card';
-  if (entity.type === 'SimulationScenario') return 'simulation-card';
-  if (entity.type === 'ExternalSystem')     return 'system-card';
-  return 'process-card';
-}
-
-function specialClass(entity: Entity) {
-  const c: string[] = [];
-  if (entity.id === 'batch_golden') c.push('reference-node');
-  if (['hidden_loss','batch_current','planned_vs_actual','impact_yield'].includes(entity.id))
-    c.push('primary-analytical');
-  return c.join(' ');
-}
-
 interface NodeCardProps {
   entity: Entity;
   position: Position;
@@ -50,6 +37,7 @@ interface NodeCardProps {
   isDimmed: boolean;
   simulatedTime: number | null;
   zone?: ZoneId;
+  graphConfig?: GraphContentConfig | null;
   onDragEnd?: (id: string, x: number, y: number) => void;
   onClick?: (id: string) => void;
   onDrag?: (id: string, x: number, y: number) => void;
@@ -60,7 +48,7 @@ interface NodeCardProps {
 export function NodeCard({
   entity, position, size,
   isFocused, isFocal, isDimmed, simulatedTime,
-  zone,
+  zone, graphConfig,
   onDragEnd, onClick, onDrag,
   onRegister, onSizeChange,
 }: NodeCardProps) {
@@ -200,12 +188,12 @@ export function NodeCard({
   }
 
   const typeClass = `type-${type.toLowerCase().replace(/\s+/g, '')}`;
+  const presentationClasses = getGraphNodeClassNames(entity, graphConfig);
 
   const cardClass = [
     'node-card',
     typeClass,
-    layoutClass(entity),
-    specialClass(entity),
+    ...presentationClasses,
     `state-${state}`,
     zone ? `zone-${zone.toLowerCase()}` : '',
     isDimmed    ? 'dimmed'     : '',

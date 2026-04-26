@@ -1,5 +1,7 @@
 import { CSSProperties, useEffect, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
+import { projectSimulationTimeline, selectSimulationContext } from '../../domain/simulation/selectors';
 
 const SHIFT_END_H = 22;
 const SHIFT_END_M = 0;
@@ -33,13 +35,15 @@ function navBtn(active: boolean, color = 'var(--normal)'): CSSProperties {
 }
 
 export function AppToolbar() {
-  const simulatedTime = useAppStore((state) => state.simulatedTime);
+  const simulation = useAppStore(useShallow(selectSimulationContext));
   const view = useAppStore((state) => state.view);
   const setSimulatedTime = useAppStore((state) => state.setSimulatedTime);
   const dark = useAppStore((state) => state.dark);
   const toggleDark = useAppStore((state) => state.toggleDark);
   const setView = useAppStore((state) => state.setView);
   const setPositions = useAppStore((state) => state.setPositions);
+  const timeline = projectSimulationTimeline(simulation);
+  const simulatedTime = timeline.simulatedTime;
   const isLive = simulatedTime === null;
   const { timeStr, remStr, urgent } = useShiftTime();
 

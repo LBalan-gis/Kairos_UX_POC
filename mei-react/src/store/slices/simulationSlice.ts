@@ -2,9 +2,15 @@ import { buildEntityMap } from '../helpers';
 import type { AppStateCreator } from './types';
 
 export const createSimulationSlice: AppStateCreator = (set) => ({
-  setSimulatedTime: (simulatedTime) => set({ simulatedTime }),
-  setActiveScenario: (activeScenario) => set({ activeScenario }),
-  setPredictions: (predictions) => set({ predictions }),
+  setSimulatedTime: (simulatedTime) => set((store) => ({
+    simulation: { ...store.simulation, simulatedTime },
+  })),
+  setActiveScenario: (activeScenario) => set((store) => ({
+    simulation: { ...store.simulation, activeScenario },
+  })),
+  setPredictions: (predictions) => set((store) => ({
+    simulation: { ...store.simulation, predictions },
+  })),
   applyLiveReading: (entityId, state, metrics, value) =>
     set((store) => {
       const updatedEntities = store.entities.map((entity) =>
@@ -23,7 +29,10 @@ export const createSimulationSlice: AppStateCreator = (set) => ({
         entities: updatedEntities,
         entityMap: buildEntityMap(updatedEntities),
         entityPhysics: updatedPhysics,
-        signalTimestamps: { ...store.signalTimestamps, [entityId]: Date.now() },
+        plant: {
+          ...store.plant,
+          signalTimestamps: { ...store.plant.signalTimestamps, [entityId]: Date.now() },
+        },
       };
     }),
 });

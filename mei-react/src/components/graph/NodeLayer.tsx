@@ -1,5 +1,6 @@
 import type { MotionValue } from 'framer-motion';
 import { NodeCard } from './NodeCard';
+import type { GraphContentConfig } from '../../types/config';
 import type { Entity, ZoneId } from '../../types/domain';
 import type { Position } from '../../types/store';
 
@@ -10,6 +11,7 @@ interface NodeLayerProps {
   visibleIds: Set<string>;
   focusId: string | null;
   simulatedTime: number | null;
+  graphConfig?: GraphContentConfig | null;
   onNodeClick?: (id: string) => void;
   onNodeDragEnd?: (id: string, x: number, y: number) => void;
   onNodeDrag?: (id: string, x: number, y: number) => void;
@@ -19,7 +21,7 @@ interface NodeLayerProps {
 }
 
 export function NodeLayer({
-  entities, positions, sizes, visibleIds, focusId, simulatedTime,
+  entities, positions, sizes, visibleIds, focusId, simulatedTime, graphConfig,
   onNodeClick, onNodeDragEnd, onNodeDrag, onRegister, onSizeChange,
   zoneMap,
 }: NodeLayerProps) {
@@ -41,6 +43,7 @@ export function NodeLayer({
             isFocal={isFocal}
             isDimmed={isDimmed}
             simulatedTime={simulatedTime}
+            graphConfig={graphConfig}
             zone={zoneMap?.[entity.id]}
             onClick={onNodeClick}
             onDragEnd={onNodeDragEnd}

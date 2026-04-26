@@ -125,6 +125,7 @@ export const ENTITY_PHYSICS: EntityPhysicsMap = {
     unitValueGBP: 15.45,
     targetUnits: 2960,
     currentUnits: 1120,
+    currentOee: 78.4,
   },
 };
 

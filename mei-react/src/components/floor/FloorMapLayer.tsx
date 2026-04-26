@@ -6,10 +6,23 @@ import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
+import { resolveSimulationEntityStates, selectSimulationContext } from '../../domain/simulation/selectors';
+import { lookupPastStates } from '../../domain/simulation/history';
+import { selectPlantRuntime } from '../../domain/plant/selectors';
+import {
+  applyFloorMachineState,
+  buildEntityToFloorMachine,
+  buildLiveEntityStates,
+  buildOfflineFloorAlarms,
+  buildOfflineXRangesPerLine,
+  flattenFloorMachines,
+  getFloorStateLabel,
+  projectPendingFloorEquipment,
+  resolveStarvedIds,
+} from '../../domain/plant/floor';
 
 import { EnvironmentDetails } from './FloorMapEnvironment';
 import { FlowingVials, CausalArcTube, ConveyorBelt } from './FloorMapAnimations';
-import { lookupPastStates } from './PredictionTimeline';
 import {
   BlisterMachine,
   Cartoner,
@@ -374,20 +387,9 @@ const IndicatorPill = ({ eq, onClick, isDiving, hoveredId, focusedId }: Indicato
   );
 };
 
-// ── Default dims ──────────────────────────────────────────────────────────────
-
-const COMPONENT_DIMS: Record<string, { w: number; h: number; d: number }> = {
-  BlisterMachine:       { w:2.8,  h:1.2,  d:1.4 },
-  Cartoner:             { w:1.8,  h:1.8,  d:1.2 },
-  SerializationStation: { w:1.2,  h:1.5,  d:1.0 },
-  InspectionMachine:    { w:1.1,  h:1.8,  d:1.0 },
-  Checkweigher:         { w:1.4,  h:0.85, d:1.2 },
-  Labeler:              { w:1.0,  h:1.3,  d:1.0 },
-};
-
 // ── Offline/Starved overlay ───────────────────────────────────────────────────
 
-function OfflineOverlay({ eq, starved = false }: { eq: FloorMachine; starved?: boolean }) {
+function OfflineOverlay({ eq, starved = false, floorConfig }: { eq: FloorMachine; starved?: boolean; floorConfig: import('../../types/floor').FloorConfig | null }) {
   return (
     <group position={[eq.x, eq.h / 2, eq.z]}>
       <mesh renderOrder={999}>
@@ -399,7 +401,7 @@ function OfflineOverlay({ eq, starved = false }: { eq: FloorMachine; starved?: b
           <span className={`fl-overlay-icon ${starved ? 'fl-overlay-icon--starved' : 'fl-overlay-icon--offline'}`}>
             {starved ? '⊘' : '⏻'}
           </span>
-          <span className="fl-overlay-state">{starved ? 'STARVED' : 'OFFLINE'}</span>
+          <span className="fl-overlay-state">{getFloorStateLabel(floorConfig, starved ? 'starved' : 'offline')}</span>
         </div>
       </Html>
     </group>
@@ -490,32 +492,21 @@ function EnvironmentLights({ isSimulation, dark }: { isSimulation: boolean; dark
 export function FloorMapLayer() {
   const {
     dark, setView, floorConfig,
-    offlineIds, pendingMachines, relations, relationPropagation,
-    simulatedTime, activeScenario, predictions,
+    pendingMachines, relations, relationPropagation,
   } = useAppStore(useShallow(s => ({
     dark:                s.dark,
     setView:             s.setView,
     floorConfig:         s.floorConfig,
-    offlineIds:          s.offlineIds,
     pendingMachines:     s.pendingMachines,
     relations:           s.relations,
     relationPropagation: s.relationPropagation,
-    simulatedTime:       s.simulatedTime,
-    activeScenario:      s.activeScenario,
-    predictions:         s.predictions,
   })));
+  const simulation = useAppStore(useShallow(selectSimulationContext));
+  const { offlineIds } = useAppStore(useShallow(selectPlantRuntime));
   const sceneDark = dark;
 
-  const allMachines = useMemo(
-    () => floorConfig?.lines.flatMap(l => l.machines) ?? [],
-    [floorConfig]
-  );
-  const entityToEq = useMemo(
-    () => Object.fromEntries(
-      allMachines.filter(e => e.entityId).map(e => [e.entityId!, e])
-    ) as Record<string, FloorMachine>,
-    [allMachines]
-  );
+  const allMachines = useMemo(() => flattenFloorMachines(floorConfig), [floorConfig]);
+  const entityToEq = useMemo(() => buildEntityToFloorMachine(allMachines), [allMachines]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
@@ -539,90 +530,33 @@ export function FloorMapLayer() {
       }))
   , [relations, entityToEq, relationPropagation]);
 
-  const liveEntityStates = useMemo(() =>
-    Object.fromEntries(
-      allMachines
-        .filter(e => e.entityId)
-        .map(e => [e.entityId!, e.state])
-    ) as Record<string, string>
-  , [allMachines]);
+  const liveEntityStates = useMemo(() => buildLiveEntityStates(allMachines), [allMachines]);
 
-  const stateOverrides = useMemo<Record<string, string>>(() => {
-    if (simulatedTime === null) return {};
-    if (simulatedTime < 0) return lookupPastStates(simulatedTime);
-    if (!predictions?.length) return {};
-    const scenario = predictions.find(p => p.scenarioId === activeScenario);
-    if (!scenario?.steps.length) return {};
-    const step = scenario.steps.reduce((best, s) =>
-      Math.abs(s.t - simulatedTime) < Math.abs(best.t - simulatedTime) ? s : best
-    , scenario.steps[0]);
-    return (step?.entityStates ?? {}) as Record<string, string>;
-  }, [simulatedTime, activeScenario, predictions]);
+  const currentEntityStates = useMemo<Record<string, string>>(
+    () => resolveSimulationEntityStates(simulation, liveEntityStates, lookupPastStates),
+    [simulation, liveEntityStates]
+  );
 
-  const currentEntityStates: Record<string, string> = simulatedTime === null ? liveEntityStates : stateOverrides;
-
-  const starvedIds = useMemo(() => {
-    const result = new Set<string>();
-    (floorConfig?.lines ?? []).forEach(line => {
-      line.order.forEach((id, idx) => {
-        if (offlineIds.has(id)) {
-          for (let i = idx + 1; i < line.order.length; i++) result.add(line.order[i]);
-        }
-      });
-    });
-    return result;
-  }, [offlineIds, floorConfig]);
+  const starvedIds = useMemo(() => resolveStarvedIds(floorConfig, offlineIds), [offlineIds, floorConfig]);
 
   const applyState = useCallback((eq: FloorMachine): FloorMachine => {
-    if (offlineIds.has(eq.id)) return { ...eq, state: 'offline', stateLabel: 'OFFLINE' };
-    if (starvedIds.has(eq.id)) return { ...eq, state: 'starved', stateLabel: 'STARVED' };
-    if (!eq.entityId) return eq;
-    const next = currentEntityStates[eq.entityId];
-    if (!next || next === eq.state) return eq;
-    return { ...eq, state: next, stateLabel: next.toUpperCase() };
-  }, [currentEntityStates, offlineIds, starvedIds]);
+    return applyFloorMachineState(floorConfig, eq, currentEntityStates, offlineIds, starvedIds);
+  }, [currentEntityStates, floorConfig, offlineIds, starvedIds]);
 
-  const pendingEquipment = useMemo((): FloorMachine[] => {
-    const lineThemes = Object.fromEntries((floorConfig?.lines ?? []).map((line) => [line.label, line.lineTheme]));
-    const lineDepths = Object.fromEntries((floorConfig?.lines ?? []).map((line) => [line.label, line.lz]));
-    const l1 = pendingMachines.filter(m => m.line !== 'Line 2');
-    const l2 = pendingMachines.filter(m => m.line === 'Line 2');
-    return pendingMachines.map(m => {
-      const compClass = (m.componentClass as string | undefined) || (m.type as string | undefined) || 'BlisterMachine';
-      const dims      = COMPONENT_DIMS[compClass] ?? { w:1.4, h:1.2, d:1.2 };
-      const lineTheme = lineThemes[m.line as string] ?? 'l1';
-      const arr       = lineTheme === 'l2' ? l2 : l1;
-      const idx       = arr.indexOf(m);
-      return {
-        id:             String(m.id ?? '').toLowerCase().replace(/-/g, '_') + '_pending',
-        label:          String(m.id ?? ''),
-        type:           compClass,
-        componentClass: compClass,
-        state:          'pending',
-        stateLabel:     'PENDING',
-        color:          'g1',
-        lineTheme,
-        x:              8.2 + idx * 2.4,
-        z:              (lineDepths[m.line as string] as number | undefined) ?? 0.0,
-        metrics:        [],
-        ...dims,
-      } as FloorMachine;
-    });
-  }, [floorConfig, pendingMachines]);
+  const pendingEquipment = useMemo(
+    () => projectPendingFloorEquipment(floorConfig, pendingMachines),
+    [floorConfig, pendingMachines]
+  );
 
-  const offlineAlarms = useMemo(() =>
-    allMachines
-      .filter(eq => applyState(eq).state === 'offline')
-      .map(eq => ({ id: eq.id, label: eq.label, severity: 'offline', msg: `Offline · ${eq.type}` }))
-  , [applyState, allMachines]);
+  const offlineAlarms = useMemo(
+    () => buildOfflineFloorAlarms(allMachines.map(applyState)),
+    [applyState, allMachines]
+  );
 
-  const offlineXRangesPerLine = useMemo(() =>
-    (floorConfig?.lines ?? []).map(line =>
-      line.machines
-        .filter(eq => applyState(eq).state === 'offline')
-        .map(eq => [eq.x - eq.w / 2 - 0.15, eq.x + eq.w / 2 + 0.15] as [number, number])
-    )
-  , [applyState, floorConfig]);
+  const offlineXRangesPerLine = useMemo(
+    () => buildOfflineXRangesPerLine(floorConfig, applyState),
+    [applyState, floorConfig]
+  );
 
   const [isDiving, setIsDiving]           = useState(false);
   const [diveTargetX, setDiveTargetX]     = useState(0);
@@ -737,7 +671,7 @@ export function FloorMapLayer() {
           <MapThemeManager darkOverride={sceneDark} />
           <color attach="background" args={[sceneDark ? '#08111e' : '#f4f6f8']} />
           <fog attach="fog" args={[sceneDark ? '#08111e' : '#f4f6f8', 44, 80]} />
-          <EnvironmentLights isSimulation={simulatedTime !== null} dark={sceneDark} />
+          <EnvironmentLights isSimulation={simulation.simulatedTime !== null} dark={sceneDark} />
 
           {runningPreset && (
             <PresetRig
@@ -765,14 +699,14 @@ export function FloorMapLayer() {
               <FlowingVials key={line.id} lineTheme={line.lineTheme} zPos={line.lz} offlineXRanges={offlineXRangesPerLine[lineIdx] ?? []} />
             ))}
 
-            {simulatedTime !== null && causalArcs
+            {simulation.simulatedTime !== null && causalArcs
               .filter(arc => {
                 const ss = currentEntityStates[arc.from.entityId!] ?? 'normal';
                 const ts = currentEntityStates[arc.to.entityId!]   ?? 'normal';
                 return ss !== 'normal' || ts !== 'normal';
               })
               .map((arc) => {
-                const t  = simulatedTime ?? 0;
+                const t  = simulation.simulatedTime ?? 0;
                 const dp = t < 0 ? 1 : Math.min(1, Math.max(0, (t - arc.delayMin) / 5));
                 return (
                   <CausalArcTube
@@ -813,7 +747,7 @@ export function FloorMapLayer() {
                     <React.Fragment key={eq.id}>
                       <group>
                         <Comp eq={eqEff} onClick={handleMachineClick} hoveredId={hoveredId} setHoveredId={setHoveredId} />
-                        {(eqEff.state === 'offline' || eqEff.state === 'starved') && <OfflineOverlay eq={eqEff} starved={eqEff.state === 'starved'} />}
+                        {(eqEff.state === 'offline' || eqEff.state === 'starved') && <OfflineOverlay eq={eqEff} starved={eqEff.state === 'starved'} floorConfig={floorConfig} />}
                       </group>
                       <IndicatorPill eq={eqEff} onClick={handleMachineClick} isDiving={isDiving} hoveredId={hoveredId} focusedId={focusedId} />
                     </React.Fragment>

@@ -1,13 +1,7 @@
-import type { EntityMap, KairosReport } from '../../types/kairos';
+import type { KairosReport } from '../../types/kairos';
+import type { PlantReportMetrics } from '../../domain/plant/model';
 
-function metricValue(entityMap: EntityMap, key: string, fallback: number) {
-  const match = Object.values(entityMap || {}).find(
-    (entity) => entity.id.includes(key) || entity.label?.toLowerCase().includes(key)
-  );
-  return match && (match as any).metricValue !== undefined ? (match as any).metricValue : fallback;
-}
-
-export function buildKairosReport(entityMap: EntityMap, text: string): KairosReport {
+export function buildKairosReport(metrics: PlantReportMetrics, text: string): KairosReport {
   const lower = text.toLowerCase();
   let type = 'incident';
   if (lower.includes('batch') || lower.includes('bpr') || lower.includes('record')) type = 'batch';
@@ -21,9 +15,7 @@ export function buildKairosReport(entityMap: EntityMap, text: string): KairosRep
     minute: '2-digit',
   });
 
-  const oee = metricValue(entityMap, 'oee', 78.4);
-  const speed = metricValue(entityMap, 'blister', 218);
-  const tension = metricValue(entityMap, 'tension', 34);
+  const { oee, speed, tension } = metrics;
 
   if (type === 'batch') {
     return {

@@ -6,7 +6,7 @@ import { useAppStore } from '../../store/useAppStore';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type ColorKey  = 'g1' | 'g2' | 'g3' | 'g4' | 'g5';
-export type LineTheme = 'l1' | 'l2';
+export type LineTheme = string;
 export type EntityState = 'normal' | 'warning' | 'critical' | 'offline' | 'starved' | 'pending';
 
 // [dark chassis, dark housing, light chassis, light housing]
@@ -82,7 +82,11 @@ export const MAT = {
 
 export type MatKey = keyof typeof MAT;
 
-export const LINE_THEME_MATS: Record<LineTheme, { panel: THREE.MeshStandardMaterial; screen: THREE.MeshStandardMaterial; tag: THREE.MeshStandardMaterial }> = {
+type LineThemeMats = { panel: THREE.MeshStandardMaterial; screen: THREE.MeshStandardMaterial; tag: THREE.MeshStandardMaterial };
+
+const DEFAULT_LINE_THEME = 'l1';
+
+export const LINE_THEME_MATS: Record<string, LineThemeMats> = {
   l1: { panel: MAT.panel,   screen: MAT.screen,   tag: MAT.tag   },
   l2: { panel: MAT.panelL2, screen: MAT.screenL2, tag: MAT.tagL2 },
 };
@@ -120,15 +124,52 @@ export const STATUS_LED: Record<EntityState, THREE.MeshStandardMaterial> = {
 export const RUN_LED     = new THREE.MeshStandardMaterial({ color: '#60aaee', emissive: '#4088cc', emissiveIntensity: 1.5 });
 export const RUN_LED_L2  = new THREE.MeshStandardMaterial({ color: '#88ccff', emissive: '#88ccff', emissiveIntensity: 1.5 });
 
-export const STATUS_LED_BY_THEME: Record<LineTheme, Record<EntityState, THREE.MeshStandardMaterial>> = {
+export const STATUS_LED_BY_THEME: Record<string, Record<EntityState, THREE.MeshStandardMaterial>> = {
   l1: STATUS_LED,
   l2: STATUS_LED,
 };
 
-export const RUN_LED_BY_THEME: Record<LineTheme, THREE.MeshStandardMaterial> = {
+export const RUN_LED_BY_THEME: Record<string, THREE.MeshStandardMaterial> = {
   l1: RUN_LED,
   l2: RUN_LED_L2,
 };
+
+export function getLineThemeMats(lineTheme?: string): LineThemeMats {
+  return LINE_THEME_MATS[lineTheme ?? DEFAULT_LINE_THEME] ?? LINE_THEME_MATS[DEFAULT_LINE_THEME];
+}
+
+export function getStatusLedsForTheme(lineTheme?: string) {
+  return STATUS_LED_BY_THEME[lineTheme ?? DEFAULT_LINE_THEME] ?? STATUS_LED_BY_THEME[DEFAULT_LINE_THEME];
+}
+
+export function getRunLedForTheme(lineTheme?: string) {
+  return RUN_LED_BY_THEME[lineTheme ?? DEFAULT_LINE_THEME] ?? RUN_LED_BY_THEME[DEFAULT_LINE_THEME];
+}
+
+export function getVialThemeMaterial(lineTheme?: string) {
+  const theme = lineTheme ?? DEFAULT_LINE_THEME;
+  if (theme === 'l2') {
+    return new THREE.MeshStandardMaterial({
+      color: 0xc0ecd8,
+      emissive: 0x106040,
+      emissiveIntensity: 0.20,
+      metalness: 0.0,
+      roughness: 0.05,
+      transparent: true,
+      opacity: 0.55,
+    });
+  }
+
+  return new THREE.MeshStandardMaterial({
+    color: 0xdcecf8,
+    emissive: 0x6090b0,
+    emissiveIntensity: 0.04,
+    metalness: 0.0,
+    roughness: 0.08,
+    transparent: true,
+    opacity: 0.45,
+  });
+}
 
 // ── MapThemeManager ───────────────────────────────────────────────────────────
 

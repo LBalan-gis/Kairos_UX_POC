@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { LINE_THEME_MATS, MAT, RUN_LED_BY_THEME, SKEU_MATS, STATUS_LED_BY_THEME, getColorMats } from './FloorMapMaterials';
+import { MAT, SKEU_MATS, getColorMats, getLineThemeMats, getRunLedForTheme, getStatusLedsForTheme } from './FloorMapMaterials';
 import type { ColorKey } from './FloorMapMaterials';
 import type { FloorMachine } from '../../types/floor';
 
@@ -50,10 +50,9 @@ const ControlPanel = ({ eq }: { eq: FloorMachine }) => {
   const panelZ = eq.d / 2 + 0.05;
   const panelW = eq.w * 0.58;
   const panelH = eq.h * 0.44;
-  const themeKey = eq.lineTheme ?? 'l1';
-  const themeMats = LINE_THEME_MATS[themeKey] ?? LINE_THEME_MATS.l1;
-  const statusLeds = STATUS_LED_BY_THEME[themeKey] ?? STATUS_LED_BY_THEME.l1;
-  const runLed = RUN_LED_BY_THEME[themeKey] ?? RUN_LED_BY_THEME.l1;
+  const themeMats = getLineThemeMats(eq.lineTheme);
+  const statusLeds = getStatusLedsForTheme(eq.lineTheme);
+  const runLed = getRunLedForTheme(eq.lineTheme);
 
   return (
     <group position={[0, 0, panelZ]}>

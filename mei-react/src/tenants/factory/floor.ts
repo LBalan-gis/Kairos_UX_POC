@@ -2,6 +2,33 @@ import type { FloorConfig } from '../../types/floor';
 
 export const FLOOR_CONFIG: FloorConfig = {
   bounds: { w: 18.5, d: 14.0, cx: -1.0, cz: 2.25 },
+  projection: {
+    stateLabels: {
+      normal: 'NORMAL',
+      warning: 'WARNING',
+      critical: 'CRITICAL',
+      offline: 'OFFLINE',
+      starved: 'STARVED',
+      pending: 'PENDING',
+    },
+    componentDims: {
+      BlisterMachine:       { w: 2.8, h: 1.2, d: 1.4 },
+      Cartoner:             { w: 1.8, h: 1.8, d: 1.2 },
+      SerializationStation: { w: 1.2, h: 1.5, d: 1.0 },
+      InspectionMachine:    { w: 1.1, h: 1.8, d: 1.0 },
+      Checkweigher:         { w: 1.4, h: 0.85, d: 1.2 },
+      Labeler:              { w: 1.0, h: 1.3, d: 1.0 },
+    },
+    defaultDims: { w: 1.4, h: 1.2, d: 1.2 },
+    pendingPlacement: {
+      baseX: 8.2,
+      xStep: 2.4,
+      defaultLineRef: 'L1',
+      defaultComponentClass: 'BlisterMachine',
+      defaultColor: 'g1',
+      defaultState: 'pending',
+    },
+  },
 
   cleanRooms: [
     { cx: -7.75, cz: -1.5 },

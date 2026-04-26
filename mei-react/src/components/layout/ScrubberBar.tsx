@@ -1,6 +1,7 @@
 import { CSSProperties, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import type { PredictionResult } from '../../types/simulation';
+import { useShallow } from 'zustand/react/shallow';
+import { projectSimulationTimeline, selectSimulationContext } from '../../domain/simulation/selectors';
 
 const PRED_PAST = 30;
 const HIST_PAST = 480;
@@ -17,9 +18,7 @@ interface EventMarker {
 }
 
 export function ScrubberBar() {
-  const predictions = useAppStore((state) => state.predictions);
-  const simulatedTime = useAppStore((state) => state.simulatedTime);
-  const activeScenario = useAppStore((state) => state.activeScenario);
+  const simulation = useAppStore(useShallow(selectSimulationContext));
   const setSimulatedTime = useAppStore((state) => state.setSimulatedTime);
   const setActiveScenario = useAppStore((state) => state.setActiveScenario);
 
@@ -27,6 +26,10 @@ export function ScrubberBar() {
   const [dragging, setDragging] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const pastMin = histMode ? HIST_PAST : PRED_PAST;
+  const timeline = useMemo(() => projectSimulationTimeline(simulation), [simulation]);
+  const predictions = simulation.predictions;
+  const simulatedTime = timeline.simulatedTime;
+  const activeScenario = timeline.activeScenarioId;
 
   const returnToLive = useCallback(() => {
     setHistMode(false);
@@ -117,9 +120,9 @@ export function ScrubberBar() {
         </div>
 
         <div className="tl-scenarios">
-          {!histMode && (predictions?.map((prediction: PredictionResult) => {
-            const active = activeScenario === prediction.scenarioId;
-            const isRisk = prediction.scenarioId === 'unchanged';
+          {!histMode && (timeline.scenarios.map((scenario) => {
+            const active = scenario.isActive;
+            const isRisk = scenario.isRiskPath;
             const chipClass = `tl-chip${active ? ' is-active' : ''}${isRisk ? ' is-risk' : ' is-corrected'}`;
             const chipStyles = {
               '--tl-chip-active-bg': active && isRisk ? 'var(--timeline-risk)' : 'transparent',
@@ -130,15 +133,15 @@ export function ScrubberBar() {
             } as CSSProperties;
             return (
               <button
-                key={prediction.scenarioId}
+                key={scenario.id}
                 className={chipClass}
-                onClick={() => setActiveScenario(prediction.scenarioId)}
+                onClick={() => setActiveScenario(scenario.id)}
                 style={chipStyles}
               >
-                {isRisk ? 'IF UNCHANGED' : 'IF CORRECTED'} <span className="tl-chip-confidence">{Math.round(prediction.confidence * 100)}%</span>
+                {isRisk ? 'IF UNCHANGED' : 'IF CORRECTED'} <span className="tl-chip-confidence">{Math.round(scenario.confidence * 100)}%</span>
               </button>
             );
-          }) ?? null)}
+          }))}
         </div>
 
         <div className="tl-stage-panel">
@@ -196,7 +199,7 @@ export function ScrubberBar() {
               );
             })}
 
-            {!histMode && predictions?.some((prediction) => prediction.scenarioId === 'corrected') && (
+            {!histMode && timeline.scenarios.some((scenario) => scenario.id === 'corrected') && (
               <div
                 className="tl-corrected-guide"
                 style={{ left: `${nowPct}%` }}

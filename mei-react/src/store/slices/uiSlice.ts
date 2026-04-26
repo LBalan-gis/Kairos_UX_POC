@@ -9,14 +9,16 @@ export const createUiSlice: AppStateCreator = (set) => ({
   openOnboarding: () => set({ onboardingOpen: true }),
   closeOnboarding: () => set({ onboardingOpen: false }),
   addPendingMachine: (machine) => set((state) => ({ pendingMachines: [...state.pendingMachines, machine] })),
-  setMachineOffline: (id) => set((state) => ({ offlineIds: new Set([...state.offlineIds, id]) })),
+  setMachineOffline: (id) => set((state) => ({
+    plant: { ...state.plant, offlineIds: new Set([...state.plant.offlineIds, id]) },
+  })),
   setMachineOnline: (id) =>
     set((state) => {
-      const offlineIds = new Set(state.offlineIds);
+      const offlineIds = new Set(state.plant.offlineIds);
       offlineIds.delete(id);
-      return { offlineIds };
+      return { plant: { ...state.plant, offlineIds } };
     }),
-  clearOffline: () => set({ offlineIds: new Set() }),
+  clearOffline: () => set((state) => ({ plant: { ...state.plant, offlineIds: new Set() } })),
   addActionLog: (entry) => set((state) => ({ actionLog: [...state.actionLog.slice(-99), entry] })),
   clearActionLog: () => set({ actionLog: [] }),
   addSpatialWidget: (widget) =>
@@ -29,9 +31,12 @@ export const createUiSlice: AppStateCreator = (set) => ({
   bumpSignal: (ids) => {
     const now = Date.now();
     set((state) => ({
-      signalTimestamps: {
-        ...state.signalTimestamps,
-        ...Object.fromEntries(ids.map((id) => [id, now])),
+      plant: {
+        ...state.plant,
+        signalTimestamps: {
+          ...state.plant.signalTimestamps,
+          ...Object.fromEntries(ids.map((id) => [id, now])),
+        },
       },
     }));
   },

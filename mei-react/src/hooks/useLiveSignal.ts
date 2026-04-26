@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../store/useAppStore';
+import { selectPlantRuntime, selectSignalTimestamp } from '../domain/plant/selectors';
 
 export function useLiveSignal(intervalMs = 2400) {
   const bumpSignal = useAppStore((state) => state.bumpSignal);
-  const liveIds = useAppStore((state) => state.liveIds);
+  const { liveIds } = useAppStore(useShallow(selectPlantRuntime));
 
   useEffect(() => {
     if (liveIds.length === 0) return;
@@ -18,7 +20,7 @@ export function useLiveSignal(intervalMs = 2400) {
 }
 
 export function useSignalAge(entityId: string | null) {
-  const ts = useAppStore((state) => (entityId ? state.signalTimestamps[entityId] ?? 0 : 0));
+  const ts = useAppStore((state) => selectSignalTimestamp(entityId, state));
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {

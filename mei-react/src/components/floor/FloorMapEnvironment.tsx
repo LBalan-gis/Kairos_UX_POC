@@ -1,9 +1,11 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useShallow } from 'zustand/react/shallow';
 import { MAT } from './FloorMapMaterials';
 import { useAppStore } from '../../store/useAppStore';
-import { lookupPastStates } from './PredictionTimeline';
+import { lookupPastStates } from '../../domain/simulation/history';
+import { resolveSimulationEntityStates, selectSimulationContext } from '../../domain/simulation/selectors';
 import type { FloorConfig } from '../../types/floor';
 
 // ── Belt signal helpers ───────────────────────────────────────────────────────
@@ -139,20 +141,12 @@ export const EnvironmentDetails = ({ floorConfig, dark = true }: EnvironmentDeta
   const cleanRooms = floorConfig?.cleanRooms ?? [];
   const bounds     = floorConfig?.bounds     ?? { w: 18.5, d: 14.0, cx: -1.0, cz: 2.25 };
 
-  const simulatedTime  = useAppStore(s => s.simulatedTime);
-  const activeScenario = useAppStore(s => s.activeScenario);
-  const predictions    = useAppStore(s => s.predictions);
+  const simulation = useAppStore(useShallow(selectSimulationContext));
 
-  const entityStates = useMemo<Record<string, string>>(() => {
-    if (simulatedTime === null) return LIVE_ENTITY_STATES;
-    if (simulatedTime < 0)     return lookupPastStates(simulatedTime);
-    const scenario = predictions?.find(p => p.scenarioId === activeScenario);
-    if (!scenario?.steps.length) return LIVE_ENTITY_STATES;
-    const step = scenario.steps.reduce((best, s) =>
-      Math.abs(s.t - simulatedTime) < Math.abs(best.t - simulatedTime) ? s : best
-    , scenario.steps[0]);
-    return step?.entityStates ?? LIVE_ENTITY_STATES;
-  }, [simulatedTime, activeScenario, predictions]);
+  const entityStates = useMemo<Record<string, string>>(
+    () => resolveSimulationEntityStates(simulation, LIVE_ENTITY_STATES, lookupPastStates),
+    [simulation]
+  );
 
   return (
   <group>

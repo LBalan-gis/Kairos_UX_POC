@@ -8,6 +8,7 @@ import { buildKairosReport } from '../../services/kairos/reports';
 import { FOCUS_RESPONSES, resolveFocusId } from '../../services/kairos/focus';
 import { resolveKnowledgeResponse } from '../../services/kairos/questions';
 import { buildWidgetPayload } from '../../services/widgets/payload';
+import { selectPlantEntityById, selectPlantReportMetrics, selectPlantRuntime } from '../../domain/plant/selectors';
 import type { Entity } from '../../types/domain';
 import type { KairosLogEntry, KairosMessage } from '../../types/kairos';
 import type { WidgetPayload } from '../../types/widgets';
@@ -39,15 +40,13 @@ type SubmitFn = (text: string) => void;
 
 export function useKairosController() {
   const {
-    kairosOpen, kairosEntityId, entityMap, dark, liveIds, entityPhysics,
+    kairosOpen, kairosEntityId, dark, entityPhysics,
     enterFocus, setMachineOffline, setMachineOnline, clearOffline,
     openOnboarding, addActionLog, addSpatialWidget,
   } = useAppStore(useShallow((state) => ({
     kairosOpen: state.kairosOpen,
     kairosEntityId: state.kairosEntityId,
-    entityMap: state.entityMap,
     dark: state.dark,
-    liveIds: state.liveIds,
     entityPhysics: state.entityPhysics,
     enterFocus: state.enterFocus,
     setMachineOffline: state.setMachineOffline,
@@ -57,6 +56,9 @@ export function useKairosController() {
     addActionLog: state.addActionLog,
     addSpatialWidget: state.addSpatialWidget,
   })));
+  const { liveIds } = useAppStore(useShallow(selectPlantRuntime));
+  const reportMetrics = useAppStore(selectPlantReportMetrics);
+  const kairosEntity = useAppStore((state) => selectPlantEntityById(kairosEntityId, state));
 
   const entityPhysicsRef = useRef(entityPhysics);
   useEffect(() => {
@@ -87,9 +89,9 @@ export function useKairosController() {
   const threadRef = useRef<ThreadElement>(null);
 
   const handleReport = useCallback((text: string) => {
-    const report = buildKairosReport(entityMap, text);
+    const report = buildKairosReport(reportMetrics, text);
     setMessages((prev) => [...prev, mkMsg('kairos', { report, actions: [] })]);
-  }, [entityMap]);
+  }, [reportMetrics]);
 
   const handleCommand = useCallback((text: string) => {
     const focusId = resolveFocusId(text);
@@ -341,8 +343,8 @@ export function useKairosController() {
   }, [messages, thinking]);
 
   useEffect(() => {
-    if (!kairosOpen || !kairosEntityId) return;
-    const entity = entityMap[kairosEntityId] as Entity | undefined;
+    if (!kairosOpen) return;
+    const entity = kairosEntity as Entity | null;
     if (!entity) return;
     setMessages((prev) => [
       ...prev,
@@ -351,7 +353,7 @@ export function useKairosController() {
         actions: entity.action ? [{ label: `→ ${entity.action}`, cmd: `focus ${kairosEntityId}` }] : [],
       }),
     ]);
-  }, [kairosEntityId, entityMap, kairosOpen]);
+  }, [kairosEntity, kairosEntityId, kairosOpen]);
 
   useEffect(() => {
     const handler = (event: Event) => {

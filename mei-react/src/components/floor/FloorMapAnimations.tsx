@@ -1,7 +1,7 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { LineTheme } from './FloorMapMaterials';
+import { getVialThemeMaterial } from './FloorMapMaterials';
 import type { FloorMachine } from '../../types/floor';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -20,22 +20,14 @@ const STATE_COL: Record<string, string> = {
 // ── FlowingVials ──────────────────────────────────────────────────────────────
 
 interface FlowingVialsProps {
-  lineTheme?: LineTheme;
+  lineTheme?: string;
   zPos?: number;
   offlineXRanges?: Array<[number, number]>;
 }
 
-export const FlowingVials = ({ lineTheme = 'l1', zPos = 0, offlineXRanges = [] }: FlowingVialsProps) => {
+export const FlowingVials = ({ lineTheme, zPos = 0, offlineXRanges = [] }: FlowingVialsProps) => {
   const vialGeo = useMemo(() => new THREE.CylinderGeometry(0.048, 0.048, 0.19, 10), []);
-  const vialMat = useMemo(() => lineTheme === 'l2'
-    ? new THREE.MeshStandardMaterial({
-        color: 0xc0ecd8, emissive: 0x106040, emissiveIntensity: 0.20,
-        metalness: 0.0, roughness: 0.05, transparent: true, opacity: 0.55,
-      })
-    : new THREE.MeshStandardMaterial({
-        color: 0xdcecf8, emissive: 0x6090b0, emissiveIntensity: 0.04,
-        metalness: 0.0, roughness: 0.08, transparent: true, opacity: 0.45,
-      }), [lineTheme]);
+  const vialMat = useMemo(() => getVialThemeMaterial(lineTheme), [lineTheme]);
 
   const groupRef = useRef<THREE.Group>(null);
   const offlineRef = useRef(offlineXRanges);
