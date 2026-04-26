@@ -1,0 +1,192 @@
+/* ── AppToolbar ─────────────────────────────────────────────────────────────── */
+
+.tb-root {
+  height: var(--control-h-md);
+  background: #0b1422;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--panel-pad-x);
+  gap: var(--space-tight);
+  user-select: none;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 1px 8px rgba(0,0,0,0.30);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 50;
+  color: rgba(255,255,255,0.82);
+}
+
+/* Brand */
+.tb-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-tight);
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.tb-brand-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-inverse);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Vertical divider */
+.tb-divider {
+  width: 1px;
+  height: 21px;
+  background: rgba(255,255,255,0.10);
+  flex-shrink: 0;
+}
+
+/* Live indicator */
+.tb-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tb-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--normal);
+  box-shadow: 0 0 6px var(--normal);
+}
+
+.tb-live-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--normal);
+  letter-spacing: 0.12em;
+  line-height: var(--line-height-tight);
+}
+
+.tb-live-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--normal);
+  letter-spacing: 0.08em;
+  padding: 0;
+  font-family: inherit;
+}
+
+/* Clock */
+.tb-clock {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-inverse);
+  letter-spacing: -0.01em;
+  line-height: var(--line-height-tight);
+  flex-shrink: 0;
+}
+
+/* Shift info */
+.tb-shift {
+  font-size: 9px;
+  color: rgba(255,255,255,0.38);
+  letter-spacing: 0.06em;
+  line-height: var(--line-height-tight);
+  flex-shrink: 0;
+}
+
+/* Sim label */
+.tb-sim-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.38);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  line-height: var(--line-height-tight);
+}
+
+.tb-spacer { flex: 1; }
+
+/* Nav buttons — border/background/color set inline (dynamic active + color) */
+.tb-nav-btn {
+  height: var(--control-h-xs);
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: inherit;
+  line-height: 1;
+}
+
+/* Theme toggle */
+.tb-theme-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: rgba(255,255,255,0.52);
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  font-family: inherit;
+}
+
+/* Facility pill */
+.tb-facility {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tb-facility-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--normal);
+}
+
+.tb-facility-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.18);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: var(--line-height-tight);
+}
+
+[data-theme="light"] .tb-root {
+  background: rgba(247, 248, 246, 0.98);
+  border-bottom-color: rgba(38,42,48,0.08);
+  box-shadow: 0 1px 10px rgba(38,42,48,0.045);
+  color: rgba(38,42,48,0.72);
+}
+
+[data-theme="light"] .tb-brand-name,
+[data-theme="light"] .tb-clock {
+  color: #1d2733;
+}
+
+[data-theme="light"] .tb-divider {
+  background: rgba(38,42,48,0.08);
+}
+
+[data-theme="light"] .tb-shift,
+[data-theme="light"] .tb-sim-label {
+  color: rgba(38,42,48,0.42);
+}
+
+[data-theme="light"] .tb-theme-btn {
+  color: rgba(38,42,48,0.42);
+}
+
+[data-theme="light"] .tb-facility-label {
+  color: rgba(38,42,48,0.28);
+}

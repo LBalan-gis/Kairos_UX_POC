@@ -1,0 +1,374 @@
+/* ── FloorMetrics sidebar ─────────────────────────────────────────────────── */
+
+.fm-sidebar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  width: 236px;
+  pointer-events: auto;
+  background: var(--app-panel-bg);
+  border-right: 1px solid var(--app-border);
+  box-shadow: var(--shadow-right);
+  overflow: hidden;
+  opacity: 0.55;
+  transition: opacity 0.25s ease;
+}
+
+.fm-sidebar:hover {
+  opacity: 1;
+}
+
+.fm-scroll {
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── KPI header ───────────────────────────────────────────────────────────── */
+
+.fm-kpi-header {
+  padding: 9px 14px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fm-kpi-label {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.fm-kpi-sub {
+  font-size: var(--font-size-2xs);
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  opacity: 0.72;
+}
+
+/* ── KPI line row — card ──────────────────────────────────────────────────── */
+
+.fm-kpi-row {
+  margin: 0 9px 7px;
+  padding: 9px 11px;
+  background: var(--app-panel-bg-soft);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+}
+
+.fm-kpi-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.fm-line-badge {
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+  letter-spacing: 0.10em;
+  line-height: 1;
+}
+
+.fm-oee-val {
+  font-size: 22px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.fm-oee-unit {
+  font-size: var(--font-size-2xs);
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fm-subbar-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── SubBar ───────────────────────────────────────────────────────────────── */
+
+.fm-subbar {
+  flex: 1;
+}
+
+.fm-subbar-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.fm-subbar-lbl {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.10em;
+  color: var(--text-muted);
+}
+
+.fm-subbar-val {
+  font-size: var(--font-size-2xs);
+  color: var(--text-secondary);
+}
+
+.fm-subbar-track {
+  height: 3px;
+  background: var(--app-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fm-subbar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* ── OTIF risk banner ─────────────────────────────────────────────────────── */
+
+.fm-otif-banner {
+  margin: 0 9px 9px;
+  padding: 9px 11px;
+  background: var(--critical-bg);
+  border: 1px solid var(--critical-border);
+  border-radius: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.fm-otif-icon {
+  font-size: var(--font-size-xs);
+  color: var(--critical);
+  flex-shrink: 0;
+}
+
+.fm-otif-title {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--critical);
+  margin-bottom: 4px;
+}
+
+.fm-otif-body {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  line-height: var(--line-height-base);
+}
+
+/* ── Alarms section — card ────────────────────────────────────────────────── */
+
+.fm-alarms {
+  margin: 0 9px 7px;
+  padding: 9px 11px;
+  background: var(--app-panel-bg-soft);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+}
+
+.fm-alarms-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.fm-alarms-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fm-alarms-title {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fm-alarm-btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--app-border);
+  padding: 8px 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.fm-alarm-btn:first-of-type {
+  border-top: none;
+}
+
+/* Active alarm — syncs with focused machine on floor */
+.fm-alarm-btn--active {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  margin: 0 -4px;
+  padding-left: 4px;
+  padding-right: 4px;
+  outline: 1px solid var(--app-border);
+  outline-offset: -1px;
+}
+.fm-alarm-btn--active .fm-alarm-label {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.fm-alarm-btn--active .fm-alarm-bar {
+  border-radius: 2px;
+  box-shadow: 0 0 5px currentColor;
+}
+
+.fm-alarm-bar {
+  width: 3px;
+  min-height: 30px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.fm-alarm-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: 3px;
+  line-height: var(--line-height-tight);
+}
+
+.fm-alarm-msg {
+  font-size: var(--font-size-2xs);
+  color: var(--text-secondary);
+  line-height: var(--line-height-snug);
+}
+
+.fm-alarm-sev {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Line metrics — card ──────────────────────────────────────────────────── */
+
+.fm-line {
+  margin: 0 9px 7px;
+  padding: 9px 11px;
+  background: var(--app-panel-bg-soft);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+}
+
+.fm-line-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.fm-line-name {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.fm-line-oee {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
+  color: var(--text-primary);
+}
+
+.fm-line-pct {
+  font-size: var(--font-size-2xs);
+  color: var(--text-muted);
+  margin-left: 1px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fm-line-target-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 5px;
+}
+
+.fm-line-target-lbl {
+  font-size: var(--font-size-2xs);
+  color: var(--text-muted);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.fm-line-target-val {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.03em;
+}
+
+.fm-line-track {
+  height: 4px;
+  background: var(--app-border);
+  border-radius: 999px;
+  margin-bottom: 7px;
+}
+
+.fm-line-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.fm-line-batch {
+  font-size: var(--font-size-2xs);
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  line-height: var(--line-height-snug);
+  font-variant-numeric: tabular-nums;
+}
+
+.fm-line-bpm {
+  color: var(--text-secondary);
+}
+
+.fm-correction {
+  background: var(--ix-suggested-bg);
+  border: 1px dotted var(--ix-suggested-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 8px;
+}
+
+.fm-correction-action {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--ix-suggested-text);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.fm-correction-detail {
+  font-size: var(--font-size-2xs);
+  color: var(--text-secondary);
+  line-height: var(--line-height-snug);
+}

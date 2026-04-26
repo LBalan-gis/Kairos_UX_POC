@@ -1,0 +1,24 @@
+// Edge rendering constants — shared across all tenants.
+interface EdgeStyleEntry { cls: string; marker: string; }
+
+export const EDGE_STYLE: Record<string, EdgeStyleEntry> = {
+  feeds:               { cls: 'material',   marker: 'arrow-material'   },
+  measured_by:         { cls: 'causal',     marker: 'arrow-causal'     },
+  controls:            { cls: 'control',    marker: 'arrow-control'    },
+  causes:              { cls: 'causal',     marker: 'arrow-causal'     },
+  affects:             { cls: 'deviation',  marker: 'arrow-deviation'  },
+  affects_performance: { cls: 'causal',     marker: 'arrow-causal'     },
+  drives:              { cls: 'control',    marker: 'arrow-control'    },
+  causes_drift:        { cls: 'deviation',  marker: 'arrow-deviation'  },
+  triggers:            { cls: 'deviation',  marker: 'arrow-deviation'  },
+  references:          { cls: 'causal',     marker: 'arrow-causal'     },
+  impacts_cost:        { cls: 'deviation',  marker: 'arrow-deviation'  },
+  logged_in:           { cls: 'system',     marker: 'arrow-system'     },
+  approved_by:         { cls: 'system',     marker: 'arrow-system'     },
+  simulated_as:        { cls: 'simulation', marker: 'arrow-simulation' },
+  mitigates:           { cls: 'control',    marker: 'arrow-control'    },
+  starves:             { cls: 'deviation',  marker: 'arrow-deviation'  },
+  accumulates:         { cls: 'deviation',  marker: 'arrow-deviation'  },
+  reduces:             { cls: 'causal',     marker: 'arrow-causal'     },
+  measures:            { cls: 'causal',     marker: 'arrow-causal'     },
+};

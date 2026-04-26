@@ -1,28 +1,30 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import './tokens.css';
+@import './interaction.css';
+@import './diorama.css';
+@import './timeline.css';
 
 :root {
-  --bg: #F1F3F0;
-  --panel: rgba(247,248,245,0.80);
-  --card: #F9FAF8;
+  /* Layout aliases */
+  --bg:    var(--bg-app);
+  --panel: var(--bg-panel-soft);
+  --card:  var(--bg-panel);
 
-  --text-primary: #141920;
-  --text-secondary: #42505F;
-  --text-muted: #66737F;
+  /* Border aliases */
+  --border-soft:    var(--border);
+  --border-default: var(--border);
 
-  --border-soft: rgba(52,65,80,0.08);
-  --border-default: rgba(52,65,80,0.14);
-  --border-strong: rgba(52,65,80,0.26);
+  --focus:      var(--selected-border);
+  --focus-ring: var(--selected-bg);
 
-  --focus: #2C5899;
-  --focus-ring: rgba(44,88,153,0.16);
-
+  /* Entity type colors */
   --material:   #3D6494;
   --sensor:     #256870;
   --control:    #4E7235;
   --asset:      #2C5899;
-  --quality:    #9A6E1A;
+  --quality:    var(--warning);
   --golden:     #927020;
-  --deviation:  #A83530;
+  --deviation:  var(--critical);
   --simulation: #6E52A4;
   --financial:  #5E7238;
   --system:     #68727E;
@@ -31,18 +33,19 @@
   --sensor-fill:     #EEF4F4;
   --control-fill:    #F0F5EC;
   --asset-fill:      #EFF3FA;
-  --quality-fill:    #FAF5E8;
+  --quality-fill:    var(--warning-bg);
   --golden-fill:     #F7F0E2;
-  --deviation-fill:  #FAEEEC;
+  --deviation-fill:  var(--critical-bg);
   --simulation-fill: #F2EFF8;
   --financial-fill:  #F0F5EC;
   --system-fill:     #F4F5F6;
 
-  --chart-live:       #2C5899;
+  /* Chart aliases */
+  --chart-live:       var(--chart-projection);
   --chart-reference:  #927020;
-  --chart-threshold:  #66737F;
-  --chart-loss:       #A83530;
-  --chart-recovery:   #4E7235;
+  --chart-threshold:  var(--text-muted);
+  --chart-loss:       var(--chart-actual);
+  --chart-recovery:   var(--chart-target);
   --chart-simulation: #6E52A4;
 }
 
@@ -56,7 +59,7 @@ html, body {
   overflow: hidden;
   background: var(--bg);
   color: var(--text-primary);
-  font-family: 'Space Grotesk', system-ui, -apple-system, Segoe UI, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;

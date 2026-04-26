@@ -1,0 +1,92 @@
+/* ── Interaction Grammar ──────────────────────────────────────────────────────
+   Six semantic states. One rule each. Apply to any surface.
+
+   1. Hover        — background fill + border lift. No translate.
+   2. Selected     — blue ring. Consistent across all surfaces.
+   3. Dangerous    — red ring. Destructive / irreversible actions only.
+   4. Suggested    — amber dotted. AI recommendation, not yet actioned.
+   5. Simulated    — violet dashed + breathe. Active what-if scenario.
+   6. Confirmed    — green ring + flash. Action executed.
+────────────────────────────────────────────────────────────────────────────── */
+
+/* ── Animations ───────────────────────────────────────────────────────────── */
+
+/* Simulated: subtle continuous breathe signals "this is hypothetical" */
+@keyframes ix-sim-breathe {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.68; }
+}
+
+/* Confirmed: brief bright flash on appear signals "done" */
+@keyframes ix-confirm-flash {
+  0%   { box-shadow: 0 0 0 3px var(--ix-confirmed-border); opacity: 0.7; }
+  40%  { box-shadow: 0 0 0 6px transparent; opacity: 1; }
+  100% { box-shadow: none; }
+}
+
+/* Button press: tactile scale-down */
+@keyframes ix-press {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+
+/* ── 1. Hover ─────────────────────────────────────────────────────────────── */
+
+.ix-hover,
+.ix-hoverable:hover {
+  background: var(--ix-hover-bg);
+  border-color: var(--ix-hover-border);
+}
+
+/* ── 2. Selected ──────────────────────────────────────────────────────────── */
+
+.ix-selected,
+.ix-selectable.is-selected {
+  background: var(--ix-selected-bg);
+  border-color: var(--ix-selected-border) !important;
+  color: var(--ix-selected-text);
+  outline: 1.5px solid var(--ix-selected-border);
+  outline-offset: -1px;
+}
+
+/* ── 3. Dangerous ─────────────────────────────────────────────────────────── */
+
+.ix-danger,
+.ix-dangerous:hover {
+  background: var(--ix-danger-bg);
+  border-color: var(--ix-danger-border) !important;
+  color: var(--ix-danger-text);
+}
+
+/* ── 4. Suggested — amber dotted, static ─────────────────────────────────── */
+
+.ix-suggested {
+  background: var(--ix-suggested-bg);
+  border: 1px dotted var(--ix-suggested-border) !important;
+  color: var(--ix-suggested-text);
+}
+
+/* ── 5. Simulated — violet dashed, breathing ─────────────────────────────── */
+
+.ix-sim {
+  background: var(--ix-sim-bg);
+  border: 1px dashed var(--ix-sim-border) !important;
+  color: var(--ix-sim-text);
+  animation: ix-sim-breathe 2.8s ease-in-out infinite;
+}
+
+/* ── 6. Confirmed — green ring, entry flash ──────────────────────────────── */
+
+.ix-confirmed {
+  background: var(--ix-confirmed-bg);
+  border-color: var(--ix-confirmed-border) !important;
+  color: var(--ix-confirmed-text);
+  animation: ix-confirm-flash 0.5s ease-out forwards;
+}
+
+/* ── Button press feedback ────────────────────────────────────────────────── */
+
+.ix-pressable:active {
+  animation: ix-press 0.18s ease-out forwards;
+}

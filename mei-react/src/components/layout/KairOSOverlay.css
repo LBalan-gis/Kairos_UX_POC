@@ -1,0 +1,1129 @@
+.kairos-overlay-panel {
+  --kai-focus-brand: var(--kai-brand);
+  --kai-input-placeholder: rgba(255, 255, 255, 0.5);
+  --kai-rail-fade: rgba(16, 20, 28, 0.95);
+  --kai-rail-divider: rgba(255, 255, 255, 0.08);
+  --kai-rail-chip-bg: rgba(255, 255, 255, 0.06);
+  --kai-rail-chip-border: rgba(255, 255, 255, 0.12);
+  --kai-rail-chip-text: rgba(255, 255, 255, 0.72);
+  --kai-input-shell-bg: #161a23;
+  --kai-input-box-bg: rgba(255, 255, 255, 0.04);
+  --kai-input-border: rgba(255, 255, 255, 0.1);
+  --kai-input-text: #e2e8f0;
+  --kai-input-btn-ready-bg: #9bd2ff;
+  --kai-input-btn-ready-text: #102334;
+  --kai-input-btn-disabled-bg: rgba(255, 255, 255, 0.06);
+  --kai-input-btn-disabled-text: rgba(255, 255, 255, 0.3);
+  --kai-thread-pad-x: 18px;
+  --kai-card-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+  position: fixed;
+  top: var(--control-h-md);
+  right: 0;
+  bottom: 0;
+  z-index: 199;
+  width: 38.2vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--kai-panel-bg);
+  border-left: 1px solid var(--kai-panel-border);
+  box-shadow: var(--kai-panel-shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme="light"] .kairos-overlay-panel {
+  --kai-rail-fade: rgba(241, 243, 240, 0.97);
+  --kai-rail-divider: rgba(72, 74, 78, 0.08);
+  --kai-rail-chip-bg: rgba(244, 246, 243, 0.82);
+  --kai-rail-chip-border: rgba(72, 74, 78, 0.13);
+  --kai-rail-chip-text: #2b3949;
+  --kai-input-shell-bg: rgba(241, 243, 240, 0.96);
+  --kai-input-box-bg: rgba(247, 248, 246, 0.94);
+  --kai-input-border: rgba(72, 74, 78, 0.11);
+  --kai-input-text: #0f172a;
+  --kai-input-btn-ready-bg: #0f766e;
+  --kai-input-btn-ready-text: #ffffff;
+  --kai-input-btn-disabled-bg: rgba(72, 74, 78, 0.05);
+  --kai-input-btn-disabled-text: rgba(72, 74, 78, 0.35);
+  --kai-card-shadow: 0 2px 10px rgba(72, 74, 78, 0.04);
+  border-left: none;
+}
+
+.kairos-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  min-height: var(--surface-header-h);
+  padding: 0 var(--panel-pad-x);
+  background: var(--kai-header-bg);
+  border-bottom: 1px solid var(--kai-header-border);
+  box-sizing: border-box;
+}
+
+.kairos-overlay-headline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kairos-overlay-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.kairos-overlay-icon,
+.kairos-overlay-launcher-icon {
+  overflow: visible;
+}
+
+.kairos-overlay-title {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--kai-brand);
+}
+
+.kairos-overlay-subtitle {
+  margin-top: 2px;
+  font-size: 9.5px;
+  color: var(--kai-subtitle);
+}
+
+.kairos-overlay-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid var(--kai-close-border);
+  background: var(--kai-close-bg);
+  color: var(--kai-close-color);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.kairos-overlay-close:hover {
+  border-color: color-mix(in srgb, var(--kai-close-border) 70%, var(--kai-brand));
+  color: var(--kai-brand);
+}
+
+.kairos-overlay-launcher {
+  position: fixed;
+  right: 16px;
+  bottom: 68px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--kai-launcher-border);
+  background: var(--kai-launcher-bg);
+  box-shadow: var(--kai-launcher-shadow);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+
+.kairos-chiprail {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.kairos-chiprail-fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.kairos-chiprail-fade.is-left {
+  left: 0;
+  width: 20px;
+  background: linear-gradient(to right, var(--kai-rail-fade), transparent);
+}
+
+.kairos-chiprail-fade.is-right {
+  right: 0;
+  width: 48px;
+  background: linear-gradient(to left, var(--kai-rail-fade), transparent);
+}
+
+.kairos-chiprail-track {
+  display: flex;
+  gap: var(--space-tight);
+  overflow-x: auto;
+  padding: 8px calc(var(--panel-pad-x) + 1px);
+  border-top: 1px solid var(--kai-rail-divider);
+}
+
+.kai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 0 10px;
+  height: var(--control-h-xs);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--kai-rail-chip-border);
+  background: var(--kai-rail-chip-bg);
+  color: var(--kai-rail-chip-text);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+[data-theme="light"] .kai-chip {
+  font-weight: 550;
+}
+
+.kai-chip-icon {
+  font-size: 9px;
+  line-height: 1;
+  opacity: 0.65;
+}
+
+.kairos-input-shell {
+  display: flex;
+  flex-shrink: 0;
+  padding: 10px calc(var(--panel-pad-x) + 1px) var(--panel-pad-y);
+  background: var(--kai-input-shell-bg);
+  border-top: 1px solid var(--kai-rail-divider);
+}
+
+.kairos-input-box {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--kai-input-border);
+  background: var(--kai-input-box-bg);
+  transition: border-color 0.2s ease;
+}
+
+.kairos-input-field {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 2px;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--kai-input-text);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.kairos-input-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-xs);
+  height: var(--control-h-xs);
+  margin-bottom: 2px;
+  margin-left: 10px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--kai-input-btn-disabled-bg);
+  color: var(--kai-input-btn-disabled-text);
+  cursor: default;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.kairos-input-send.is-ready {
+  background: var(--kai-input-btn-ready-bg);
+  color: var(--kai-input-btn-ready-text);
+  cursor: pointer;
+}
+
+.kairos-thread-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.kairos-thread-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 13px var(--kai-thread-pad-x) 8px;
+}
+
+.kairos-bubble {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-tight);
+  margin-bottom: var(--panel-gap);
+  padding: 8px 13px 8px 13px;
+  border-left: 2px solid var(--kai-bubble-accent);
+}
+
+.kairos-bubble-time {
+  width: 50px;
+  flex-shrink: 0;
+  padding-top: 5px;
+  text-align: right;
+}
+
+.kairos-bubble-timecode {
+  font-size: 9px;
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--kai-bubble-dim);
+}
+
+[data-theme="light"] .kairos-bubble {
+  background: transparent;
+  border-radius: 0;
+}
+
+.kairos-bubble-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--kai-avatar-border);
+  background: var(--kai-avatar-bg);
+}
+
+.kairos-bubble-avatar-label {
+  font-weight: 700;
+  line-height: 1;
+  color: var(--kai-avatar-color);
+}
+
+.kairos-bubble-avatar-label.is-operator {
+  font-size: 8px;
+}
+
+.kairos-bubble-avatar-label.is-default {
+  font-size: 11px;
+}
+
+.kairos-bubble-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.kairos-bubble-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--kai-bubble-head-gap, 6px);
+}
+
+.kairos-bubble-badge {
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid var(--kai-badge-border);
+  background: var(--kai-badge-bg);
+  color: var(--kai-badge-text);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-theme="light"] .kairos-bubble-badge,
+[data-theme="light"] .kairos-bubble-cfr {
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.55);
+}
+
+.kairos-bubble-sender {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--kai-bubble-sender);
+}
+
+.kairos-bubble-cfr {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--kai-bubble-cfr-bg);
+  color: var(--kai-bubble-cfr-text);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.kairos-bubble-operator-ack {
+  margin-left: auto;
+  color: var(--kai-bubble-ack);
+  font-size: 13px;
+}
+
+.kairos-bubble-sig {
+  margin-left: auto;
+  color: var(--kai-bubble-dim);
+  font-size: 9px;
+  font-family: "IBM Plex Mono", monospace;
+  cursor: pointer;
+  user-select: none;
+}
+
+.kairos-bubble-text {
+  margin-bottom: 12px;
+  color: var(--kai-bubble-body);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 12.5px;
+  line-height: var(--line-height-base);
+}
+
+.kairos-bubble-bullets {
+  margin: 0 0 14px;
+  padding: 0 0 0 16px;
+}
+
+.kairos-bubble-bullet {
+  margin-bottom: 3px;
+  color: var(--kai-bubble-body);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 12px;
+  line-height: 1.62;
+}
+
+.kairos-bubble-confidence {
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.kairos-bubble-confidence-label {
+  margin-right: 4px;
+  color: var(--kai-bubble-dim);
+}
+
+.kairos-bubble-confidence-value {
+  color: var(--kai-bubble-confidence);
+  font-weight: 700;
+}
+
+.kairos-bubble-block {
+  margin-bottom: 14px;
+}
+
+.kairos-bubble-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.kairos-bubble-chart-label {
+  color: var(--kai-bubble-dim);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.kairos-bubble-chart-delta {
+  padding: 1px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--kai-bubble-chart-delta-border);
+  background: var(--kai-bubble-chart-delta-bg);
+  color: var(--kai-bubble-chart-delta);
+  font-size: 10px;
+  font-weight: 700;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.kairos-bubble-chart-card {
+  padding: 10px 12px 8px;
+  border-radius: 8px;
+  border: var(--kai-bubble-chart-border);
+  background: var(--kai-bubble-chart-bg);
+}
+
+.kairos-bubble-chart-card.is-oee {
+  height: 230px;
+}
+
+.kairos-bubble-chart-card.is-default {
+  height: 190px;
+}
+
+.kairos-card {
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  box-shadow: var(--kai-card-shadow);
+}
+
+[data-theme="light"] .kairos-card {
+  backdrop-filter: saturate(1.02);
+}
+
+.kairos-card-report {
+  background: var(--kai-card-bg);
+  border: 1px solid var(--kai-card-border);
+  color: var(--kai-card-title);
+  font-size: 11.5px;
+}
+
+.kairos-card-report-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 13px 8px;
+  border-bottom: 1px solid var(--kai-card-head-border);
+}
+
+.kairos-card-report-pill {
+  display: inline-flex;
+  margin-bottom: 3px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--kai-report-pill-border);
+  background: var(--kai-report-pill-bg);
+  color: var(--kai-report-pill-text);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.kairos-card-report-title {
+  color: var(--kai-card-title);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.kairos-card-report-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+  color: var(--kai-card-meta);
+  font-size: 9.5px;
+}
+
+.kairos-card-report-print {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--kai-card-print-border);
+  background: var(--kai-card-print-bg);
+  color: var(--kai-card-print-color);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+[data-theme="light"] .kairos-card-report-print,
+[data-theme="light"] .kairos-signed-link,
+[data-theme="light"] .kairos-critical-banner-btn {
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.5);
+}
+
+.kairos-card-report-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 7px 13px 9px;
+}
+
+.kairos-card-report-label {
+  margin-bottom: 2px;
+  color: var(--kai-card-label);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.kairos-card-report-text {
+  color: var(--kai-card-body);
+  line-height: 1.55;
+}
+
+.kairos-card-report-chart {
+  height: 140px;
+  padding: 6px 6px 4px;
+  border-radius: 6px;
+  border: 1px solid var(--kai-card-chart-border);
+  background: var(--kai-card-chart-bg);
+}
+
+.kairos-card-otif {
+  background: var(--kai-otif-bg);
+  border: 1px solid var(--kai-otif-border);
+}
+
+.kairos-card-otif-head,
+.kairos-card-trace-head,
+.kairos-card-aegis-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 11px;
+  border-bottom: 1px solid var(--kai-head-border);
+  background: var(--kai-head-bg);
+}
+
+.kairos-card-otif-title,
+.kairos-card-trace-title,
+.kairos-card-aegis-title {
+  color: var(--kai-head-title);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.kairos-card-otif-time,
+.kairos-card-otif-tail,
+.kairos-card-trace-tail {
+  color: var(--kai-head-title);
+  font-size: 8px;
+  opacity: 0.75;
+}
+
+.kairos-card-otif-time {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.kairos-card-otif-tail,
+.kairos-card-trace-tail {
+  margin-left: auto;
+}
+
+.kairos-card-otif-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 11px;
+}
+
+.kairos-card-otif-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kairos-card-otif-key {
+  flex-shrink: 0;
+  color: var(--kai-otif-label);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.kairos-card-otif-value {
+  color: var(--kai-otif-value);
+  text-align: right;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.kairos-card-trace,
+.kairos-card-aegis {
+  background: var(--kai-trace-bg);
+  border: 1px solid var(--kai-trace-border);
+  font-family: "Fira Code", "Cascadia Code", "Consolas", monospace;
+}
+
+.kairos-card-trace-row {
+  padding: 6px 11px;
+  border-bottom: 1px solid var(--kai-trace-row-border);
+}
+
+.kairos-card-trace-row:last-child {
+  border-bottom: none;
+}
+
+.kairos-card-trace-main,
+.kairos-card-trace-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kairos-card-trace-sub {
+  margin-top: 2px;
+}
+
+.kairos-card-trace-tag {
+  width: 82px;
+  flex-shrink: 0;
+  color: var(--kai-trace-row-color);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.kairos-card-trace-main-text {
+  color: var(--kai-trace-main);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.kairos-card-trace-icon {
+  width: 82px;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--kai-trace-row-color);
+  font-size: 10px;
+}
+
+.kairos-card-trace-sub-text {
+  color: var(--kai-trace-sub);
+  font-size: 9px;
+}
+
+.kairos-card-aegis-body {
+  padding: 9px 11px;
+  color: var(--kai-aegis-main);
+  font-size: 10px;
+  line-height: 1.72;
+}
+
+.kairos-card-aegis-lead {
+  margin-bottom: 6px;
+  color: var(--kai-aegis-hl1);
+  font-weight: 700;
+}
+
+.kairos-card-aegis-hl2 {
+  color: var(--kai-aegis-hl2);
+}
+
+.kairos-card-aegis-subtle {
+  color: var(--kai-aegis-sub);
+}
+
+.kairos-card-aegis-copy {
+  margin-bottom: 8px;
+  color: var(--kai-aegis-sub);
+}
+
+.kairos-card-aegis-sensors-label {
+  color: var(--kai-aegis-sub);
+  font-size: 9px;
+}
+
+.kairos-card-aegis-sensors {
+  margin-top: 2px;
+  color: var(--kai-aegis-hl3);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.kairos-highlight-strong {
+  color: var(--kai-highlight-strong);
+  font-weight: 600;
+}
+
+.kairos-highlight-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 2px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--kai-highlight-token-border);
+  background: var(--kai-highlight-token-bg);
+  color: var(--kai-highlight-token-text);
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 700;
+  vertical-align: baseline;
+}
+
+.kairos-highlight-token-icon {
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.kairos-breakdown-table {
+  width: 100%;
+  margin-top: 4px;
+  border-collapse: collapse;
+  font-family: "IBM Plex Mono", "Fira Code", monospace;
+}
+
+.kairos-breakdown-row {
+  border-bottom: 1px solid var(--kai-breakdown-border);
+}
+
+.kairos-breakdown-row:last-child {
+  border-bottom: none;
+}
+
+.kairos-breakdown-label {
+  width: 52px;
+  padding: 5px 8px 5px 0;
+  color: var(--kai-breakdown-label);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.kairos-breakdown-value {
+  padding: 4px 10px 4px 0;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.kairos-breakdown-value-main {
+  color: var(--kai-breakdown-value-color);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kairos-breakdown-value-delta {
+  margin-left: 6px;
+  color: var(--kai-breakdown-value-color);
+  opacity: 0.8;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.kairos-breakdown-detail {
+  padding: 4px 0;
+  color: var(--kai-breakdown-detail);
+  font-size: 10px;
+  vertical-align: middle;
+}
+
+.kairos-signed-record {
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--kai-signed-border);
+  background: var(--kai-signed-bg);
+}
+
+.kairos-signed-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px 12px;
+  margin-bottom: 9px;
+}
+
+.kairos-signed-label {
+  margin-bottom: 2px;
+  color: var(--kai-signed-label);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.kairos-signed-value {
+  color: var(--kai-signed-value);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.kairos-signed-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid var(--kai-signed-border);
+}
+
+.kairos-signed-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--kai-signed-meta);
+  font-size: 9px;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.kairos-signed-link {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--kai-signed-border);
+  background: transparent;
+  color: var(--kai-signed-link);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.kairos-metrics-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.kairos-metric-card {
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: var(--kai-metric-bg);
+}
+
+.kairos-metric-label {
+  margin-bottom: 4px;
+  color: var(--kai-metric-label);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kairos-metric-value {
+  color: var(--kai-metric-value-color);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.kairos-metric-sub {
+  margin-top: 2px;
+  color: var(--kai-metric-sub);
+  font-size: 9px;
+}
+
+.kairos-metric-bar {
+  height: 4px;
+  margin-top: 5px;
+  border-radius: 2px;
+  background: var(--kai-metric-bar-bg);
+}
+
+.kairos-metric-bar-fill {
+  height: 100%;
+  width: var(--kai-metric-bar-width);
+  border-radius: 2px;
+  background: var(--kai-metric-value-color);
+}
+
+.kairos-bubble-feedback-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--kai-bubble-divider);
+}
+
+.kairos-bubble-feedback-inline {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--kai-bubble-divider);
+  flex-wrap: wrap;
+}
+
+.kairos-bubble-feedback-label {
+  color: var(--kai-bubble-dim);
+  font-size: 10.5px;
+}
+
+.kairos-bubble-feedback-btn {
+  padding: 3px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--kai-bubble-feedback-border);
+  background: transparent;
+  color: var(--kai-bubble-feedback-text);
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.kairos-bubble-feedback-btn.is-selected {
+  background: var(--ix-confirmed-bg);
+  border-color: var(--ix-confirmed-border);
+  color: var(--ix-confirmed-text);
+}
+
+.kairos-bubble-feedback-btn.is-kairos {
+  padding: 3px 9px;
+  border-color: transparent;
+  color: var(--kai-bubble-dim);
+  transition: all 0.1s;
+}
+
+.kairos-bubble-feedback-btn.is-kairos.is-selected {
+  background: var(--ix-confirmed-bg);
+  border-color: var(--ix-confirmed-border);
+  color: var(--ix-confirmed-text);
+}
+
+.kairos-bubble-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.kairos-bubble-action-link {
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--kai-bubble-action-color);
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.kairos-bubble-action-link.is-pinned {
+  color: var(--ix-confirmed-text);
+  border-color: var(--ix-confirmed-border);
+  background: var(--ix-confirmed-bg);
+}
+
+.kairos-critical-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 7px 16px;
+  background: var(--kai-critical-bg);
+  border-bottom: 1px solid var(--kai-critical-border);
+}
+
+.kairos-critical-banner-icon {
+  color: var(--kai-critical-label);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.kairos-critical-banner-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.kairos-critical-banner-title {
+  margin-bottom: var(--kai-critical-title-gap, 0);
+  color: var(--kai-critical-label);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.kairos-critical-banner-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.kairos-critical-banner-meta-item {
+  color: var(--kai-critical-sub);
+  font-size: 10px;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.kairos-critical-banner-meta-key {
+  color: var(--kai-critical-label);
+  font-weight: 700;
+}
+
+.kairos-critical-banner-btn {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--kai-critical-btn-border);
+  background: var(--kai-critical-btn-bg);
+  color: var(--kai-critical-btn-color);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.kairos-critical-banner-close {
+  flex-shrink: 0;
+  padding: 2px 4px;
+  border: none;
+  background: transparent;
+  color: var(--kai-critical-dim);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.kairos-thinking {
+  margin-bottom: 32px;
+  padding-left: 16px;
+}
+
+.kairos-thinking-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+}
+
+.kairos-thinking-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="light"] .kairos-thinking-dot {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.kai-thread::-webkit-scrollbar {
+  width: 3px;
+}
+
+.kai-thread::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kai-thread::-webkit-scrollbar-thumb {
+  background: rgba(169, 144, 212, 0.25);
+  border-radius: 4px;
+}
+
+.kai-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.kai-chips {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.kai-chip {
+  transition: all 0.1s;
+}
+
+.kai-input:focus {
+  outline: none;
+  border-color: var(--kai-focus-brand) !important;
+}
+
+.kai-input::placeholder {
+  color: var(--kai-input-placeholder);
+}
+
+@media (max-width: 1280px) {
+  .kairos-overlay-panel {
+    width: min(460px, 42vw);
+  }
+}

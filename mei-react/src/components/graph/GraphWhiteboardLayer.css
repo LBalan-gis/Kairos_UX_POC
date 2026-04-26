@@ -1,0 +1,630 @@
+/* ── Shell ────────────────────────────────────────────────────────────── */
+.graph-shell {
+  --graph-text-primary: var(--text-primary);
+  --graph-text-secondary: var(--text-muted);
+  --graph-badge-bg: rgba(15,23,42,0.05);
+  --graph-show-all-bg: rgba(15,23,42,0.03);
+  --graph-show-all-border: rgba(15,23,42,0.08);
+  --graph-focus-track-off: #CBD5E1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
+  padding-top: 104px; /* room for scrubber overlay, labels, and risk markers */
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+.graph-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--panel-gap);
+  min-height: 44px;
+  padding: var(--space-tight) var(--panel-pad-x) var(--space-tight);
+  z-index: 20;
+}
+
+.graph-header-left {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-tight);
+  min-width: 0;
+  flex: 1 1 420px;
+}
+
+.graph-header-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--graph-text-primary);
+}
+
+.graph-header-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 10px;
+  height: var(--control-h-xs);
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  color: var(--graph-text-secondary);
+  background: var(--graph-badge-bg);
+}
+
+.graph-header-desc {
+  font-size: 12.5px;
+  font-weight: 400;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: var(--line-height-base);
+  color: var(--graph-text-secondary);
+  flex: 1 1 280px;
+  min-width: 220px;
+}
+
+.graph-header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-tight);
+  flex: 0 1 360px;
+  min-width: 260px;
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+.graph-header-right:hover {
+  opacity: 1;
+}
+
+.graph-header-status {
+  font-size: 11px;
+  color: var(--graph-text-secondary);
+  font-weight: 500;
+}
+
+/* Focus toggle */
+.graph-focus-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.graph-focus-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.graph-focus-track {
+  display: inline-block;
+  width: 28px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--graph-focus-track-bg, var(--graph-focus-track-off));
+  transition: background 0.2s;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.graph-focus-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+}
+
+.graph-focus-toggle input:checked + .graph-focus-track::after {
+  transform: translateX(12px);
+}
+
+.graph-focus-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--graph-text-secondary);
+}
+
+.graph-show-all-btn {
+  font-size: 11px;
+  font-weight: 600;
+  height: var(--control-h-xs);
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  color: var(--graph-text-secondary);
+  border: 1px solid var(--graph-show-all-border);
+  background: var(--graph-show-all-bg);
+}
+
+.graph-show-all-btn:hover {
+  opacity: 0.75;
+}
+
+@media (max-width: 1200px) {
+  .graph-shell {
+    padding-top: 116px;
+  }
+
+  .graph-header {
+    gap: 10px 14px;
+  }
+
+  .graph-header-left,
+  .graph-header-right {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .graph-header-right {
+    justify-content: flex-start;
+  }
+
+  .graph-header-desc {
+    min-width: 0;
+  }
+}
+
+/* ── Body (canvas + detail panel) ─────────────────────────────────────── */
+.graph-body {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.graph-canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Simulated time badge */
+.graph-sim-badge {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #BE185D;
+  background: rgba(190,24,93,0.08);
+  border: 1px solid rgba(190,24,93,0.22);
+  border-radius: 10px;
+  padding: 3px 12px;
+  pointer-events: none;
+}
+
+/* ── Legend bar ───────────────────────────────────────────────────────── */
+.graph-legend-bar {
+  background: var(--graph-legend-bg);
+  border-top: 1px solid var(--graph-legend-border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  height: 32px;
+  overflow-x: auto;
+  z-index: 20;
+}
+
+.graph-legend-bar::-webkit-scrollbar { display: none; }
+
+.graph-legend-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--graph-legend-dim);
+  flex-shrink: 0;
+}
+
+.graph-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.graph-legend-text {
+  font-size: 10px;
+  color: var(--graph-legend-dim);
+  font-weight: 500;
+}
+
+.graph-legend-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.graph-legend-link {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--graph-legend-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.04em;
+}
+
+.graph-legend-link-warn {
+  color: #F59E0B;
+}
+
+/* ── Detail panel (GDP) ───────────────────────────────────────────────── */
+.gdp-shell {
+  --gdp-zone-color: #64748B;
+  flex-shrink: 0;
+  height: 100%;
+  overflow: hidden;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+.gdp-inner {
+  width: 300px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* GDP Header */
+.gdp-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.gdp-header-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.gdp-type {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.gdp-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.gdp-badge {
+  --gdp-badge-bg: #FFFBEB;
+  --gdp-badge-text: #D97706;
+  --gdp-badge-border: rgba(217,119,6,0.20);
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: var(--gdp-badge-text);
+  background: var(--gdp-badge-bg);
+  border: 1px solid var(--gdp-badge-border);
+}
+
+.gdp-close {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #94A3B8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+}
+
+.gdp-close:hover {
+  color: #0F172A;
+  background: rgba(15,23,42,0.06);
+}
+
+[data-theme="dark"] .gdp-close:hover {
+  color: #F1F5F9;
+  background: rgba(255,255,255,0.08);
+}
+
+/* GDP Tabs */
+.gdp-tabs {
+  flex-shrink: 0;
+  display: flex;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 10px;
+}
+
+.gdp-tab {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94A3B8;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 4px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.gdp-tab.active {
+  color: var(--tab-color, #6366F1);
+  border-bottom-color: var(--tab-color, #6366F1);
+}
+
+/* GDP Body */
+.gdp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gdp-body::-webkit-scrollbar { width: 4px; }
+.gdp-body::-webkit-scrollbar-track { background: transparent; }
+.gdp-body::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.12); border-radius: 2px; }
+
+[data-theme="dark"] .gdp-body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.10);
+}
+
+.gdp-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.gdp-desc-compact {
+  font-size: 12px;
+}
+
+/* GDP Sections */
+.gdp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gdp-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+/* GDP Metrics */
+.gdp-metric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.gdp-metric-k {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.gdp-metric-v {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.gdp-metric-v.is-negative {
+  color: #DC2626;
+}
+
+/* GDP Confidence row */
+.gdp-conf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(99,102,241,0.06);
+}
+
+.gdp-conf-accent {
+  color: var(--gdp-zone-color);
+}
+
+.gdp-conf-muted {
+  color: #9CA3AF;
+}
+
+.gdp-conf span {
+  color: #64748B;
+  font-weight: 500;
+}
+
+.gdp-conf strong {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* GDP Contributing factors */
+.gdp-factor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 3px 0;
+}
+
+.gdp-factor-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--gdp-factor-color, #64748B);
+}
+
+.gdp-factor-label {
+  flex: 1;
+  color: #374151;
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .gdp-factor-label {
+  color: #CBD5E1;
+}
+
+.gdp-factor-sev {
+  --gdp-factor-severity: #16A34A;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: var(--gdp-factor-severity);
+}
+
+/* GDP Action row */
+.gdp-action-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: rgba(15,23,42,0.03);
+}
+
+[data-theme="dark"] .gdp-action-row {
+  background: rgba(255,255,255,0.04);
+}
+
+.gdp-action-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.gdp-action-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1E293B;
+  line-height: 1.4;
+}
+
+[data-theme="dark"] .gdp-action-title {
+  color: #E2E8F0;
+}
+
+.gdp-action-impact {
+  font-size: 10px;
+  font-weight: 600;
+  color: #16A34A;
+  margin-top: 2px;
+}
+
+/* GDP Footer */
+.gdp-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 8px;
+}
+
+.gdp-cta {
+  width: 100%;
+  padding: 9px 0;
+  border-radius: 8px;
+  border: none;
+  background: var(--gdp-zone-color);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.gdp-cta:hover {
+  opacity: 0.88;
+}
+
+.gdp-cta:active {
+  transform: scale(0.98);
+}
+
+.gdp-audit {
+  width: 100%;
+  padding: 7px 0;
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366F1;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s;
+  text-align: center;
+}
+
+.gdp-audit:hover {
+  opacity: 0.72;
+}
+
+/* ── Board container (legacy, keep for GraphBoard wrapper) ───────────── */
+.board-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}

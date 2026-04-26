@@ -1,0 +1,197 @@
+/* =========================================
+   KAIROS DIORAMA DESIGN SYSTEM
+   (Pills + Scene component classes)
+   ========================================= */
+
+:root {
+  /* ---------- COMPAT ALIASES ---------- */
+  --diorama-bg: var(--map-canvas-bg);
+  --diorama-floor: var(--map-floor-bg);
+  --equip-top: var(--equipment-top);
+  --equip-side: var(--equipment-side);
+  --equip-edge: var(--equipment-edge);
+  --conv-belt: var(--conveyor-belt);
+  --conv-rail: var(--conveyor-rail);
+  --path-critical: var(--critical);
+  --path-warning: var(--warning);
+  --path-normal: var(--normal);
+  --glow-critical: var(--critical-glow);
+  --glow-warning: var(--warning-glow);
+  --glow-normal: var(--normal-glow);
+
+  /* ---------- PILLS ---------- */
+  --pill-bg:     rgba(34, 44, 58, 0.92);
+  --pill-border: rgba(148,163,184,0.22);
+  --pill-text:   #D3DCE6;
+
+  --pill-critical-bg:     rgba(255,95,87,0.12);
+  --pill-critical-border: rgba(255,95,87,0.65);
+  --pill-critical-text:   #FFB5AF;
+
+  --pill-warning-bg:     rgba(245,165,36,0.12);
+  --pill-warning-border: rgba(245,165,36,0.58);
+  --pill-warning-text:   #FFD79A;
+
+  --pill-normal-bg:     rgba(51,209,122,0.11);
+  --pill-normal-border: rgba(51,209,122,0.52);
+  --pill-normal-text:   #B5F2CF;
+
+  --pill-info-bg:     rgba(76,141,255,0.12);
+  --pill-info-border: rgba(76,141,255,0.50);
+  --pill-info-text:   #B8D2FF;
+
+  /* ---------- SELECTION / FOCUS ---------- */
+  --selection-outline: #6CB8FF;
+  --selection-bg: rgba(108,184,255,0.08);
+  --focus-ring: #6CB8FF;
+
+  /* ---------- INTERACTION ---------- */
+  --hover-bg: rgba(255,255,255,0.04);
+  --active-bg: rgba(255,255,255,0.07);
+
+  /* ---------- SHADOWS ---------- */
+  --shadow-soft: 0 6px 18px rgba(0,0,0,0.28);
+  --shadow-deep: 0 14px 36px rgba(0,0,0,0.42);
+
+  /* ---------- TYPOGRAPHY ---------- */
+  --font-primary: var(--font-sans);
+  --text-xs: 10px;
+  --text-sm: 11px;
+  --text-md: 13px;
+  --text-lg: 15px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+}
+
+
+/* ================================
+   PILLS
+   ================================ */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.pill-base {
+  background: var(--pill-bg);
+  border-color: var(--pill-border);
+  color: var(--pill-text);
+}
+
+.pill-critical {
+  background: var(--pill-critical-bg);
+  border-color: var(--pill-critical-border);
+  color: var(--pill-critical-text);
+}
+
+.pill-warning {
+  background: var(--pill-warning-bg);
+  border-color: var(--pill-warning-border);
+  color: var(--pill-warning-text);
+}
+
+.pill-normal {
+  background: var(--pill-normal-bg);
+  border-color: var(--pill-normal-border);
+  color: var(--pill-normal-text);
+}
+
+.pill-info {
+  background: var(--pill-info-bg);
+  border-color: var(--pill-info-border);
+  color: var(--pill-info-text);
+}
+
+
+/* ================================
+   SCENE / MAP COMPONENTS
+   ================================ */
+
+.scene {
+  background: var(--map-canvas-bg);
+}
+
+.floor-plane {
+  background: var(--map-floor-plane);
+}
+
+.machine-top {
+  fill: var(--map-equipment-top);
+}
+
+.machine-side {
+  fill: var(--map-equipment-side);
+}
+
+.machine-face {
+  fill: var(--map-equipment-face);
+}
+
+.machine-label {
+  background: var(--map-label-bg);
+  border-color: var(--map-label-border);
+  color: var(--map-label-text);
+}
+
+
+/* ===============================
+   LIGHT MODE
+   =============================== */
+
+[data-theme="light"] {
+
+  /* ---------- PILLS ---------- */
+  --pill-bg:     #eef2f6;
+  --pill-border: rgba(15,23,42,0.12);
+  --pill-text:   #415061;
+
+  --pill-critical-bg:     rgba(228,87,79,0.10);
+  --pill-critical-border: rgba(228,87,79,0.40);
+  --pill-critical-text:   #B6433D;
+
+  --pill-warning-bg:     rgba(217,144,31,0.10);
+  --pill-warning-border: rgba(217,144,31,0.34);
+  --pill-warning-text:   #9C6616;
+
+  --pill-normal-bg:     rgba(32,184,106,0.09);
+  --pill-normal-border: rgba(32,184,106,0.30);
+  --pill-normal-text:   #0F7B49;
+
+  --pill-info-bg:     rgba(61,126,245,0.10);
+  --pill-info-border: rgba(61,126,245,0.28);
+  --pill-info-text:   #245DC3;
+
+  /* ---------- SELECTION ---------- */
+  --selection-outline: #4F95FF;
+  --selection-bg: rgba(79,149,255,0.08);
+  --focus-ring: #4F95FF;
+
+  /* ---------- INTERACTION ---------- */
+  --hover-bg: rgba(15,23,42,0.04);
+  --active-bg: rgba(15,23,42,0.06);
+
+  /* ---------- SHADOWS ---------- */
+  --shadow-soft: 0 4px 10px rgba(15,23,42,0.06);
+  --shadow-deep: 0 10px 24px rgba(15,23,42,0.10);
+}
